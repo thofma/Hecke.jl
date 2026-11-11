@@ -1428,6 +1428,42 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
     return nothing
   end
 
+  gens, order = _automorphisms_of_trace_forms(L, QQMatrix[]; depth,
+                                              bacher_depth)
+  L.automorphism_group_generators = gens
+  L.automorphism_group_order = order
+  return nothing
+end
+
+# Integral Gram matrices, with respect to an absolute basis of L, of the forms
+# (x, y) -> Tr_E/Q(F(x, y)), for the matrices F of forms on the ambient space
+# of L, linear in the first argument (and sesquilinear for hermitian L).
+function _Zforms_of_forms(L::AbstractLat{<: NumField}, F::Vector)
+  E = base_ring(ambient_space(L))
+  n = degree(L)
+  Babsmat = matrix(E, absolute_basis(L))
+  Babsmatstar = _map(transpose(Babsmat), involution(L))
+  res = QQMatrix[]
+  for f in F
+    @req size(f) == (n, n) "The forms must be given on the ambient space"
+    G = Babsmat * change_base_ring(E, f) * Babsmatstar
+    m = nrows(G)
+    push!(res, matrix(QQ, m, m,
+                      [absolute_tr(G[i, j]) for i in 1:m for j in 1:m]))
+  end
+  return res
+end
+
+# Return generators, with respect to the basis of the rational span of L, and
+# the order of the group of automorphisms of L which preserve the forms F on
+# the ambient space of L.
+#
+# An automorphism of the trace forms Tr(B(x, y)) and Tr(a*B(x, y)) of L, where
+# a generates E over Q, commutes with the multiplication by a, so it is
+# E-linear and preserves B. Being E-linear, it preserves a form F if and only
+# if it preserves Tr(F(x, y)).
+function _automorphisms_of_trace_forms(L::AbstractLat{<: NumField}, F::Vector;
+                                       depth::Int = -1, bacher_depth::Int = 0)
   E = base_ring(ambient_space(L))
 
   if rank(L) == 0
@@ -1444,60 +1480,10 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   if ZgramL[1][1, 1] < 0
     ZgramL[1] = -ZgramL[1]
   end
+  append!(ZgramL, _integral_forms(_Zforms_of_forms(L, F)))
 
-  # Make the Gram matrix small
-  Glll, T = lll_gram_with_transform(ZgramL[1])
-  Ttr = transpose(T)
-  ZgramLorig = copy(ZgramL)
-  for i in 1:length(ZgramL)
-    ZgramL[i] = T * ZgramL[i] * Ttr
-  end
-
-  # Create the automorphism context and compute generators as well as orders
-
-  C = ZLatAutoCtx(ZgramL)
-  fl, Csmall = try_init_small(C, depth = depth, bacher_depth = bacher_depth)
-  if fl
-    auto(Csmall)
-    _gens, order = _get_generators(Csmall)
-    gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
-  else
-    init(C, depth = depth, bacher_depth = bacher_depth)
-    auto(C)
-    gens, order = _get_generators(C)
-  end
-
-  @hassert :Lattice 1 begin
-    flag = true
-    for g in gens
-      gt = transpose(g)
-      for i in 1:length(ZgramL)
-        if g * ZgramL[i] * transpose(g) != ZgramL[i]
-          flag = false
-        end
-      end
-    end
-    flag
-  end
-
-  # Now undo the LLL transformation
-  Tinv = inv(T)
-  for i in 1:length(gens)
-    gens[i] = Tinv * gens[i] * T
-  end
-
-  # Now gens are with respect to the absolute basis of L
-  @hassert :Lattice 1 begin
-    flag = true
-    for j in 1:length(ZgramL)
-      for i in 1:length(gens)
-        if gens[i] * ZgramLorig[j] * transpose(gens[i]) != ZgramLorig[j]
-          flag = false
-        end
-      end
-    end
-    flag
-  end
+  # The generators with respect to the absolute basis of L
+  gens, order = _automorphisms_of_forms(ZgramL; depth, bacher_depth)
 
   # Now translate to get the automorphisms with respect to basis_matrix(L)
   BmatL = basis_matrix_of_rational_span(L)
@@ -1523,11 +1509,7 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
                               for i in 1:nrows(g), j in 1:nrows(g))
   end
 
-  # Now set the generators and the order
-
-  L.automorphism_group_generators = t_gens
-  L.automorphism_group_order = order
-  return nothing
+  return t_gens, order
 end
 
 ################################################################################
@@ -1567,24 +1549,61 @@ function automorphism_group_generators(L::AbstractLat; ambient_representation::B
     end
     return copy(gens)
   else
-    bm = basis_matrix_of_rational_span(L)
-    bm2 = orthogonal_complement(ambient_space(L), bm)
-    B = vcat(bm2, bm)
-    ide = identity_matrix(base_field(L), nrows(bm2))
-    gens = [block_diagonal_matrix([ide, g]) for g in gens]
-    gens = typeof(bm)[inv(B)*g*B for g in gens]
-    @hassert :Lattice 1 begin
-      flag = true
-      Gamb = gram_matrix(ambient_space(L))
-      for g in gens
-        if g * Gamb * _map(transpose(g), involution(L)) != Gamb
-          flag = false
-        end
+    return _automorphisms_in_ambient_space(L, gens)
+  end
+end
+
+# Extend automorphisms given with respect to the basis of the rational span of
+# L by the identity on its orthogonal complement.
+function _automorphisms_in_ambient_space(L::AbstractLat, gens)
+  bm = basis_matrix_of_rational_span(L)
+  bm2 = orthogonal_complement(ambient_space(L), bm)
+  B = vcat(bm2, bm)
+  ide = identity_matrix(base_field(L), nrows(bm2))
+  gens = [block_diagonal_matrix([ide, g]) for g in gens]
+  gens = typeof(bm)[inv(B)*g*B for g in gens]
+  @hassert :Lattice 1 begin
+    flag = true
+    Gamb = gram_matrix(ambient_space(L))
+    for g in gens
+      if g * Gamb * _map(transpose(g), involution(L)) != Gamb
+        flag = false
       end
-      flag
     end
+    flag
+  end
+  return gens
+end
+
+@doc raw"""
+    automorphism_group_generators(L::AbstractLat{<:NumField},
+                                  F::Vector{<:MatElem};
+                                  ambient_representation::Bool = true,
+                                  depth::Int = -1, bacher_depth::Int = 0)
+                                                       -> Vector{MatElem}
+
+Given a definite lattice `L` over a number field and a list `F` of Gram
+matrices of forms on the ambient space of `L`, return generators for the group
+of automorphisms of `L` which preserve every form in `F`.
+
+The forms are linear in the first argument; for a hermitian lattice they are
+sesquilinear with respect to the involution of `L`, and need not be hermitian.
+The representation of the automorphisms and the parameters are as for
+[`automorphism_group_generators(::AbstractLat)`](@ref).
+
+The underlying algorithm is by Plesken and Souvignier [PS97](@cite), applied to
+trace forms over $\mathbf{Q}$ as in their Section 9(3).
+"""
+function automorphism_group_generators(L::AbstractLat{<: NumField},
+                                       F::Vector{<: MatElem};
+                                       ambient_representation::Bool = true,
+                                       depth::Int = -1, bacher_depth::Int = 0)
+  @req is_definite(L) "The lattice must be definite"
+  gens, _ = _automorphisms_of_trace_forms(L, F; depth, bacher_depth)
+  if !ambient_representation
     return gens
   end
+  return _automorphisms_in_ambient_space(L, gens)
 end
 
 ################################################################################
@@ -1614,6 +1633,24 @@ function automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int
 
   assert_has_automorphisms(L; redo, depth, bacher_depth)
   return L.automorphism_group_order
+end
+
+@doc raw"""
+    automorphism_group_order(L::AbstractLat{<:NumField}, F::Vector{<:MatElem};
+                             depth::Int = -1, bacher_depth::Int = 0)
+                                                       -> ZZRingElem
+
+Given a definite lattice `L` over a number field and a list `F` of Gram
+matrices of forms on the ambient space of `L`, return the order of the group
+of automorphisms of `L` which preserve every form in `F`.
+
+See [`automorphism_group_generators(::AbstractLat{<:NumField}, ::Vector{<:MatElem})`](@ref).
+"""
+function automorphism_group_order(L::AbstractLat{<: NumField},
+                                  F::Vector{<: MatElem};
+                                  depth::Int = -1, bacher_depth::Int = 0)
+  @req is_definite(L) "The lattice must be definite"
+  return _automorphisms_of_trace_forms(L, F; depth, bacher_depth)[2]
 end
 
 ################################################################################
@@ -1667,6 +1704,69 @@ is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; depth::Int = -1, bach
 
 function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{<: NumField};
                                     depth::Int = -1, bacher_depth::Int = 0)
+  return _isometry_of_trace_forms(L, QQMatrix[], M, QQMatrix[]; depth,
+                                  bacher_depth)
+end
+
+@doc raw"""
+    is_isometric_with_isometry(L::AbstractLat{<:NumField}, F::Vector{<:MatElem},
+                               M::AbstractLat{<:NumField}, H::Vector{<:MatElem};
+                               depth::Int = -1, bacher_depth::Int = 0)
+                                                       -> (Bool, MatElem)
+
+Given definite lattices `L` and `M` over a number field and lists `F` and `H`
+of Gram matrices of forms on the ambient spaces of `L` and `M`, return whether
+there is an isometry from `L` to `M` carrying the $k$-th form of `H` to the
+$k$-th form of `F` for every $k$. If this is the case, the second returned
+value is such an isometry `T`.
+
+The isometry is represented with respect to the bases $B_L$ and $B_M$ of the
+rational spans of `L` and `M`, that is, $T G_M T^* = G_L$ for the Gram
+matrices $G_L$ and $G_M$ of these bases, and
+$T (B_M H_k B_M^*) T^* = B_L F_k B_L^*$ for all $k$, where $^*$ is the
+transpose composed with the involution.
+
+The forms are linear in the first argument; for hermitian lattices they are
+sesquilinear with respect to the involution, and need not be hermitian. The
+parameters are as for
+[`is_isometric_with_isometry(::AbstractLat, ::AbstractLat)`](@ref).
+
+The underlying algorithm is by Plesken and Souvignier [PS97](@cite), applied to
+trace forms over $\mathbf{Q}$ as in their Section 9(3).
+"""
+function is_isometric_with_isometry(L::AbstractLat{<: NumField},
+                                    F::Vector{<: MatElem},
+                                    M::AbstractLat{<: NumField},
+                                    H::Vector{<: MatElem};
+                                    depth::Int = -1, bacher_depth::Int = 0)
+  @req length(F) == length(H) "The lists of forms must have the same length"
+  @req is_definite(M) "Only implemented for definite lattices"
+  return _isometry_of_trace_forms(L, F, M, H; depth, bacher_depth)
+end
+
+@doc raw"""
+    is_isometric(L::AbstractLat{<:NumField}, F::Vector{<:MatElem},
+                 M::AbstractLat{<:NumField}, H::Vector{<:MatElem};
+                 depth::Int = -1, bacher_depth::Int = 0) -> Bool
+
+Given definite lattices `L` and `M` over a number field and lists `F` and `H`
+of Gram matrices of forms on the ambient spaces of `L` and `M`, return whether
+there is an isometry from `L` to `M` carrying the $k$-th form of `H` to the
+$k$-th form of `F` for every $k$.
+
+See [`is_isometric_with_isometry(::AbstractLat{<:NumField}, ::Vector{<:MatElem}, ::AbstractLat{<:NumField}, ::Vector{<:MatElem})`](@ref).
+"""
+function is_isometric(L::AbstractLat{<: NumField}, F::Vector{<: MatElem},
+                      M::AbstractLat{<: NumField}, H::Vector{<: MatElem};
+                      depth::Int = -1, bacher_depth::Int = 0)
+  return is_isometric_with_isometry(L, F, M, H; depth, bacher_depth)[1]
+end
+
+# See _automorphisms_of_trace_forms for why the traces of the forms in F and H
+# suffice.
+function _isometry_of_trace_forms(L::AbstractLat{<: NumField}, F::Vector,
+                                  M::AbstractLat{<: NumField}, H::Vector;
+                                  depth::Int = -1, bacher_depth::Int = 0)
   V = ambient_space(L)
   W = ambient_space(M)
   E = base_ring(V)
@@ -1699,31 +1799,14 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     ZgramL[1] = -ZgramL[1]
     ZgramM[1] = -ZgramM[1]
   end
+  FL, FM = _integral_forms(_Zforms_of_forms(L, F), _Zforms_of_forms(M, H))
+  append!(ZgramL, FL)
+  append!(ZgramM, FM)
 
-  ZgramLsmall = copy(ZgramL)
-  ZgramMsmall = copy(ZgramM)
-
-  # Make the Gram matrix small
-  _, TL = lll_gram_with_transform(ZgramL[1])
-  _, TM = lll_gram_with_transform(ZgramM[1])
-  TLtr = transpose(TL)
-  TMtr = transpose(TM)
-  for i in 1:length(ZgramL)
-    ZgramLsmall[i] = TL * ZgramL[i] * TLtr
-    ZgramMsmall[i] = TM * ZgramM[i] * TMtr
-  end
-
-  fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
-  if fl
-    b, _T = isometry(CLsmall, CMsmall)
-    T = matrix(ZZ, _T)
-  else
-    CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
-    b, T = isometry(CL, CM)
-  end
+  b, T = _isometry_of_forms(ZgramL, ZgramM; depth, bacher_depth)
 
   if b
-    T = change_base_ring(QQ, inv(TL)*T*TM)
+    T = change_base_ring(QQ, T)
     fl, s1 = can_solve_with_solution(BabsmatL, basis_matrix_of_rational_span(L); side = :left)
     fl, s2 = can_solve_with_solution(basis_matrix_of_rational_span(M), BabsmatM; side = :left)
     T = s1 * change_base_ring(E, T) * s2
