@@ -356,8 +356,12 @@ end
 ################################################################################
 
 function zero!(a::GroupAlgebraElem)
-  for i = 1:length(coefficients(a, copy = false))
-    a.coeffs[i] = zero!(coefficients(a, copy = false)[i])
+  if _is_sparse(a)
+    zero!(a.coeffs_sparse)
+  else
+    for i = 1:length(coefficients(a, copy = false))
+      a.coeffs[i] = zero!(coefficients(a, copy = false)[i])
+    end
   end
   return a
 end
