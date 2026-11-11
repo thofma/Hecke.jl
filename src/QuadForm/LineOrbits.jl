@@ -366,9 +366,7 @@ function _line_orbits(G::Vector)
     i += 1
   end
 
-  if !(K isa fpField && K isa FpField)
-    sort!(lines, lt = _isless)
-  end
+  sort!(lines, lt = _isless)
 
   res = Tuple{eltype(P), Int}[]
 
