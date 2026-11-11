@@ -430,31 +430,6 @@ function set!(a::fpMatrix, z::Vector{fpFieldElem})
   end
 end
 
-function _normalize!(x::fpMatrix)
-  R = base_ring(x)
-  GC.@preserve x begin
-    piv = 0
-    local ell
-    for j in 1:ncols(x)
-      el = x[1, j]
-      if !iszero(el)
-        piv = j
-        ell = inv(el)
-        break
-      end
-    end
-
-    @assert piv != 0
-
-    for j in (piv+1):ncols(x)
-      el = x[j] * ell
-      Nemo.setindex_raw!(x, data(el), 1, j)
-    end
-    Nemo.setindex_raw!(x, UInt(1), 1, piv)
-  end
-  return x
-end
-
 function _isless(x::Vector{fpFieldElem}, y::fpMatrix)
   d = length(x)
   for i in 1:d
@@ -489,7 +464,7 @@ function set!(a::MatElem, z::Vector{FpFieldElem})
 end
 
 # The entries before the pivot are zero, so scaling the row normalizes it.
-function _normalize!(x::FpMatrix)
+function _normalize!(x::Union{fpMatrix, FpMatrix})
   piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
   @assert !isnothing(piv)
   return mul!(x, inv(x[1, piv]))
