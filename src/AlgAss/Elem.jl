@@ -359,7 +359,7 @@ end
 
 function zero!(a::GroupAlgebraElem)
   if _is_sparse(a)
-    zero!(a.coeffs_sparse)
+    a.coeffs_sparse = zero!(a.coeffs_sparse)
   else
     for i in 1:dim(parent(a))
       a.coeffs[i] = zero!(a.coeffs[i])
@@ -378,14 +378,13 @@ end
 function add!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraElem{T}) where {T}
   parent(a) != parent(b) && error("Parents don't match.")
   parent(c) != parent(b) && error("Parents don't match.")
-  A = parent(a)
-  if _is_sparse(A)
-    c.coeffs_sparse = add!(c.coeffs_sparse, a.coeffs_sparse, b.coeffs_sparse)
-    return c
-  end
 
-  for i in 1:dim(parent(a))
-    c.coeffs[i] = add!(c.coeffs[i], a.coeffs[i], b.coeffs[i])
+  if _is_sparse(c)
+    c.coeffs_sparse = add!(c.coeffs_sparse, a.coeffs_sparse, b.coeffs_sparse)
+  else
+    for i in 1:dim(parent(a))
+      c.coeffs[i] = add!(c.coeffs[i], a.coeffs[i], b.coeffs[i])
+    end
   end
   return c
 end
@@ -393,8 +392,12 @@ end
 function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebraElem{T}, b::Union{T, Int, ZZRingElem}) where {T}
   parent(a) != parent(c) && error("Parents don't match.")
 
-  for i in 1:dim(parent(a))
-    c.coeffs[i] = mul!(c.coeffs[i], a.coeffs[i], b)
+  if _is_sparse(c)
+    c.coeffs_sparse = mul!(c.coeffs_sparse, a.coeffs_sparse, b)
+  else
+    for i in 1:dim(parent(a))
+      c.coeffs[i] = mul!(c.coeffs[i], a.coeffs[i], b)
+    end
   end
   return c
 end
