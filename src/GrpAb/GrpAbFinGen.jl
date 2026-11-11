@@ -932,6 +932,7 @@ function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinG
   end
 
   @assert length(V) == length(dG) == length(dH)
+  isempty(V) && return zero_map(G, H)
   @assert all(i -> domain(V[i]) == dG[i] && codomain(V[i]) == dH[i], 1:length(V))
   h = hom(G, H, cat([matrix(V[i]) for i=1:length(V)]..., dims=(1,2)), check = !true)
   return h

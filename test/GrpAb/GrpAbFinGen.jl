@@ -227,6 +227,16 @@
     @test all(h(g) == g for g in gens(D))
   end
 
+  @testset "Empty diagonal map" begin
+    # An empty vector of maps induces the zero map between empty products.
+    Z = direct_product(FinGenAbGroup[]; task = :none)
+    W = direct_product(FinGenAbGroup[]; task = :none)
+    f = hom_direct_sum(Z, W, Hecke.FinGenAbGroupHom[])
+    @test domain(f) === Z
+    @test codomain(f) === W
+    @test matrix(f) == zero_matrix(ZZ, 0, 0)
+  end
+
   @testset "Torsion" begin
     G = abelian_group([5, 4])
     @test @inferred is_torsion(G)
