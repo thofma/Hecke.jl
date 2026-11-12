@@ -53,6 +53,39 @@ end
 
 end
 
+@testset "Image of ideals" begin
+  # The image of an ideal under a map from an absolute simple field, for
+  # relative, non-simple and absolute simple targets: it preserves the
+  # factorization of p and the norms, and agrees with induce_image.
+  Qx, x = QQ["x"]
+  K, = number_field(x^2 - 5, "s")
+
+  O = equation_order(K)
+  I = 2 * O
+  J = image(Hecke.id_hom(K), I)
+  @test order(J) === O && J == I
+
+  Ky, y = K["y"]
+  L1, = number_field(y^2 - 2, "t")
+  L1z, z = L1["z"]
+  for L in [number_field(y^2 - 2)[1], number_field([x^2 - 2, x^2 - 5])[1],
+            number_field([y^2 - 2, y^2 - 3])[1], number_field(z^2 - 3)[1]]
+    Labs, f = absolute_simple_field(L)
+    OA = maximal_order(Labs)
+    OL = maximal_order(L)
+    @test image(f, 1 * OA) == 1 * OL
+    for p in [2, 3, 5, 11]
+      lP = prime_decomposition(OA, p)
+      @test prod(image(f, P)^e for (P, e) in lP) == p * OL
+      @test all(absolute_norm(image(f, P)) == norm(P) for (P, _) in lP)
+    end
+  end
+  K6, a = number_field(x^6 + 108, "a")
+  OK6 = maximal_order(K6)
+  for sigma in automorphism_list(K6), (P, _) in prime_decomposition(OK6, 7)
+    @test image(sigma, P) == Hecke.induce_image(sigma, P)
+  end
+end
 
 @testset "Automorphisms" begin
   Qx, x = QQ["x"]
