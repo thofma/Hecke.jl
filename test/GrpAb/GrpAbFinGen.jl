@@ -197,6 +197,15 @@
     @test is_isomorphic(K, abelian_group([60]))
     K2 = direct_sum(H, G)[1]
     @test is_isomorphic(K, K2)
+
+    # Exercise the explicit ring with nonempty and empty collections of groups.
+    @test is_isomorphic(first(direct_sum(ZZ, H, G)), K)
+    @test is_isomorphic(first(direct_product(ZZ, [G, H])), K)
+    @test is_isomorphic(first(biproduct(ZZ, G, H)), K)
+    @test is_trivial(first(direct_sum(ZZ, FinGenAbGroup[])))
+    @test is_trivial(first(direct_product(ZZ)))
+    @test is_trivial(first(biproduct(ZZ)))
+
     K3, proj, inj = biproduct(G, H)
     for i in 1:2, j in 1:2
       if i == j
