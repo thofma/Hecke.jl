@@ -366,7 +366,7 @@ function _line_orbits(G::Vector)
     i += 1
   end
 
-  if !(K isa fpField && K isa FpField)
+  if !(K isa fpField || K isa FpField)
     sort!(lines, lt = _isless)
   end
 
@@ -413,9 +413,7 @@ end
 ################################################################################
 
 function inc!(a::BigInt)
-  ccall((:__gmpz_add_ui, Base.GMP.libgmp), Nothing,
-        (Ref{BigInt}, Ref{BigInt}, UInt), a, a, UInt(1))
-  return a
+  return Base.GMP.MPZ.add_ui!(a, 1)
 end
 
 ################################################################################
@@ -432,55 +430,6 @@ function set!(a::fpMatrix, z::Vector{fpFieldElem})
   end
 end
 
-function _normalize!(x::fpMatrix)
-  R = base_ring(x)
-  GC.@preserve x begin
-    piv = 0
-    local ell
-    for j in 1:ncols(x)
-      el = x[1, j]
-      if !iszero(el)
-        piv = j
-        ell = inv(el)
-        break
-      end
-    end
-
-    @assert piv != 0
-
-    for j in (piv+1):ncols(x)
-      el = x[j] * ell
-      Nemo.setindex_raw!(x, data(el), 1, j)
-    end
-    Nemo.setindex_raw!(x, UInt(1), 1, piv)
-  end
-  return x
-end
-
-function _isless(x::Vector{fpFieldElem}, y::fpMatrix)
-  d = length(x)
-  for i in 1:d
-    xi = x[i]
-    yi = y[1, i]
-    if xi.data != yi.data
-      return xi.data < yi.data
-    end
-  end
-  return false
-end
-
-function _isless(x::Vector{fpFieldElem}, y::Vector{fpFieldElem})
-  d = length(x)
-  for i in 1:d
-    xi = x[i]
-    yi = y[i]
-    if xi.data != yi.data
-      return xi.data < yi.data
-    end
-  end
-  return false
-end
-
 # gfp_fmpz
 
 function set!(a::MatElem, z::Vector{FpFieldElem})
@@ -490,14 +439,10 @@ function set!(a::MatElem, z::Vector{FpFieldElem})
   end
 end
 
-# The entries before the pivot are zero, so scaling the row normalizes it.
-function _normalize!(x::FpMatrix)
-  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
-  @assert !isnothing(piv)
-  return mul!(x, inv(x[1, piv]))
-end
+# gfp and gfp_fmpz
 
-function _isless(x::Vector{FpFieldElem}, y::MatElem)
+function _isless(x::Vector{T}, y::MatElem{T}) where
+                                    {T <: Union{fpFieldElem, FpFieldElem}}
   d = length(x)
   for i in 1:d
     xi = x[i]
@@ -509,7 +454,8 @@ function _isless(x::Vector{FpFieldElem}, y::MatElem)
   return false
 end
 
-function _isless(x::Vector{FpFieldElem}, y::Vector{FpFieldElem})
+function _isless(x::Vector{T}, y::Vector{T}) where
+                                    {T <: Union{fpFieldElem, FpFieldElem}}
   d = length(x)
   for i in 1:d
     xi = x[i]
@@ -519,6 +465,13 @@ function _isless(x::Vector{FpFieldElem}, y::Vector{FpFieldElem})
     end
   end
   return false
+end
+
+# The entries before the pivot are zero, so scaling the row normalizes it.
+function _normalize!(x::Union{fpMatrix, FpMatrix})
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
+  return mul!(x, inv(x[1, piv]))
 end
 
 # fqPolyRepMatrix
@@ -531,51 +484,13 @@ function set!(a::fqPolyRepMatrix, z::Vector{fqPolyRepFieldElem})
   end
 end
 
-function _isequal(x::fqPolyRepMatrix, y::Vector{fqPolyRepFieldElem})
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:length(y)
-      el = mat_entry_ptr(x, 1, i)
-      b = ccall((:fq_nmod_equal, libflint), Cint, (Ref{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), y[i], el, R)
-      bb = Bool(b)
-      if !bb
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function _muleq!(x::fqPolyRepMatrix, y::fqPolyRepFieldElem)
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:nrows(x)
-      for j in 1:ncols(x)
-        el = mat_entry_ptr(x, i, j)
-        ccall((:fq_nmod_mul, libflint), Cvoid, (Ptr{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), el, el, y, R)
-      end
-    end
-  end
-  return x
-end
-
 function _normalize!(x::fqPolyRepMatrix)
   R = base_ring(x)
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
   GC.@preserve x begin
-    piv = 0
-    local ell
-    for j in 1:ncols(x)
-      el = mat_entry_ptr(x, 1, j)
-      b = ccall((:fq_nmod_is_zero, libflint), Cint, (Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), el, R)
-      if !Bool(b)
-        piv = j
-        ccall((:fq_nmod_inv, libflint), Cvoid, (Ptr{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), el, el, R)
-        ell = el
-        break
-      end
-    end
-
-    @assert piv != 0
+    ell = mat_entry_ptr(x, 1, piv)
+    ccall((:fq_nmod_inv, libflint), Cvoid, (Ptr{fqPolyRepFieldElem}, Ptr{fqPolyRepFieldElem}, Ref{fqPolyRepField}), ell, ell, R)
 
     for j in (piv+1):ncols(x)
       el = mat_entry_ptr(x, 1, j)
@@ -589,24 +504,13 @@ function _normalize!(x::fqPolyRepMatrix)
   return x
 end
 
-function _isless(x::fqPolyRepFieldElem, y::fqPolyRepFieldElem)
-  d = degree(parent(x)) - 1
-  for i in 0:d
-    xi = coeff(x, i)
-    yi = coeff(y, i)
-    if xi != yi
-      return xi < yi
-    end
-  end
-  return false
-end
-
-@inline function _isless(x::fqPolyRepFieldElem, y::Ptr{fqPolyRepFieldElem})
+@inline function _isless(x::fqPolyRepFieldElem,
+                         y::Nemo.TypeOrPtr{fqPolyRepFieldElem})
   d = degree(parent(x)) - 1
   for i in 0:d
     xi = coeff(x, i)
     yi = ccall((:nmod_poly_get_coeff_ui, libflint), UInt,
-               (Ptr{fqPolyRepFieldElem}, Int), y, i)
+               (Ref{fqPolyRepFieldElem}, Int), y, i)
     if xi != yi
       return xi < yi
     end
@@ -653,55 +557,14 @@ function set!(a::FqPolyRepMatrix, z::Vector{FqPolyRepFieldElem})
   end
 end
 
-function _isequal(x::FqPolyRepMatrix, y::Vector{FqPolyRepFieldElem})
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:length(y)
-      el = mat_entry_ptr(x, 1, i)
-      b = ccall((:fq_equal, libflint), Cint,
-                (Ref{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), y[i], el, R)
-      bb = Bool(b)
-      if !bb
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function _muleq!(x::FqPolyRepMatrix, y::FqPolyRepFieldElem)
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:nrows(x)
-      for j in 1:ncols(x)
-        el = mat_entry_ptr(x, i, j)
-        ccall((:fq_mul, libflint), Cvoid,
-              (Ptr{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, el, y, R)
-      end
-    end
-  end
-  return x
-end
-
 function _normalize!(x::FqPolyRepMatrix)
   R = base_ring(x)
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
   GC.@preserve x begin
-    piv = 0
-    local ell
-    for j in 1:ncols(x)
-      el = mat_entry_ptr(x, 1, j)
-      b = ccall((:fq_is_zero, libflint), Cint,
-                (Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, R)
-      if !Bool(b)
-        piv = j
-        ccall((:fq_inv, libflint), Cvoid,
-              (Ptr{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), el, el, R)
-        ell = el
-        break
-      end
-    end
-
-    @assert piv != 0
+    ell = mat_entry_ptr(x, 1, piv)
+    ccall((:fq_inv, libflint), Cvoid,
+          (Ptr{FqPolyRepFieldElem}, Ptr{FqPolyRepFieldElem}, Ref{FqPolyRepField}), ell, ell, R)
 
     for j in (piv+1):ncols(x)
       el = mat_entry_ptr(x, 1, j)
@@ -713,28 +576,15 @@ function _normalize!(x::FqPolyRepMatrix)
   return x
 end
 
-function _isless(x::FqPolyRepFieldElem, y::FqPolyRepFieldElem, xi::ZZRingElem = ZZRingElem(), yi::ZZRingElem = ZZRingElem())
+@inline function _isless(x::FqPolyRepFieldElem,
+                         y::Nemo.TypeOrPtr{FqPolyRepFieldElem},
+                         xi::ZZRingElem = ZZRingElem(), yi::ZZRingElem = ZZRingElem())
   d = degree(parent(x)) - 1
   for i in 0:d
     ccall((:fmpz_poly_get_coeff_fmpz, libflint), Cvoid,
           (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), xi, x, i)
     ccall((:fmpz_poly_get_coeff_fmpz, libflint), Cvoid,
           (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), yi, y, i)
-    if xi != yi
-      return xi < yi
-    end
-  end
-  return false
-end
-
-@inline function _isless(x::FqPolyRepFieldElem, y::Ptr{FqPolyRepFieldElem}, xi::ZZRingElem = ZZRingElem(),
-                                            yi::ZZRingElem = ZZRingElem())
-  d = degree(parent(x)) - 1
-  for i in 0:d
-    ccall((:fmpz_poly_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), xi, x, i)
-    ccall((:fmpz_poly_get_coeff_fmpz, libflint), Cvoid,
-          (Ref{ZZRingElem}, Ptr{FqPolyRepFieldElem}, Int), yi, y, i)
     if xi != yi
       return xi < yi
     end
@@ -789,55 +639,14 @@ function set!(a::FqMatrix, z::Vector{FqFieldElem})
   end
 end
 
-function _isequal(x::FqMatrix, y::Vector{FqFieldElem})
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:length(y)
-      el = mat_entry_ptr(x, 1, i)
-      b = ccall((:fq_default_equal, libflint), Cint,
-                (Ref{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqField}), y[i], el, R)
-      bb = Bool(b)
-      if !bb
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function _muleq!(x::FqMatrix, y::FqFieldElem)
-  R = base_ring(x)
-  GC.@preserve x begin
-    for i in 1:nrows(x)
-      for j in 1:ncols(x)
-        el = mat_entry_ptr(x, i, j)
-        ccall((:fq_default_mul, libflint), Cvoid,
-              (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqFieldElem}, Ref{FqField}), el, el, y, R)
-      end
-    end
-  end
-  return x
-end
-
 function _normalize!(x::FqMatrix)
   R = base_ring(x)
-  piv = 0
-  local ell
+  piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
+  @assert !isnothing(piv)
   GC.@preserve x begin
-    for j in 1:ncols(x)
-      el = mat_entry_ptr(x, 1, j)
-      b = ccall((:fq_default_is_zero, libflint), Cint,
-                (Ptr{FqFieldElem}, Ref{FqField}), el, R)
-      if !Bool(b)
-        piv = j
-        ccall((:fq_default_inv, libflint), Cvoid,
-              (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqField}), el, el, R)
-        ell = el
-        break
-      end
-    end
-
-    @assert piv != 0
+    ell = mat_entry_ptr(x, 1, piv)
+    ccall((:fq_default_inv, libflint), Cvoid,
+          (Ptr{FqFieldElem}, Ptr{FqFieldElem}, Ref{FqField}), ell, ell, R)
 
     for j in (piv+1):ncols(x)
       el = mat_entry_ptr(x, 1, j)
