@@ -69,7 +69,7 @@ mutable struct DifferentialFactorCache
         for i in 0:x_lengths[l]-1
           entry = coefficient_tables[l] + (j*x_lengths[l] + i)*entry_size
           if i < length(row)
-            ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}), entry, row[i+1])
+            Nemo._acb_set(entry, row[i+1])
             iszero(row[i+1]) || (row_lengths[l][j+1] = i + 1)
           else
             ccall((:acb_zero, libflint), Nothing, (Ptr{acb_struct},), entry)
@@ -146,7 +146,7 @@ function _evaluate_differentials!(values::Matrix{AcbFieldElem}, cache::Different
 
     if y_length == 1
       # the factor does not depend on y: the same value on all sheets
-      ccall((:acb_set, libflint), Nothing, (Ref{AcbFieldElem}, Ptr{acb_struct}), value, y_coefficients)
+      Nemo._acb_set(value, y_coefficients)
       _acb_pow_si!(powers[1], value, min_power)
       for t in 1:power_range
         mul!(powers[t+1], powers[t], value)

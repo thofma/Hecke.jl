@@ -142,7 +142,7 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   ctx = Nemo.LLLContext(0.99, 0.51, :gram)
 
   one!(g)
-  ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
+  Nemo._lll_gram_with_transform!(d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
@@ -595,7 +595,7 @@ function _lll_sublattice(M::AbsNumFieldOrder, u::Vector{Int}; prec = 100)
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end
     ctx = Nemo.LLLContext(0.99, 0.51, :gram)
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d1, g, ctx)
+    @vtime :LLL 3 Nemo._lll_gram_with_transform!(d1, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       prec *= 2
@@ -661,7 +661,7 @@ function _lll_with_parameters(M::AbsNumFieldOrder, parameters::Tuple{Float64, Fl
     for i=1:n
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
+    @vtime :LLL 3 Nemo._lll_gram_with_transform!(d, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       fl = true

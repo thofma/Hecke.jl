@@ -266,7 +266,7 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
         n = mat_entry_ptr(a, c, j)
         m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
-        ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
+        fdiv!(q, n, m)
         #q = fdiv(a[c, j], H[i, j])
         fl = is_zero(q)
         if fl
@@ -298,7 +298,7 @@ function reduce_mod_hnf_ll!(a::ZZMatrix, H::ZZMatrix)
         n = mat_entry_ptr(a, c, j)
         m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
-        ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
+        fdiv!(q, n, m)
         #q = fdiv(a[c, j], H[i, j])
         fl = is_zero(q)
         if fl
@@ -462,8 +462,7 @@ function round_scale!(b::ZZMatrix, a::ArbMatrix, l::Int)
   r = R()
   for i = 1:s[1]
       for j = 1:s[2]
-          v = ccall((:arb_mat_entry_ptr, libflint), Ptr{ArbFieldElem},
-              (Ref{ArbMatrix}, Int, Int), a, i - 1, j - 1)
+          v = mat_entry_ptr(a, i, j)
           ccall((:arb_mul_2exp_si, libflint), Nothing, (Ref{ArbFieldElem}, Ptr{ArbFieldElem}, Int), r, v, l)
           b[i, j] = round(ZZRingElem, r)
       end
@@ -493,14 +492,12 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         if is_lower_triangular(S)
           break
         end
-        ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{ZZMatrix}, Ref{ZZMatrix}), S, S)
+        transpose!(S)
         ccall((:fmpz_mat_hnf_transform, libflint), Nothing,
            (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), S, T, S)
         #S, T = hnf_with_transform(S)
         R = mul!(R, T, R)
-        ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{ZZMatrix}, Ref{ZZMatrix}), S, S)
+        transpose!(S)
         if is_upper_triangular(S)
           break
         end
@@ -511,23 +508,16 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
   GC.@preserve S R begin
     for i=1:min(nrows(S), ncols(S))
       Sii = mat_entry_ptr(S, i, i)
-      fl = is_one(Sii)
-      if fl
+      if is_one(Sii)
         continue
       end
       for j=i+1:min(nrows(S), ncols(S))
         Sjj = mat_entry_ptr(S, j, j)
-        fl = is_zero(Sjj)
-        if fl
+        if is_zero(Sjj)
           continue
         end
-        fl1 = is_zero(Sii)
-        if !fl1
-          fl2 = Bool(ccall((:fmpz_divisible, libflint), Cint,
-              (Ref{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sii))
-          if fl2
-            continue
-          end
+        if !is_zero(Sii) && is_divisible_by(Sjj, Sii)
+          continue
         end
         #if S[i,i] != 0 && S[j,j] % S[i,i] == 0
         #  continue
@@ -998,8 +988,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     for i = 1:nrows(M)
       SR[i, i+nrows(M)] = 1
     end
-    ccall((:nmod_mat_howell_form, libflint), Nothing, (Ref{zzModMatrix}, ), SR)
-    #howell_form!(SR)
+    howell_form!(SR)
     iMR = SR[1:nrows(M), nrows(M)+1:ncols(SR)]
     #@assert iMR*MRR == identity_matrix(RR, nrows(M))
     return lift(iMR)
@@ -1011,7 +1000,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     for i = 1:nrows(M)
       S[i, i+nrows(M)] = 1
     end
-    ccall((:fmpz_mod_mat_howell_form, libflint), Nothing, (Ref{ZZModMatrix}, Ref{Nemo.fmpz_mod_ctx_struct}), S, R.ninv)
+    howell_form!(S)
     iM = S[1:nrows(M), nrows(M)+1:ncols(S)]
     #@assert iM*MR == identity_matrix(R, nrows(M))
     return lift(iM)

@@ -476,12 +476,8 @@ end
 
 # fqPolyRepMatrix
 function set!(a::fqPolyRepMatrix, z::Vector{fqPolyRepFieldElem})
-  @assert ncols(a) == length(z)
-  for i in 1:length(z)
-    ccall((:fq_nmod_mat_entry_set, libflint), Nothing,
-          (Ref{fqPolyRepMatrix}, Int, Int, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}),
-          a, 0, i - 1, z[i], base_ring(a))
-  end
+  a[1, :] = z
+  return a
 end
 
 function _normalize!(x::fqPolyRepMatrix)
@@ -549,12 +545,8 @@ end
 
 # FqPolyRepFieldElem
 function set!(a::FqPolyRepMatrix, z::Vector{FqPolyRepFieldElem})
-  @assert ncols(a) == length(z)
-  for i in 1:length(z)
-    ccall((:fq_mat_entry_set, libflint), Nothing,
-          (Ref{FqPolyRepMatrix}, Int, Int, Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}),
-          a, 0, i - 1, z[i], base_ring(a))
-  end
+  a[1, :] = z
+  return a
 end
 
 function _normalize!(x::FqPolyRepMatrix)
@@ -631,12 +623,8 @@ end
 
 # FqFieldElem
 function set!(a::FqMatrix, z::Vector{FqFieldElem})
-  @assert ncols(a) == length(z)
-  for i in 1:length(z)
-    ccall((:fq_default_mat_entry_set, libflint), Nothing,
-          (Ref{FqMatrix}, Int, Int, Ref{FqFieldElem}, Ref{FqField}),
-          a, 0, i - 1, z[i], base_ring(a))
-  end
+  a[1, :] = z
+  return a
 end
 
 function _normalize!(x::FqMatrix)

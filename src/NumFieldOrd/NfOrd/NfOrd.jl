@@ -442,9 +442,8 @@ function minkowski_gram_mat_scaled(O::AbsNumFieldOrder, prec::Int = 64)
   else
     c = minkowski_matrix(O, prec+2)
     d = zero_matrix(ZZ, degree(O), degree(O))
-    A = zero_matrix(ZZ, degree(O), degree(O))
     round_scale!(d, c, prec)
-    ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), A, d)
+    A = gram(d)
     shift!(A, -prec)
     O.minkowski_gram_mat_scaled = (A, prec)
     A = deepcopy(A)
@@ -460,9 +459,8 @@ function minkowski_gram_mat_scaled(B::Vector{T}, prec::Int = 64) where T <: NumF
   K = parent(B[1])
   c = minkowski_matrix(B, prec+2)
   d = zero_matrix(ZZ, length(B), absolute_degree(K))
-  A = zero_matrix(ZZ, length(B), length(B))
   round_scale!(d, c, prec)
-  ccall((:fmpz_mat_gram, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}), A, d)
+  A = gram(d)
   shift!(A, -prec)
   return A
 end

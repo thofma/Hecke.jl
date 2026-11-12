@@ -11,8 +11,7 @@
 
 function fillacb!(r::Ptr{acb_struct}, s::Vector{AcbFieldElem})
   for i in 1:length(s)
-    ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}),
-          r + (i - 1) * sizeof(acb_struct), s[i])
+    Nemo._acb_set(r + (i - 1) * sizeof(acb_struct), s[i])
   end
 end
 
@@ -94,12 +93,10 @@ function _validate_size_of_zeros(roots::Ptr{acb_struct}, deg::Int, abs_tol::Int)
   end
 
   for i = 0 : deg-1
-    re = ccall((:acb_real_ptr, libflint), Ptr{Nemo.arb_struct},
-          (Ptr{AcbFieldElem}, ), roots + i * sizeof(acb_struct))
-    im = ccall((:acb_imag_ptr, libflint), Ptr{Nemo.arb_struct},
-          (Ptr{AcbFieldElem}, ), roots + i * sizeof(acb_struct))
-    t = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ptr{ArbFieldElem}, ), re)
-    u = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ptr{ArbFieldElem}, ), im)
+    re = Nemo._real_ptr(roots + i * sizeof(acb_struct))
+    im = Nemo._imag_ptr(roots + i * sizeof(acb_struct))
+    t = Nemo._rad_ptr(re)
+    u = Nemo._rad_ptr(im)
     ok = ok && (ccall((:mag_cmp_2exp_si, libflint), Cint,
         (Ptr{Nemo.mag_struct}, Int), t, -abs_tol) <= 0)
     ok = ok && (ccall((:mag_cmp_2exp_si, libflint), Cint,
@@ -192,8 +189,7 @@ function _roots!(roots::Ptr{acb_struct}, x::Union{QQPolyRingElem, ZZPolyRingElem
           ok = false
       else
         for i = 0 : deg - 1
-            im = ccall((:acb_imag_ptr, libflint), Ptr{Nemo.arb_struct},
-                (Ptr{AcbFieldElem}, ), roots + i * sizeof(acb_struct))
+            im = Nemo._imag_ptr(roots + i * sizeof(acb_struct))
             if ccall((:arb_contains_zero, libflint), Bool, (Ptr{Nemo.arb_struct}, ), im)
                 ccall((:arb_zero, libflint), Nothing, (Ptr{Nemo.arb_struct}, ), im)
             end
@@ -219,7 +215,7 @@ end
 
 function radiuslttwopower(x::T, e::Int) where {T <: Union{RealFieldElem, ArbFieldElem}}
   GC.@preserve x begin
-    t = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ref{T}, ), x)
+    t = Nemo._rad_ptr(x)
     b = ccall((:mag_cmp_2exp_si, libflint), Cint,
             (Ptr{Nemo.mag_struct}, Int), t, e) <= 0
   end
@@ -228,12 +224,10 @@ end
 
 function radiuslttwopower(x::T, e::Int) where {T <: Union{ComplexFieldElem, AcbFieldElem}}
   GC.@preserve x begin
-    re = ccall((:acb_real_ptr, libflint), Ptr{Nemo.arb_struct},
-               (Ref{T}, ), x)
-    im = ccall((:acb_imag_ptr, libflint), Ptr{Nemo.arb_struct},
-               (Ref{T}, ), x)
-    t = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ptr{ArbFieldElem}, ), re)
-    u = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ptr{ArbFieldElem}, ), im)
+    re = Nemo._real_ptr(x)
+    im = Nemo._imag_ptr(x)
+    t = Nemo._rad_ptr(re)
+    u = Nemo._rad_ptr(im)
     ok = (ccall((:mag_cmp_2exp_si, libflint), Cint,
                 (Ptr{Nemo.mag_struct}, Int), t, e) <= 0)
     ok = ok && (ccall((:mag_cmp_2exp_si, libflint), Cint,
@@ -259,7 +253,7 @@ function rel_accuracy(x::ArbFieldElem)
 end
 
 function set!(z::ArbFieldElem, x::ArbFieldElem)
-  ccall((:arb_set, libflint), Nothing, (Ref{Nemo.ArbFieldElem}, Ref{Nemo.ArbFieldElem}), z, x)
+  Nemo._arb_set(z, x)
   return z
 end
 
@@ -272,7 +266,7 @@ function rel_accuracy(x::AcbFieldElem)
 end
 
 function set!(z::AcbFieldElem, x::AcbFieldElem)
-  ccall((:acb_set, libflint), Nothing, (Ref{Nemo.AcbFieldElem}, Ref{Nemo.AcbFieldElem}), z, x)
+  Nemo._acb_set(z, x)
   return z
 end
 
