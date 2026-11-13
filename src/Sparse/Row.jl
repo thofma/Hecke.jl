@@ -917,14 +917,16 @@ end
 
 function addmul!(z::SRow{T}, x::SRow{T}, y) where T
   if z === x
-    return scale_row_right!(x, y+1)
+    R = base_ring(x)
+    return scale_row_right!(x, R(y) + 1)
   end
   return add_right_scaled_row!(x, z, y)
 end
 
 function addmul!(z::SRow{T}, x, y::SRow{T}) where T
   if z === y
-    return scale_row_left!(y, x+1)
+    R = base_ring(y)
+    return scale_row_left!(y, R(x) + 1)
   end
   return add_left_scaled_row!(y, z, x)
 end
@@ -934,17 +936,21 @@ function submul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
 end
 
 function submul!(z::SRow{T}, x::SRow{T}, y) where T
+  R = base_ring(x)
+  c = R(y)
   if z === x
-    return scale_row_right!(x, -y+1)
+    return scale_row_right!(x, 1 - c)
   end
-  return add_right_scaled_row!(x, z, -y)
+  return add_right_scaled_row!(x, z, -c)
 end
 
 function submul!(z::SRow{T}, x, y::SRow{T}) where T
+  R = base_ring(y)
+  c = R(x)
   if z === y
-    return scale_row_left!(y, -x+1)
+    return scale_row_left!(y, 1 - c)
   end
-  return add_left_scaled_row!(y, z, -x)
+  return add_left_scaled_row!(y, z, -c)
 end
 
 

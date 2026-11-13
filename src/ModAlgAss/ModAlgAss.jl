@@ -652,6 +652,9 @@ function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
   if dim(V) != dim(W)
     return false, zero_map(V, W)
   end
+  if dim(V) == 0
+    return true, zero_map(V, W)
+  end
 
   # V and W are isomorphic if and only if Hom(V, W) is a free End(V)-module
   # of rank 1 with an invertible generator.
