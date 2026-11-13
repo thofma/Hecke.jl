@@ -685,9 +685,22 @@ injections, one should call `biproduct(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :sum, kwargs...)
-  @assert task in [:sum, :prod, :both, :none]
+function direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...; kwargs...)
+  return direct_sum(ZZ, G, H...; kwargs...)
+end
+
+function direct_sum(::ZZRing, G::FinGenAbGroup, H::FinGenAbGroup...;
+                    task::Symbol = :sum, kwargs...)
   return _direct_product(:sum, G, H...; task = task, kwargs...)
+end
+
+function direct_sum(G::Vector{FinGenAbGroup}; kwargs...)
+  return direct_sum(ZZ, G; kwargs...)
+end
+
+function direct_sum(::ZZRing, G::Vector{FinGenAbGroup};
+                    task::Symbol = :sum, kwargs...)
+  return _direct_product(:sum, G...; task = task, kwargs...)
 end
 
 @doc raw"""
@@ -706,9 +719,22 @@ injections, one should call `biproduct(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function direct_product(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :prod, kwargs...)
-  @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:prod, G, H...; task = task, kwargs...)
+function direct_product(G::FinGenAbGroup, H::FinGenAbGroup...; kwargs...)
+  return direct_product(ZZ, G, H...; kwargs...)
+end
+
+function direct_product(::ZZRing, G::FinGenAbGroup...;
+                        task::Symbol = :prod, kwargs...)
+  return _direct_product(:prod, G...; task = task, kwargs...)
+end
+
+function direct_product(G::Vector{FinGenAbGroup}; task::Symbol = :prod)
+  return direct_product(ZZ, G; task)
+end
+
+function direct_product(R::ZZRing, G::Vector{FinGenAbGroup};
+                        task::Symbol = :prod)
+  return direct_product(R, G...; task)
 end
 
 @doc raw"""
@@ -727,9 +753,13 @@ one should call `direct_product(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function biproduct(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :both, kwargs...)
-  @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:prod, G, H...; task = task, kwargs...)
+function biproduct(G::FinGenAbGroup, H::FinGenAbGroup...; kwargs...)
+  return biproduct(ZZ, G, H...; kwargs...)
+end
+
+function biproduct(::ZZRing, G::FinGenAbGroup...;
+                   task::Symbol = :both, kwargs...)
+  return _direct_product(:prod, G...; task = task, kwargs...)
 end
 
 @doc raw"""
@@ -740,16 +770,21 @@ Return the direct sum $D$ of the (finitely many) abelian groups $G_i$.
 If one wants to access the injections $G_i \to D$ or the projections $D \to G_i$ later,
 one can call respectively `canonical_injections(D)` or `canonical_projections(D)`.
 """
-function _direct_product(t::Symbol, G::FinGenAbGroup...
-             ; add_to_lattice::Bool = false, L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
+function _direct_product(t::Symbol, G::FinGenAbGroup...;
+                         add_to_lattice::Bool = false,
+                         L::GrpAbLattice = GroupLattice, task::Symbol = :sum)
   @assert task in [:prod, :sum, :both, :none]
 
-  Dp = abelian_group(cat([rels(x) for x = G]..., dims = (1,2)))
-  for x = G
-    assure_has_hnf(x)
+  if isempty(G)
+    Dp = free_abelian_group(0)
+  else
+    Dp = abelian_group(cat([rels(x) for x = G]..., dims = (1,2)))
+    for x = G
+      assure_has_hnf(x)
+    end
+    # This works if the HNF has no zero rows.
+    Dp.hnf = cat([x.hnf for x = G]..., dims = (1,2))
   end
-  #works iff hnf is stripping the zero rows
-  Dp.hnf = cat([x.hnf for x = G]..., dims = (1,2))
 
   if t === :prod
     set_attribute!(Dp, :direct_product =>G, :show => show_direct_product)
@@ -912,6 +947,7 @@ function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinG
   end
 
   @assert length(V) == length(dG) == length(dH)
+  isempty(V) && return zero_map(G, H)
   @assert all(i -> domain(V[i]) == dG[i] && codomain(V[i]) == dH[i], 1:length(V))
   h = hom(G, H, cat([matrix(V[i]) for i=1:length(V)]..., dims=(1,2)), check = !true)
   return h
