@@ -311,11 +311,16 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
   OK = order(x)
   @assert target == false || OK === target
 
+  K = nf(OK)
+  if !is_maximal_known_and_maximal(OK)
+    stable = all(b -> f(b) in OK, basis(OK, K; copy = false))
+    @req stable "The automorphism must preserve the order of the ideal"
+  end
+
   if isone(x)
     return x
   end
 
-  K = nf(OK)
   if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
     int_in_ideal = x.gen_one
     if has_minimum(x)
