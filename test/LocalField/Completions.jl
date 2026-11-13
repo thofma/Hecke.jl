@@ -172,3 +172,30 @@ end
     end
   end
 end
+
+@testset "totally ramified completion, non-monogenic" begin
+  # the map is a ring homomorphism to precision(Kp) and preimage inverts it
+  Qx, x = QQ["x"]
+  K, a = number_field(x^3 - 9, "a", cached = false)
+  OK = maximal_order(K)
+  P = prime_decomposition(OK, 3)[1][1]
+  els = [a + 1, a^2//3 - 2, elem_in_nf(uniformizer(P))]
+  for pr in [5, 20, 100]
+    Kp, m = Hecke.totally_ramified_completion(K, P, pr)
+    n = precision(Kp)
+    @test n == 3*pr
+    @test iszero(defining_polynomial(K)(m(a)))
+    @test valuation(m(a)) == 2//3
+    @test valuation(m(elem_in_nf(uniformizer(P)))) == 1//3
+    for b in els, c in els
+      d = m(b*c) - m(b)*m(c)
+      @test precision(d) >= n && iszero(d)
+      d = m(b + c) - m(b) - m(c)
+      @test precision(d) >= n && iszero(d)
+    end
+    for b in els
+      d = preimage(m, m(b)) - b
+      @test iszero(d) || valuation(d, P) >= n
+    end
+  end
+end
