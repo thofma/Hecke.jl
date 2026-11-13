@@ -386,7 +386,7 @@ function _line_orbits(G::Vector)
     cnd = 1
     orb = Int[pt]
     while cnd <= norb
-      set!(newline, lines[orb[cnd]])
+      newline[1, :] = lines[orb[cnd]]
       for i in 1:length(G)
         newline2 = mul!(newline2, newline, G[i])
         _normalize!(newline2)
@@ -421,23 +421,6 @@ end
 #  Helper functions for sorting and comparing finite field matrices and arrays
 #
 ################################################################################
-
-# gfp
-function set!(a::fpMatrix, z::Vector{fpFieldElem})
-  @assert ncols(a) == length(z)
-  for i in 1:length(z)
-    Nemo.setindex_raw!(a, data(z[i]), 1, i) # no reduction necessary
-  end
-end
-
-# gfp_fmpz
-
-function set!(a::MatElem, z::Vector{FpFieldElem})
-  @assert ncols(a) == length(z)
-  for i in 1:length(z)
-    a[1, i] = z[i]
-  end
-end
 
 # gfp and gfp_fmpz
 
@@ -475,15 +458,6 @@ function _normalize!(x::Union{fpMatrix, FpMatrix})
 end
 
 # fqPolyRepMatrix
-function set!(a::fqPolyRepMatrix, z::Vector{fqPolyRepFieldElem})
-  @assert ncols(a) == length(z)
-  for i in 1:length(z)
-    ccall((:fq_nmod_mat_entry_set, libflint), Nothing,
-          (Ref{fqPolyRepMatrix}, Int, Int, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}),
-          a, 0, i - 1, z[i], base_ring(a))
-  end
-end
-
 function _normalize!(x::fqPolyRepMatrix)
   R = base_ring(x)
   piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
@@ -548,15 +522,6 @@ function _isless(x::Vector{fqPolyRepFieldElem}, y::fqPolyRepMatrix)
 end
 
 # FqPolyRepFieldElem
-function set!(a::FqPolyRepMatrix, z::Vector{FqPolyRepFieldElem})
-  @assert ncols(a) == length(z)
-  for i in 1:length(z)
-    ccall((:fq_mat_entry_set, libflint), Nothing,
-          (Ref{FqPolyRepMatrix}, Int, Int, Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}),
-          a, 0, i - 1, z[i], base_ring(a))
-  end
-end
-
 function _normalize!(x::FqPolyRepMatrix)
   R = base_ring(x)
   piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
@@ -630,15 +595,6 @@ function __isless(::Type{FqPolyRepFieldElem})
 end
 
 # FqFieldElem
-function set!(a::FqMatrix, z::Vector{FqFieldElem})
-  @assert ncols(a) == length(z)
-  for i in 1:length(z)
-    ccall((:fq_default_mat_entry_set, libflint), Nothing,
-          (Ref{FqMatrix}, Int, Int, Ref{FqFieldElem}, Ref{FqField}),
-          a, 0, i - 1, z[i], base_ring(a))
-  end
-end
-
 function _normalize!(x::FqMatrix)
   R = base_ring(x)
   piv = findfirst(j -> !is_zero_entry(x, 1, j), 1:ncols(x))
