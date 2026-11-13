@@ -77,3 +77,23 @@ end
   @test_throws Hecke.AbstractAlgebra.NotImplementedError preimage(f, one(S))
   @test_throws ArgumentError hom(Q, S, S.([one(kt), t, t^2, t^3 + 1]))
 end
+
+@testset "strong echelon form" begin
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 + 5, "a")
+  O = maximal_order(K)
+  for m in [6, 12, 30]
+    I = m * O
+    Q, = quo(O, I)
+    mats = [matrix(Q, 2, 2, Q.(O.([2, a, 3, 1 + a]))),
+            matrix(Q, 3, 3, Q.(O.([2, a, 1, 3, 1 + a, 0, a, 4, 2*a]))),
+            matrix(Q, 3, 3, [Q(2 * rand(O, -10:10)) for i in 1:9])]
+    for M in mats
+      S = strong_echelon_form(M, :upperright, :split)
+      T = strong_echelon_form(M, :upperright, :no_split)
+      @test is_upper_triangular(S)
+      # The diagonal of a strong echelon form is unique up to units
+      @test all(ideal(O, lift(S[i, i])) + I == ideal(O, lift(T[i, i])) + I for i in 1:nrows(M))
+    end
+  end
+end
