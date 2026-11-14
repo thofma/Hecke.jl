@@ -277,7 +277,7 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
       end
     end
 
-    !(isfinite(mu)  && radiuslttwopower(mu, wprec)) && (attempt *= 2; continue)
+    !(isfinite(mu) && radiuslttwopower(mu, -wprec)) && (attempt *= 2; continue)
 
     # Algorithm is only precise up to wprec bits
     error_arf = arf_struct(0, 0, 0, 0)
@@ -287,7 +287,7 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
             (Ref{ArbFieldElem}, Ref{arf_struct}), mu, error_arf)
     ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
-    @assert radiuslttwopower(mu, prec)
+    @assert radiuslttwopower(mu, -prec)
     return mu
   end
 end
@@ -387,7 +387,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
       end
     end
 
-    !(isfinite(mu)  && radiuslttwopower(mu, wprec)) && (attempt *= 2; continue)
+    !(isfinite(mu) && radiuslttwopower(mu, -wprec)) && (attempt *= 2; continue)
 
     # Algorithm is only precise up to wprec bits
     error_arf = arf_struct(0, 0, 0, 0)
@@ -397,7 +397,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
             (Ref{ArbFieldElem}, Ref{arf_struct}), mu, error_arf)
     ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
-    @assert radiuslttwopower(mu, prec)
+    @assert radiuslttwopower(mu, -prec)
     return mu
   end
 end

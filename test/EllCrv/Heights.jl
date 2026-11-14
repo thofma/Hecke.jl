@@ -231,6 +231,19 @@
       for v in real_places(K)
         @test Hecke.radiuslttwopower(local_height(P, v, 1568), -1568)
       end
+
+      # corner case in local height computation: the first working precision is too
+      #   low at a place where the coefficients are huge.
+      # before the fix this testcase will throw an AssertionError in expand!.
+      u = (b - 1)^5
+      E = elliptic_curve(K, [0, 0, u^3, -u^4, 0])
+      P = E([0, 0])
+      for v in real_places(K)
+        h = local_height(P, v, 100)
+        hp = local_height(P, v, 2)
+        @test Hecke.radiuslttwopower(hp, -2)
+        @test overlaps(hp, h)
+      end
     end
   end
 
