@@ -196,6 +196,55 @@
       end
     end
 
+    # corner case in local height computation: |sigma(P_x)| = 1/2 exactly
+    # before the fix this testcase would just hang, infinitely increasing precision
+    let (K, i) = number_field(x^2 + 1, :i),
+        E = elliptic_curve(K, [0, 0, 0, 0, -288 - 91*i]),
+      D = 1 + 3*i
+      P = E([(3 - 4*i)//D^2, (-378 + 399*i)//D^3])
+      v = complex_places(K)[1]
+
+      h = local_height(P, v, 50)
+      @test overlaps(h, parent(h)("2.3664798676775410944873740579471174"))
+    end
+
+    let (K, b) = number_field(x^2 - 2, :b)
+      # corner case in local height computation: |Delta|_v is very small
+      # before the fix this testcase will throw an exception, since absolute precision for
+      #   for computing discriminant is too low, resuling in it being zero
+      for k in (10, 20, 30, 40, 50)
+        u = (1 - b)^k
+        E = elliptic_curve(K, [0, 0, 0, 0, u^2])
+
+        P = E([0, u])
+        @test is_infinite(3*P)
+        @test contains(canonical_height(P, 50), 0)
+      end
+
+      # corner case in local height computation: the bound on the number of series terms straddles an integer
+      # before the fix this testcase will throw an exception "Argument must represent a unique integer"
+      # NOTE: this happening of course heavily depends on the exact ball returned for a given precision,
+      #   but this can never start failing for unrelated reasons, so it is safe to have it tested always
+      u = (1 - b)^30
+      E = elliptic_curve(K, [0, 0, 0, 0, u^2])
+      P = E([0, u])
+      for v in real_places(K)
+        @test Hecke.radiuslttwopower(local_height(P, v, 1568), -1568)
+      end
+
+      # corner case in local height computation: the first working precision is too
+      #   low at a place where the coefficients are huge.
+      # before the fix this testcase will throw an AssertionError in expand!.
+      u = (b - 1)^5
+      E = elliptic_curve(K, [0, 0, u^3, -u^4, 0])
+      P = E([0, 0])
+      for v in real_places(K)
+        h = local_height(P, v, 100)
+        hp = local_height(P, v, 2)
+        @test Hecke.radiuslttwopower(hp, -2)
+        @test overlaps(hp, h)
+      end
+    end
   end
 
   @testset "Canonical height" begin
