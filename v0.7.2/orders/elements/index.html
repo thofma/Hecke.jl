@@ -1,0 +1,1276 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+        <meta name="description" content="Hecke">
+      
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-\.]+">
+      
+      <link rel="shortcut icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.6.0">
+    
+    
+      
+        <title>Elements - Hecke</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/application.1b62728e.css">
+      
+        <link rel="stylesheet" href="../../assets/stylesheets/application-palette.a8b3c06d.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#546e7a">
+      
+    
+    
+      <script src="../../assets/javascripts/modernizr.268332fc.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../assets/fonts/material-icons.css">
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+      <link rel="stylesheet" href="../../css/extra.css">
+    
+    
+      
+    
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="blue-grey" data-md-color-accent="bluey-grey">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#elements" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../.." title="Hecke" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Hecke
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Elements
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+        
+
+  
+
+<nav class="md-tabs md-tabs--active" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  <li class="md-tabs__item">
+    
+      <a href="../.." class="md-tabs__link">
+        About
+      </a>
+    
+  </li>
+
+      
+        
+  
+  
+    
+    
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="../../number_fields/intro/" class="md-tabs__link">
+          Documentation
+        </a>
+      
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+    <li class="md-tabs__item">
+      
+        <a href="https://www.github.com/thofma/Hecke.jl" class="md-tabs__link">
+          Source
+        </a>
+      
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+      
+      <main class="md-main" role="main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../.." title="Hecke" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Hecke
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../.." title="About" class="md-nav__link">
+      About
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
+    
+    <label class="md-nav__link" for="nav-2">
+      Documentation
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-2">
+        Documentation
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1">
+    
+    <label class="md-nav__link" for="nav-2-1">
+      Number fields
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-1">
+        Number fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/basics/" title="Creation and basics" class="md-nav__link">
+      Creation and basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/elements/" title="Elements" class="md-nav__link">
+      Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../number_fields/internal/" title="Internals" class="md-nav__link">
+      Internals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2" checked>
+    
+    <label class="md-nav__link" for="nav-2-2">
+      Orders
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-2">
+        Orders
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../orders/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Elements
+      </label>
+    
+    <a href="./" title="Elements" class="md-nav__link md-nav__link--active">
+      Elements
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    Creation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-properties" class="md-nav__link">
+    Basic properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscallenous" class="md-nav__link">
+    Miscallenous
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../ideals/" title="Ideals" class="md-nav__link">
+      Ideals
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../frac_ideals/" title="Fractional Ideals" class="md-nav__link">
+      Fractional Ideals
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-3" type="checkbox" id="nav-2-3">
+    
+    <label class="md-nav__link" for="nav-2-3">
+      Quadratic and Hermitian forms
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-3">
+        Quadratic and Hermitian forms
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/basics/" title="Basics" class="md-nav__link">
+      Basics
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../quad_forms/lattices/" title="Lattices" class="md-nav__link">
+      Lattices
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-4" type="checkbox" id="nav-2-4">
+    
+    <label class="md-nav__link" for="nav-2-4">
+      Abelian groups
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-4">
+        Abelian groups
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../abelian/introduction/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-5" type="checkbox" id="nav-2-5">
+    
+    <label class="md-nav__link" for="nav-2-5">
+      Class fields
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-5">
+        Class fields
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../class_fields/intro/" title="Introduction" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-6" type="checkbox" id="nav-2-6">
+    
+    <label class="md-nav__link" for="nav-2-6">
+      Misc
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-2-6">
+        Misc
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../FacElem/" title="Factored Elements" class="md-nav__link">
+      Factored Elements
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../sparse/intro/" title="Sparse Linear Algebra" class="md-nav__link">
+      Sparse Linear Algebra
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+    
+    <label class="md-nav__link" for="nav-3">
+      Source
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        Source
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="https://www.github.com/thofma/Hecke.jl" title="None" class="md-nav__link">
+      None
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#creation" class="md-nav__link">
+    Creation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-properties" class="md-nav__link">
+    Basic properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic" class="md-nav__link">
+    Arithmetic
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#miscallenous" class="md-nav__link">
+    Miscallenous
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                <p><a id='Elements-1'></a></p>
+<h1 id="elements">Elements</h1>
+<p>Elements in orders have two representations: they can be viewed as  elements in the <script type="math/tex">Z^n</script> giving the coefficients wrt to the order basis where they are elements in. On the other hand, as every order is in a field, they also have a representation as number field elements. Since, asymptotically, operations are more efficient in the  field (due to fast polynomial arithmetic) than in the order, the primary representation is that as a field element.</p>
+<p><a id='Creation-1'></a></p>
+<h2 id="creation">Creation</h2>
+<p>Elements are constructed either as linear combinations of basis elements or via explicit coercion. Elements will be of type <code>NfOrdElem</code>,  the type if actually parametrized by the type of the surrounding field and the type of the field elements. E.g. the type of any element in any order of an absolute simple field will be <code>NfAbsOrdElem{AnticNumberField,nf_elem}</code></p>
+<hr />
+<div class="codehilite"><pre><span></span>  <span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)(</span><span class="n">a</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="n">fmpz</span><span class="p">,</span> <span class="kt">Integer</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Given an element <script type="math/tex">a</script> of type <code>fmpz</code> or <code>Integer</code>, this function coerces the element into <script type="math/tex">\mathcal O</script>. It will be checked that <script type="math/tex">a</script> is contained in <script type="math/tex">\mathcal O</script> if and only if <code>check</code> is <code>true</code>.</p>
+<div class="codehilite"><pre><span></span>  (O::NfOrd)(arr::Array{fmpz, 1})
+</pre></div>
+
+<p>Returns the element of <script type="math/tex">\mathcal O</script> with coefficient vector <code>arr</code>.</p>
+<div class="codehilite"><pre><span></span>  (O::NfOrd)() -&gt; NfAbsOrdElem
+</pre></div>
+
+<p>This function constructs a new element of <script type="math/tex">\mathcal O</script> which is set to <script type="math/tex">0</script>.</p>
+<p><a id='Basic-properties-1'></a></p>
+<h2 id="basic-properties">Basic properties</h2>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">parent</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfOrd</span>
+</pre></div>
+
+<p>Returns the order of which <script type="math/tex">a</script> is an element.</p>
+<div class="codehilite"><pre><span></span>parent(g::Perm)
+</pre></div>
+
+<blockquote>
+<p>Return the parent of the permutation <code>g</code>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>julia&gt; G = PermutationGroup(5); g = Perm([3,4,5,2,1])
+(1,3,5)(2,4)
+
+julia&gt; parent(g) == G
+true
+</pre></div>
+
+<div class="codehilite"><pre><span></span>parent(a::AbstractAlgebra.MatElem{T}, cached::Bool = true) where T &lt;: RingElement
+</pre></div>
+
+<blockquote>
+<p>Return the parent object of the given matrix.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>parent(a::AbstractAlgebra.MatAlgElem{T}, cached::Bool = true) where T &lt;: RingElement
+</pre></div>
+
+<blockquote>
+<p>Return the parent object of the given matrix.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">elem_in_nf</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nf_elem</span>
+</pre></div>
+
+<p>Returns the element <script type="math/tex">a</script> considered as an element of the ambient number field.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">coordinates</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">fmpz</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns the coefficient vector of <script type="math/tex">a</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">discriminant</span><span class="p">(</span><span class="n">B</span><span class="o">::</span><span class="kt">Array</span><span class="p">{</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="mi">1</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Returns the discriminant of the family <script type="math/tex">B</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">==</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Returns whether <script type="math/tex">x</script> and <script type="math/tex">y</script> are equal.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">zero</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Returns the zero element of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">one</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Returns the one element of <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">iszero</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Tests if <script type="math/tex">a</script> is zero.</p>
+<div class="codehilite"><pre><span></span>iszero(v::AbstractAlgebra.FPModuleElem{T}) where T &lt;: RingElement
+</pre></div>
+
+<blockquote>
+<p>Return true if <script type="math/tex">v</script> is the zero element of the module <script type="math/tex">M</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">isone</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+</pre></div>
+
+<p>Tests if <script type="math/tex">a</script> is one.</p>
+<p><a id='Arithmetic-1'></a></p>
+<h2 id="arithmetic">Arithmetic</h2>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">-</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Returns the additive inverse of <script type="math/tex">x</script>.</p>
+<div class="codehilite"><pre><span></span>-(A::SMat, B::SMat) -&gt; SMat
+</pre></div>
+
+<p>Return the difference <script type="math/tex">A - B</script>.</p>
+<div class="codehilite"><pre><span></span>-(A::SRow, B::SRow) -&gt; SRow
+</pre></div>
+
+<p>Returns the difference of <script type="math/tex">A</script> and <script type="math/tex">B</script>.</p>
+<div class="codehilite"><pre><span></span>-(A::SRow) -&gt; SRow
+</pre></div>
+
+<p>Returns the negative of <script type="math/tex">A</script>.</p>
+<div class="codehilite"><pre><span></span>-(a::AbsAlgAssElem) -&gt; AbsAlgAssElem
+</pre></div>
+
+<blockquote>
+<p>Returns <script type="math/tex">-a</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbsAlgAssElem, b::AbsAlgAssElem) -&gt; AbsAlgAssElem
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AlgMatElem, b::AlgMatElem) -&gt; AlgMatElem
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.ResElem{T}, b::AbstractAlgebra.ResElem{T}) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.ResElem{T}, b::T) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::T, b::AbstractAlgebra.ResElem{T}) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.ResFieldElem{T}, b::AbstractAlgebra.ResFieldElem{T}) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.ResFieldElem{T}, b::T) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::T, b::AbstractAlgebra.ResFieldElem{T}) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.PolyElem{T}, b::AbstractAlgebra.PolyElem{T}) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.NCPolyElem{T}, b::AbstractAlgebra.NCPolyElem{T}) where {T &lt;: NCRingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.RelSeriesElem{T}, b::AbstractAlgebra.RelSeriesElem{T}) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.AbsSeriesElem{T}, b::AbstractAlgebra.AbsSeriesElem{T}) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::Generic.LaurentSeriesElem{T}, b::Generic.LaurentSeriesElem{T}) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(x::Generic.MatrixElem{T}, y::Generic.MatrixElem{T}) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">x - y</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(x::T, y::Generic.MatrixElem{T}) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">S(x) - y</script> where <script type="math/tex">S</script> is the parent of <script type="math/tex">y</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(x::Generic.MatrixElem{T}, y::T) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">x - S(y)</script>, where <script type="math/tex">S</script> is the parent of <script type="math/tex">a</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.FracElem{T}, b::AbstractAlgebra.FracElem{T}) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::AbstractAlgebra.FracElem{T}, b::T) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>-(a::T, b::AbstractAlgebra.FracElem{T}) where {T &lt;: RingElem}
+</pre></div>
+
+<blockquote>
+<p>Return <script type="math/tex">a - b</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">+</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">x + y</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">-</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">x - y</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">x \cdot y</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="o">^</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">y</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span>
+</pre></div>
+
+<p>Returns <script type="math/tex">x^y</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">mod</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">m</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="n">fmpz</span><span class="p">,</span> <span class="kt">Int</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Reduces the coefficient vector of <script type="math/tex">a</script> modulo <script type="math/tex">m</script> and returns the corresponding element. The coefficient vector of the result will have entries <script type="math/tex">x</script> with <script type="math/tex">0 \leq x \leq m</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">powermod</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">i</span><span class="o">::</span><span class="n">fmpz</span><span class="p">,</span> <span class="n">m</span><span class="o">::</span><span class="kt">Integer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Returns the element <script type="math/tex">a^i</script> modulo <script type="math/tex">m</script>.</p>
+<p><a id='Miscallenous-1'></a></p>
+<h2 id="miscallenous">Miscallenous</h2>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">representation_matrix</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz_mat</span>
+</pre></div>
+
+<p>Returns the representation matrix of the element <script type="math/tex">a</script>.</p>
+<div class="codehilite"><pre><span></span><span class="n">representation_matrix</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">K</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</pre></div>
+
+<p>Returns the representation matrix of the element <script type="math/tex">a</script> considered as an element of the ambient number field <script type="math/tex">K</script>. It is assumed that <script type="math/tex">K</script> is the ambient number field of the order of <script type="math/tex">a</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">representation_matrix</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">K</span><span class="o">::</span><span class="n">AnticNumberField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FakeFmpqMat</span>
+</pre></div>
+
+<p>Returns the representation matrix of the element <script type="math/tex">a</script> considered as an element of the ambient number field <script type="math/tex">K</script>. It is assumed that <script type="math/tex">K</script> is the ambient number field of the order of <script type="math/tex">a</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">tr</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz</span>
+</pre></div>
+
+<p>Returns the trace of <script type="math/tex">a</script>.</p>
+<div class="codehilite"><pre><span></span>tr(x::AbsAlgAssElem{T}) where T -&gt; T
+</pre></div>
+
+<blockquote>
+<p>Returns the trace of <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">norm</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfRelOrdFracIdl</span><span class="p">{</span><span class="n">T</span><span class="p">,</span> <span class="n">S</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">S</span>
+</pre></div>
+
+<p>Returns the norm of <script type="math/tex">a</script>
+</p>
+<div class="codehilite"><pre><span></span>norm(a::NfAbsOrdElem) -&gt; fmpz
+</pre></div>
+
+<p>Returns the norm of <script type="math/tex">a</script>.</p>
+<div class="codehilite"><pre><span></span>norm(a::AlgAssAbsOrdIdl, O::AlgAssAbsOrd; copy::Bool = true) -&gt; fmpq
+</pre></div>
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">a</script> considered as an (possibly fractional) ideal of <script type="math/tex">O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>norm(a::AlgAssRelOrdIdl{S, T}, O::AlgAssRelOrd{S, T}; copy::Bool = true)
+  where { S, T } -&gt; T
+</pre></div>
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">a</script> considered as an (possibly fractional) ideal of <script type="math/tex">O</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">rand</span><span class="p">(</span><span class="n">O</span><span class="o">::</span><span class="n">NfOrd</span><span class="p">,</span> <span class="n">n</span><span class="o">::</span><span class="kt">Union</span><span class="p">{</span><span class="kt">Integer</span><span class="p">,</span> <span class="n">fmpz</span><span class="p">})</span> <span class="o">-&gt;</span> <span class="n">NfAbsOrdElem</span>
+</pre></div>
+
+<p>Computes a coefficient vector with entries uniformly distributed in <script type="math/tex">\{-n,\dotsc,-1,0,1,\dotsc,n\}</script> and returns the corresponding element of the order <script type="math/tex">\mathcal O</script>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">minkowski_map</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">abs_tol</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">arb</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns the image of <script type="math/tex">a</script> under the Minkowski embedding. Every entry of the array returned is of type <code>arb</code> with radius less then <code>2^-abs_tol</code>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">conjugates_arb</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">abs_tol</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">acb</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Compute the the conjugates of <code>x</code> as elements of type <code>acb</code>. Recall that we order the complex conjugates <script type="math/tex">\sigma_{r+1}(x),...,\sigma_{r+2s}(x)</script> such that <script type="math/tex">\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}</script> for <script type="math/tex">r + 2 \leq i \leq r + s</script>.</p>
+<blockquote></blockquote>
+<p>Every entry <code>y</code> of the array returned satisfies <code>radius(real(y)) &lt; 2^-abs_tol</code>, <code>radius(imag(y)) &lt; 2^-abs_tol</code> respectively.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">conjugates_arb_log</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">abs_tol</span><span class="o">::</span><span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Array</span><span class="p">{</span><span class="n">arb</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+
+<p>Returns the elements <script type="math/tex">(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert), \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc, 2\log(\lvert \sigma_{r+s}(x)\rvert))</script> as elements of type <code>arb</code> radius less then <code>2^-abs_tol</code>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">t2</span><span class="p">(</span><span class="n">x</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">abs_tol</span><span class="o">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">arb</span>
+</pre></div>
+
+<p>Return the <script type="math/tex">T_2</script>-norm of <script type="math/tex">x</script>. The radius of the result will be less than <code>2^-abs_tol</code>.</p>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">minpoly</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz_poly</span>
+</pre></div>
+
+<p>The minimal polynomial of <script type="math/tex">a</script>.    </p>
+<div class="codehilite"><pre><span></span>minpoly(S::Ring, M::MatElem{T}, charpoly_only::Bool = false) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return the minimal polynomial <script type="math/tex">p</script> of the matrix <script type="math/tex">M</script>. The polynomial ring <script type="math/tex">S</script> of the resulting polynomial must be supplied and the matrix must be square.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>minpoly(S::Ring, M::MatAlgElem{T}, charpoly_only::Bool = false) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return the minimal polynomial <script type="math/tex">p</script> of the matrix <script type="math/tex">M</script>. The polynomial ring <script type="math/tex">S</script> of the resulting polynomial must be supplied and the matrix must be square.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span><span class="n">charpoly</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz_poly</span>
+
+<span class="n">charpoly</span><span class="p">(</span><span class="n">a</span><span class="o">::</span><span class="n">NfAbsOrdElem</span><span class="p">,</span> <span class="n">FlintZZ</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fmpz_poly</span>
+</pre></div>
+
+<p>The characteristic polynomial of <script type="math/tex">a</script>.    </p>
+<div class="codehilite"><pre><span></span>charpoly(V::Ring, Y::Generic.MatrixElem{T}) where {T &lt;: RingElement}
+</pre></div>
+
+<blockquote>
+<p>Return the characteristic polynomial <script type="math/tex">p</script> of the matrix <script type="math/tex">M</script>. The polynomial ring <script type="math/tex">R</script> of the resulting polynomial must be supplied and the matrix is assumed to be square.</p>
+</blockquote>
+                
+                  
+                
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../orders/" title="Basics" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Basics
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../ideals/" title="Ideals" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Ideals
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+  <div class="md-footer-social">
+    <link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
+    
+      <a href="https://github.com/thofma" class="md-footer-social__link fa fa-github"></a>
+    
+  </div>
+
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../assets/javascripts/application.808e90bb.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../.."}})</script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+      
+        <script src="../../assets/mathjaxhelper.js"></script>
+      
+    
+  </body>
+</html>

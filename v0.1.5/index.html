@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="no-js ie6"><![endif]-->
+<!--[if IE 7 ]><html class="no-js ie7"><![endif]-->
+<!--[if IE 8 ]><html class="no-js ie8"><![endif]-->
+<!--[if IE 9 ]><html class="no-js ie9"><![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js"> <!--<![endif]-->
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
+    
+      
+        <title>Hecke.jl - Hecke</title>
+      
+      
+        <meta name="description" content="Hecke">
+      
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+    
+    <meta property="og:url" content="None">
+    <meta property="og:title" content="Hecke.jl">
+    <meta property="og:image" content="None/./">
+    <meta name="apple-mobile-web-app-title" content="Hecke.jl">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    
+    <link rel="shortcut icon" type="image/x-icon" href="./assets/images/favicon-e565ddfa3b.ico">
+    <link rel="icon" type="image/x-icon" href="./assets/images/favicon-e565ddfa3b.ico">
+    <style>
+      @font-face {
+      	font-family: 'Icon';
+      	src: url('./assets/fonts/icon.eot?52m981');
+      	src: url('./assets/fonts/icon.eot?#iefix52m981')
+               format('embedded-opentype'),
+      		   url('./assets/fonts/icon.woff?52m981')
+               format('woff'),
+      		   url('./assets/fonts/icon.ttf?52m981')
+               format('truetype'),
+      		   url('./assets/fonts/icon.svg?52m981#icon')
+               format('svg');
+      	font-weight: normal;
+      	font-style: normal;
+      }
+    </style>
+    <link rel="stylesheet" href="./assets/stylesheets/application-a422ff04cc.css">
+    
+      <link rel="stylesheet" href="./assets/stylesheets/palettes-05ab2406df.css">
+    
+    
+      
+      
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
+      <style>
+        body, input {
+          font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
+        }
+        pre, code {
+          font-family: 'Ubuntu Mono', 'Courier New', 'Courier', monospace;
+        }
+      </style>
+    
+    
+      <link rel="stylesheet" href="./assets/Documenter.css">
+    
+    <script src="./assets/javascripts/modernizr-4ab42b99fd.js"></script>
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+  
+  
+  <body class="palette-primary-indigo palette-accent-blue">
+    
+      
+      
+    
+    <div class="backdrop">
+      <div class="backdrop-paper"></div>
+    </div>
+    <input class="toggle" type="checkbox" id="toggle-drawer">
+    <input class="toggle" type="checkbox" id="toggle-search">
+    <label class="toggle-button overlay" for="toggle-drawer"></label>
+    <header class="header">
+      <nav aria-label="Header">
+  <div class="bar default">
+    <div class="button button-menu" role="button" aria-label="Menu">
+      <label class="toggle-button icon icon-menu" for="toggle-drawer">
+        <span></span>
+      </label>
+    </div>
+    <div class="stretch">
+      <div class="title">
+        
+          <span class="path">
+            
+          </span>
+        
+        Hecke.jl
+      </div>
+    </div>
+    
+    
+    <div class="button button-search" role="button" aria-label="Search">
+      <label class="toggle-button icon icon-search" title="Search" for="toggle-search"></label>
+    </div>
+  </div>
+  <div class="bar search">
+    <div class="button button-close" role="button" aria-label="Close">
+      <label class="toggle-button icon icon-back" for="toggle-search"></label>
+    </div>
+    <div class="stretch">
+      <div class="field">
+        <input class="query" type="text" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck>
+      </div>
+    </div>
+    <div class="button button-reset" role="button" aria-label="Search">
+      <button class="toggle-button icon icon-close" id="reset-search"></button>
+    </div>
+  </div>
+</nav>
+    </header>
+    <main class="main">
+      
+      <div class="drawer">
+        <nav aria-label="Navigation">
+  
+  <a href="https://github.com/thofma/Hecke.jl" class="project">
+    <div class="banner">
+      
+      <div class="name">
+        <strong>
+          Hecke.jl
+          <span class="version">
+            
+          </span>
+        </strong>
+        
+          <br>
+          thofma/Hecke.jl
+        
+      </div>
+    </div>
+  </a>
+  <div class="scrollable">
+    <div class="wrapper">
+      
+        <ul class="repo">
+          <li class="repo-download">
+            
+            <a href="https://github.com/thofma/Hecke.jl/archive/master.zip" target="_blank" title="Download" data-action="download">
+              <i class="icon icon-download"></i> Download
+            </a>
+          </li>
+          <li class="repo-stars">
+            <a href="https://github.com/thofma/Hecke.jl/stargazers" target="_blank" title="Stargazers" data-action="star">
+              <i class="icon icon-star"></i> Stars
+              <span class="count">&ndash;</span>
+            </a>
+          </li>
+        </ul>
+        <hr>
+      
+      <div class="toc">
+        <ul>
+          
+            
+  <li>
+    <a class="current" title="Getting Started" href=".">
+      Getting Started
+    </a>
+    
+      
+        
+      
+      
+        <ul>
+          
+            <li class="anchor">
+              <a title="About" href="#about">
+                About
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Installation" href="#installation">
+                Installation
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Quick start" href="#quick-start">
+                Quick start
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Documentation" href="#documentation">
+                Documentation
+              </a>
+            </li>
+          
+        </ul>
+      
+    
+  </li>
+
+          
+            
+  <li>
+    <span class="section">Number fields</span>
+    <ul>
+      
+        
+  <li>
+    <a class="" title="Introduction" href="numberfields/introduction/">
+      Introduction
+    </a>
+    
+  </li>
+
+      
+        
+  <li>
+    <a class="" title="Orders" href="numberfields/orders/">
+      Orders
+    </a>
+    
+  </li>
+
+      
+        
+  <li>
+    <a class="" title="Maximal Orders" href="numberfields/maximalorders/">
+      Maximal Orders
+    </a>
+    
+  </li>
+
+      
+    </ul>
+  </li>
+
+          
+        </ul>
+        
+      </div>
+    </div>
+  </div>
+</nav>
+      </div>
+      <article class="article">
+        <div class="wrapper">
+          
+          <p><a id='Hecke-1'></a></p>
+<h1 id="hecke">Hecke</h1>
+<p><strong>Builds</strong></p>
+<p><a href="https://travis-ci.org/thofma/Hecke.jl"><img alt="Build Status" src="https://travis-ci.org/thofma/Hecke.jl.svg?branch=master" /></a></p>
+<p><a id='About-1'></a></p>
+<h2 id="about">About</h2>
+<p>Hecke is a software package for algebraic number theory maintained by Claus Fieker and Tommy Hofmann. It is written in <a href="http://www.julialang.org">julia</a> and is based on the computer algebra package <a href="http://www.nemocas.org">Nemo</a>.</p>
+<ul>
+<li><a href="https://github.com/thofma/Hecke.jl">https://github.com/thofma/Hecke.jl</a> (Source code)</li>
+<li><a href="http://thofma.github.io/Hecke.jl/latest/">http://thofma.github.io/Hecke.jl/latest/</a> (Online documentation)</li>
+</ul>
+<p>So far, Hecke provides the following features:</p>
+<ul>
+<li>Orders (including element and ideal arithmetic) in number fields</li>
+<li>Computation of maximal orders</li>
+<li>Verified residue computations of Dedekind zeta functions</li>
+<li>Factor base creation and relations search in number fields</li>
+<li>Lattice enumeration</li>
+<li>Sparse linear algebra</li>
+</ul>
+<p><a id='Installation-1'></a></p>
+<h2 id="installation">Installation</h2>
+<p>To use Hecke, a julia version of 0.4 or higher is necessary (the latest stable julia version will do). Please see <a href="http://julialang.org/downloads/">http://julialang.org/downloads</a> for instructions on how to obtain julia for your system. Once a suitable julia version is installed, use the following steps at the julia prompt to install Hecke:</p>
+<div class="codehilite"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span> <span class="n">Pkg</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s">&quot;Hecke&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<p><a id='Quick-start-1'></a></p>
+<h2 id="quick-start">Quick start</h2>
+<p>Here is a quick example of using Hecke:</p>
+<div class="codehilite"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span> <span class="k">using</span> <span class="n">Hecke</span>
+<span class="o">...</span>
+
+<span class="n">Welcome</span> <span class="n">to</span> 
+
+  <span class="n">_</span>    <span class="n">_</span>           <span class="n">_</span>        
+ <span class="o">|</span> <span class="o">|</span>  <span class="o">|</span> <span class="o">|</span>         <span class="o">|</span> <span class="o">|</span>       
+ <span class="o">|</span> <span class="o">|</span><span class="n">__</span><span class="o">|</span> <span class="o">|</span> <span class="n">___</span>  <span class="n">___</span><span class="o">|</span> <span class="o">|</span> <span class="n">_____</span> 
+ <span class="o">|</span>  <span class="n">__</span>  <span class="o">|/</span> <span class="n">_</span> \<span class="o">/</span> <span class="n">__</span><span class="o">|</span> <span class="o">|/</span> <span class="o">/</span> <span class="n">_</span> \
+ <span class="o">|</span> <span class="o">|</span>  <span class="o">|</span> <span class="o">|</span>  <span class="n">__</span><span class="o">/</span> <span class="p">(</span><span class="n">__</span><span class="o">|</span>   <span class="o">&lt;</span>  <span class="n">__</span><span class="o">/</span>
+ <span class="o">|</span><span class="n">_</span><span class="o">|</span>  <span class="o">|</span><span class="n">_</span><span class="o">|</span>\<span class="n">___</span><span class="o">|</span>\<span class="n">___</span><span class="o">|</span><span class="n">_</span><span class="o">|</span>\<span class="n">_</span>\<span class="n">___</span><span class="o">|</span>
+
+<span class="n">Version</span> <span class="mf">0.1</span><span class="o">.</span><span class="mi">3</span> <span class="o">...</span> 
+ <span class="o">...</span> <span class="n">which</span> <span class="n">comes</span> <span class="n">with</span> <span class="n">absolutely</span> <span class="n">no</span> <span class="n">warrant</span> <span class="n">whatsoever</span>
+<span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="mi">2015</span> <span class="n">by</span> <span class="n">Claus</span> <span class="n">Fieker</span> <span class="n">and</span> <span class="n">Tommy</span> <span class="n">Hofmann</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="s">&quot;x&quot;</span><span class="p">);</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">f</span> <span class="o">=</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span><span class="p">;</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">O</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">);</span>
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">O</span>
+<span class="n">Maximal</span> <span class="n">order</span> <span class="n">of</span> <span class="n">Number</span> <span class="n">field</span> <span class="n">over</span> <span class="n">Rational</span> <span class="n">Field</span> <span class="n">with</span> <span class="n">defining</span> <span class="n">polynomial</span> <span class="n">x</span><span class="o">^</span><span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span> 
+<span class="n">with</span> <span class="n">basis</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">a</span><span class="o">^</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+
+
+<p><a id='Documentation-1'></a></p>
+<h2 id="documentation">Documentation</h2>
+<p>The online documentation can be found here: <a href="http://thofma.github.io/Hecke.jl/latest/">http://thofma.github.io/Hecke.jl/latest/</a></p>
+<p>The documentation of the single functions can also be accessed at the julia prompt. Here is an example:</p>
+<div class="codehilite"><pre><span></span>help?&gt; signature
+search: signature
+
+  ----------------------------------------------------------------------------
+
+  signature(O::NfMaximalOrder) -&gt; Tuple{Int, Int}
+
+  |  Returns the signature of the ambient number field of \mathcal O.
+</pre></div>
+          <aside class="copyright" role="note">
+            
+            Documentation built with
+            <a href="http://www.mkdocs.org" target="_blank">MkDocs</a>
+            using the
+            <a href="http://squidfunk.github.io/mkdocs-material/" target="_blank">
+              Material
+            </a>
+            theme.
+          </aside>
+          
+            <footer class="footer">
+              
+  <nav class="pagination" aria-label="Footer">
+    <div class="previous">
+      
+    </div>
+    <div class="next">
+      
+        <a href="numberfields/introduction/" title="Introduction">
+          <span class="direction">
+            Next
+          </span>
+          <div class="page">
+            <div class="stretch">
+              <div class="title">
+                Introduction
+              </div>
+            </div>
+            <div class="button button-next" role="button" aria-label="Next">
+              <i class="icon icon-forward"></i>
+            </div>
+          </div>
+        </a>
+      
+    </div>
+  </nav>
+
+            </footer>
+          
+        </div>
+      </article>
+      <div class="results" role="status" aria-live="polite">
+        <div class="scrollable">
+          <div class="wrapper">
+            <div class="meta"></div>
+            <div class="list"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      var base_url = '.';
+      var repo_id  = 'thofma/Hecke.jl';
+    </script>
+    <script src="./assets/javascripts/application-997097ee0c.js"></script>
+    
+      <script src="./mathjaxhelper.js"></script>
+    
+      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    
+    
+  </body>
+</html>
