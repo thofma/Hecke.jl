@@ -223,6 +223,39 @@
     @test !Hecke.contains_equation_order(O)
   end
 
+  @testset "Prime decomposition without equation order containment" begin
+    # An integral generalized index must not affect containment or reduction.
+    _, x = QQ["x"]
+    K, a = number_field(x^4 - 14*x^2 + 9; cached = false)
+    s = (a^3 - 11*a) // 6
+    t = (17*a - a^3) // 6
+    w = (1 + t) // 2
+    O = order([one(K), w, 2*s, 2*s*w]; is_basis = true)
+
+    @test abs(gen_index(O)) == 12
+    @test_throws ErrorException index(O)
+    @test prime_decomposition_type(O, 7) == [(2, 1), (2, 1)]
+    @test !isdefined(O, :index)
+    @test !Hecke.contains_equation_order(O)
+    @test !(a in O)
+    @test denominator(a, O) == 2
+
+    A = simplify(ideal(O, 5, O(5*w)))
+    @test coordinates(A.gen_two) == ZZRingElem[0, 5, 0, 0]
+    @test basis_matrix(ideal(O, A.gen_one, A.gen_two)) ==
+          basis_matrix(ideal(O, 5))
+
+    for p in (3, 7)
+      @test Hecke._number_of_degree_one_primes(O, p) == 0
+      primes = prime_decomposition(O, p, 0)
+      @test [(degree(P), e) for (P, e) in primes] == [(2, 1), (2, 1)]
+      for (P, _) in primes
+        @test K(P.gen_two) in O
+        @test basis_matrix(ideal(O, p, P.gen_two)) == basis_matrix(P)
+      end
+    end
+  end
+
   @testset "Discriminant" begin
     b = @inferred discriminant(O1)
     @test b == -108

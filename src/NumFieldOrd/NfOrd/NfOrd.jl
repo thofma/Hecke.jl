@@ -322,10 +322,9 @@ index $[ \mathcal O : \mathbf Z]$.
 """
 function index(O::AbsNumFieldOrder; copy::Bool = false)
   if !isdefined(O, :index)
-    i = gen_index(O)
-    !isone(denominator(i)) && error("Order does not contain the equation order")
-    O.index = abs(numerator(i))
-    end
+    contains_equation_order(O) || error("Order does not contain the equation order")
+    O.index = abs(numerator(gen_index(O)))
+  end
   if copy
     return deepcopy(O.index)
     else
