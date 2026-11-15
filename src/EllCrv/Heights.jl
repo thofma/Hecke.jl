@@ -231,11 +231,11 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
 
   wprec = prec + 1
 
-  N = ceil(Int,
-            Rc(5)/3 * log(Rc(2))/log(Rc(10)) * (wprec + 1) + Rc(1)/2 +
-            Rc(3)/4 * log(Rc(7) + Rc(4)/3 * log(Rc(H)) +
-                                 Rc(1)/3 * log(max(Rc(1), inv(Rc(discriminant(E))))))
-          )
+  abs_disc = Rc(abs(discriminant(E)))
+  bound = Rc(5)/3 * log(Rc(2))/log(Rc(10)) * (wprec + 1) + Rc(1)/2 +
+          Rc(3)/4 * log(Rc(7) + Rc(4)/3 * log(Rc(H)) +
+                               Rc(1)/3 * log(max(Rc(1), inv(abs_disc))))
+  N = Int(upper_bound(ZZRingElem, bound))
 
   while true
     R = ArbField(attempt*wprec)
