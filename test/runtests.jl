@@ -246,10 +246,20 @@ else
   end
 end
 
+# Files below one top-level test directory share most of their compiled code,
+# so each directory runs as one job on one worker instead of being compiled on
+# every worker.
+test_group(path) = first(splitpath(relpath(path, test_directory)))
+
 sort!(testlist)
+testgroups = [filter(p -> test_group(p) == g, testlist)
+              for g in unique(test_group.(testlist))]
 if get(ENV, "HECKE_TEST_SORTED", nothing) !== "true"
-  Hecke.Random.shuffle!(Hecke.Random.MersenneTwister(seed), testlist)
+  shuffle_rng = Hecke.Random.MersenneTwister(seed)
+  Hecke.Random.shuffle!(shuffle_rng, testgroups)
+  foreach(g -> Hecke.Random.shuffle!(shuffle_rng, g), testgroups)
 end
+testlist = reduce(vcat, testgroups)
 
 @info "Hecke test setup"
 @info "CI            : $(get(ENV, "CI", "false"))"
@@ -260,13 +270,16 @@ end
 @info "with_polymake : $(_with_polymake)"
 @info "tests         :\n$testlist"
 
-# With many workers this distributes test files across them; with one worker it
+# With many workers this distributes test groups across them; with one worker it
 # is effectively a serial loop.
-test_stats = pmap(worker_pool, testlist) do path
-  println("Starting tests for $path at $(Dates.now(Dates.UTC)) UTC")
-  timed_test_include(path)
+test_stats = pmap(worker_pool, testgroups) do group
+  map(group) do path
+    println("Starting tests for $path at $(Dates.now(Dates.UTC)) UTC")
+    timed_test_include(path)
+  end
 end
-stats = reduce(merge, test_stats; init=Dict{String,NamedTuple}())
+stats = reduce(merge, Iterators.flatten(test_stats);
+               init=Dict{String,NamedTuple}())
 
 if haskey(ENV, "GITHUB_STEP_SUMMARY")
   open(ENV["GITHUB_STEP_SUMMARY"], "a") do io
