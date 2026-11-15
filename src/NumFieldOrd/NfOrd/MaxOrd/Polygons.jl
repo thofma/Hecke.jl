@@ -755,7 +755,8 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
       #u = u1*(u2+v2) + u2*v1
       #v = v1*v2
       @hassert :AbsNumFieldOrder 1 isone(u + v)
-      if is_simple(nf(O)) && is_defining_polynomial_nice(nf(O))
+      if is_simple(nf(O)) && is_defining_polynomial_nice(nf(O)) &&
+         contains_equation_order(O)
         u = O(mod(u.elem_in_nf, p))
       end
 
@@ -807,7 +808,10 @@ function _decomposition(O::AbsNumFieldOrder, I::AbsNumFieldOrderIdeal, Ip::AbsNu
     P = ideals[1][1]
     f = P.splitting_type[2]
     u, v = idempotents(P, T)
-    u = O(mod(u.elem_in_nf, p))
+    if is_simple(nf(O)) && is_defining_polynomial_nice(nf(O)) &&
+       contains_equation_order(O)
+      u = O(mod(u.elem_in_nf, p))
+    end
     x = zero(parent(u))
     modulo = norm(P)*p
 
@@ -908,7 +912,8 @@ function find_random_second_gen(A::AbsNumFieldOrderIdeal{S, T}) where {S, T}
     mul!(m, m, basis_matrix(A, copy = false))
     mul!(m, m, basis_matrix(FakeFmpqMat, O, copy = false).num)
     gen = elem_from_mat_row(K, m, 1, dBmat)
-    if is_simple(K) && is_defining_polynomial_nice(K)
+    if is_simple(K) && is_defining_polynomial_nice(K) &&
+       contains_equation_order(O)
       gen = mod(gen, Amin2)
     end
     if iszero(gen)

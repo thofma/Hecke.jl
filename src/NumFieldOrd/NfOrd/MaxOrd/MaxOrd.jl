@@ -88,7 +88,7 @@ function pmaximal_overorder_at(O::AbsSimpleNumFieldOrder, primes::Vector{ZZRingE
   end
   OO = O
 
-  if !is_defining_polynomial_nice(nf(O)) || !isinteger(gen_index(O))
+  if !is_defining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     for i in 1:length(primes)
       p = primes[i]
       @vprintln :AbsNumFieldOrder 1 "Computing p-maximal overorder for $p ..."
