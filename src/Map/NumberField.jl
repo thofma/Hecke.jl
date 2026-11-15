@@ -317,7 +317,7 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
     @req stable "The automorphism must preserve the order of the ideal"
   end
 
-  if isone(x)
+  if iszero(x) || isone(x)
     return x
   end
 
@@ -367,21 +367,16 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
     end
   end
   if !has_2_elem(I)
-    #I need to translate the basis matrix
-    bb = Vector{AbsSimpleNumFieldOrderElem}(undef, degree(K))
+    # Store the transformed basis in lower-left HNF.
     B = basis(x, copy = false)
-    for i = 1:length(bb)
-      bb[i] = OK(f(K(B[i])))
-    end
-    I.basis = bb
     M = zero_matrix(ZZ, degree(K), degree(K))
-    for i = 1:degree(K)
-      el = coordinates(I.basis[i])
+    for i in eachindex(B)
+      el = coordinates(OK(f(K(B[i]))); copy = false)
       for j = 1:degree(K)
         M[i, j] = el[j]
       end
     end
-    I.basis_matrix = M
+    I.basis_matrix = _hnf!(M, :lowerleft)
   end
   return I
 end

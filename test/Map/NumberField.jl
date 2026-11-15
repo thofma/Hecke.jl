@@ -46,6 +46,24 @@ end
     @test J == ideal(S, S(sigma(2*b)))
   end
 
+  @testset "Images of basis-matrix ideals and zero ideals" begin
+    # Check canonical bases and zero ideals in automorphism-stable orders.
+    L, b = number_field(x^3 + x^2 - 2*x - 1)
+    sigma = hom(L, L, b^2 - 2)
+    S = order(L, [2*b, 2*b^2])
+    I = ideal(S, 2 * identity_matrix(ZZ, degree(L)))
+    J = sigma(I)
+    @test J == I
+    @test basis_matrix(J) == basis_matrix(I)
+    @test hash(J) == hash(I)
+    @test mod(one(S), J) == one(S)
+
+    M = maximal_order(L)
+    @test sigma(0 * M) == 0 * M
+    Z = ideal(S, zero_matrix(ZZ, 0, degree(L)))
+    @test sigma(Z) == 0 * S
+  end
+
   @testset "Non-integral defining generator" begin
     K, a = number_field(
       x^4 + 4//9*x^2 + 4//9, "a"; cached = false)
