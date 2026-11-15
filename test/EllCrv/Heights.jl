@@ -158,6 +158,23 @@
        @test overlaps(lh, parent(lh)("2.288529620287974"))
      end
 
+    # On y^2 = x^3 + u^2, the local height of (0, u) is log(4*u^2)/3.
+    @testset "Small negative discriminant" begin
+      u = QQ(1, ZZ(2)^5000)
+      E = elliptic_curve([QQ(0), u^2])
+      lh = local_height(E([0, u]), 0, 10)
+      @test contains(lh, log(ArbField(256)(4*u^2)) / 3)
+      @test Hecke.radiuslttwopower(lh, -10)
+    end
+
+    @testset "Truncation bound straddles an integer" begin
+      u = ZZ("3711975007276096")
+      E = elliptic_curve([0, u^2])
+      lh = local_height(E([0, u]), 0, 2)
+      @test contains(lh, log(ArbField(256)(4*u^2)) / 3)
+      @test Hecke.radiuslttwopower(lh, -2)
+    end
+
      let E, P
        K, a = number_field(x^3 - x^2 + 1)
        E = elliptic_curve(K, [a, 1 + a , a, a, 0])
