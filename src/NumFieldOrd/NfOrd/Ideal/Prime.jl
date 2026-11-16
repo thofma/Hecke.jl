@@ -210,6 +210,11 @@ function prime_decomposition(O::AbsSimpleNumFieldOrder, p::IntegerUnion, degree_
   end
 
   if is_defining_polynomial_nice(nf(O))
+    if !contains_equation_order(O)
+      @assert O.is_maximal == 1 || p in O.primesofmaximality ||
+              !is_divisible_by(discriminant(O), p)
+      return prime_dec_gen(O, p, degree_limit, lower_limit)
+    end
     if cached || is_index_divisor(O, p)
       if haskey(O.index_div, ZZRingElem(p))
         lp = O.index_div[ZZRingElem(p)]::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}
@@ -251,7 +256,8 @@ function prime_dec_gen(O::AbsNumFieldOrder, p::Union{ZZRingElem, Int}, degree_li
   lp = Hecke._decomposition(O, Jp, Ip, ideal(O, 1), ZZRingElem(p))
   z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
-    if degree(Q) <= degree_limit && degree(Q) >= lower_limit
+    if (iszero(degree_limit) || degree(Q) <= degree_limit) &&
+       degree(Q) >= lower_limit
       push!(z, (Q, e))
     end
   end
@@ -445,7 +451,7 @@ Returns an array of tuples whose length is the number of primes lying over $p$ a
 gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
 """
 function prime_decomposition_type(O::AbsSimpleNumFieldOrder, p::T) where T <: IntegerUnion
-  if !is_defining_polynomial_nice(nf(O))
+  if !is_defining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
   end
   if (mod(discriminant(O), p)) != 0 && (mod(ZZRingElem(index(O)), p) != 0)
@@ -485,7 +491,7 @@ function _number_of_degree_one_primes(O::AbsSimpleNumFieldOrder,
   if typeof(p) != ZZRingElem && typeof(p) != Int
     return _number_of_degree_one_primes(O, ZZRingElem(p))
   end
-  if is_defining_polynomial_nice(nf(O)) &&
+  if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O) &&
       !iszero(mod(discriminant(O), p)) && !iszero(mod(ZZRingElem(index(O)), p))
     f = defining_polynomial(nf(O))
     Zf = numerator(f, Globals.Zx)

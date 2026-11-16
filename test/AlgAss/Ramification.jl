@@ -3,6 +3,16 @@
   Q = Hecke.quaternion_algebra2(K, -1, -1)
   @test (@inferred Hecke.ramified_infinite_places(Q)) == real_places(K)
 
+  @testset "Cyclic algebra with one ramified real place" begin
+    # The cyclic algebra splits exactly where a is positive.
+    K, a = quadratic_field(5)
+    _, x = K[:x]
+    L, i = number_field(x^2 + 1, "i")
+    A = cyclic_algebra(L, hom(L, L, -i), a)
+    ram_plc = only(p for p in real_places(K) if sign(a, p) == -1)
+    @test Hecke.ramified_infinite_places(A) == [ram_plc]
+  end
+
   Q = Hecke.quaternion_algebra2(QQ, -1, -1)
   QQQ = direct_product(Q, Q)[1]
   C, = center(QQQ)

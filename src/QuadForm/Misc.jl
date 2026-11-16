@@ -255,11 +255,12 @@ end
 ################################################################################
 
 # This can be done more efficiently
-function image(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::AbsNumFieldOrderIdeal, OK)
+function image(f::NumFieldHom{AbsSimpleNumField, <:NumField}, I::AbsNumFieldOrderIdeal, OK)
   return reduce(+, (OK(f(elem_in_nf(b))) * OK for b in basis(I)), init = 0 * OK)
 end
 
-function image(f::NumFieldHom{AbsSimpleNumField, RelSimpleNumField{AbsSimpleNumFieldElem}}, I::AbsNumFieldOrderIdeal)
+function image(f::NumFieldHom{AbsSimpleNumField, <:NumField}, I::AbsNumFieldOrderIdeal)
+  domain(f) === codomain(f) && return induce_image(f, I)
   OK = maximal_order(codomain(f))
   return image(f, I, OK)
 end

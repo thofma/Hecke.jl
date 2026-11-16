@@ -1084,7 +1084,8 @@ function _minmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     return ZZRingElem(0)
   end
 
-  if !is_defining_polynomial_nice(nf(parent(b)))
+  if !is_defining_polynomial_nice(nf(parent(b))) ||
+     !contains_equation_order(parent(b))
     return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
   lf, ar = _factors_trial_division(a, 10^2)

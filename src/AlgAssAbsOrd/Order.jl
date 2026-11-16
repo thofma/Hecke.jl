@@ -1270,10 +1270,11 @@ end
 #
 ################################################################################
 
-# For algebras fulfilling the Eichler condition this is trivial over QQ, as
-# there is always just one equivalence class with respect to conjugation.
-# Otherwise the algebra is a totally definite quaternion algebra, and the
-# representatives are the types of a maximal order.
+# For a quaternion algebra over its center the representatives are the types
+# of a maximal order. A number field has one maximal order, and any other
+# central algebra over QQ fulfills the Eichler condition, and then this is
+# trivial, as there is always just one equivalence class with respect to
+# conjugation.
 representatives_of_maximal_orders(A::StructureConstantAlgebra{QQFieldElem}) = representatives_of_maximal_orders(maximal_order(A))
 
 representatives_of_maximal_orders(A::QuaternionAlgebra) =
@@ -1282,29 +1283,18 @@ representatives_of_maximal_orders(A::QuaternionAlgebra) =
 function representatives_of_maximal_orders(O::AlgAssAbsOrd)
   A = algebra(O)
   @req is_simple(A) "Algebra must be simple"
+  d = dimension_over_center(A)
+  @req d == 4 || d == 1 || is_central(A) (
+    "Algebra must be central, a field or a quaternion algebra over its center")
   @req is_maximal(O) "Order must be maximal"
-  is_eichler(A) && return typeof(O)[ O ]
-  return _types_via_quaternion_algebra(O)
+  d == 4 && return type_set(O)
+  return typeof(O)[ O ]
 end
 
 function representatives_of_maximal_orders(
     O::AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}})
   @req is_maximal(O) "Order must be maximal"
   return type_set(O)
-end
-
-# The types of the order O of a central quaternion algebra A that is not a
-# QuaternionAlgebra, computed in the QuaternionAlgebra isomorphic to A.
-function _types_via_quaternion_algebra(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
-  A = algebra(O)
-  @req dim(A) == 4 && is_central(A) "Algebra must be a central quaternion algebra"
-  QtoA = isomorphism(QuaternionAlgebra, A)
-  Q = domain(QtoA)
-  OQ = _get_order_from_gens(Q, [QtoA \ elem_in_algebra(b)
-                                for b in absolute_basis(O)])
-  return [_get_order_from_gens(A, [QtoA(elem_in_algebra(b))
-                                   for b in absolute_basis(L)])
-          for L in type_set(OQ)]
 end
 
 ################################################################################
