@@ -624,10 +624,12 @@ Note that primes at which the model is non-minimal but the curve has good reduct
   return sort!(collect(keys(d)))
 end
 
+# candidates for bad primes are the ones dividing (the numerator of) the discriminant,
+#   and the ones where model is not integral (these will also divide the denominator of the discriminant)
 @attr Vector{ZZRingElem} function _bad_prime_candidates(E::EllipticCurve{QQFieldElem})
-  d = discriminant(E)
-  pnum = [p for (p, _) in factor(numerator(d))]
-  pden = [p for (p, _) in factor(denominator(d))]
+  den = reduce(lcm, map(denominator, a_invariants(E)))
+  pnum = [p for (p, _) in factor(numerator(discriminant(E)))]
+  pden = [p for (p, _) in factor(den)]
   return union(pnum, pden)
 end
 
@@ -648,9 +650,17 @@ Note that prime ideals at which the model is non-minimal but the curve has good 
   return sort!(collect(keys(d)); by = _nf_prime_sort_key)
 end
 
+# candidates for bad primes are the ones dividing (the numerator of) the discriminant,
+#   and the ones where model is not integral (these will also divide the denominator of the discriminant)
 @attr Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}} function _bad_prime_candidates(E::EllipticCurve{AbsSimpleNumFieldElem})
   OK = ring_of_integers(base_field(E))
-  return [p for (p, _) in factor(discriminant(E)*OK)]
+  # we need the primes with negative exponent in the factorization of sum_i a_i*OK
+  # by initing the sum with OK (so J = OK + sum_i a_i*OK), we end up only with
+  #   the primes having negative exponent
+  J = sum(a*OK for a in a_invariants(E); init = 1*OK)
+  pnum = [p for (p, _) in factor(discriminant(E)*OK)]
+  pden = [p for (p, _) in factor(J)]
+  return union(pnum, pden)
 end
 
 # Canonical-ish sort for absolute number field prime ideals.
@@ -682,11 +692,17 @@ Places are represented as elements of $k(t)$:
   return sort!(collect(keys(d)); by = _rff_place_sort_key)
 end
 
+# candidates for bad primes are the ones dividing (the numerator of) the discriminant,
+#   and the ones where model is not integral (these will also divide the denominator of the discriminant)
+#   plus the place at infinity
 @attr Vector{T} function _bad_prime_candidates(E::EllipticCurve{T}) where {T <: AbstractAlgebra.Generic.RationalFunctionFieldElem}
   K = base_field(E)
   R = base_ring(K.fraction_field)
 
-  result = T[K(p) for (p, _) in factor(R, discriminant(E))]
+  den = reduce(lcm, map(denominator, a_invariants(E)))
+  pnum = [K(p) for (p, _) in factor(R, discriminant(E))]
+  pden = [K(p) for (p, _) in factor(den)]
+  result = union(pnum, pden)
   push!(result, 1//gen(K))
 
   return result
