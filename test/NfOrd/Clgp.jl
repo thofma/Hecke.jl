@@ -1,5 +1,158 @@
 @testset "Clgp" begin
   Qx, x = polynomial_ring(QQ, "x")
+  # Compare gcd-based prime selection with independent ideal valuations.
+  @testset "Single-prime factor-base gcd" begin
+    for (f, p) in ((x^4 + x^3 + x^2 + x + 1, 11), (x^4 + x + 2, 2))
+      K, a = number_field(f; cached = false)
+      O = maximal_order(K)
+      lp = [(i, P) for (i, (P, _)) in enumerate(prime_decomposition(O, p))]
+      @test length(lp) >= 3
+      b = K(lp[1][2].gen_two)
+      for n in 3:length(lp)
+        selected = lp[1:n]
+        sP = Hecke.FactorBaseSingleP(p, selected)
+        for candidate in (one(K), K(p), K(p)^3, b, b^3)
+          v = Int(valuation(norm(candidate), p))
+          exponents = [valuation(candidate, P) for (_, P) in selected]
+          expected = [(i, e) for (i, e) in enumerate(exponents) if !iszero(e)]
+          actual, remaining = Hecke.fb_int_doit(candidate, v, sP)
+          @test sort(actual) == expected
+          @test remaining == v - sum(degree(P)*e
+                                     for ((_, P), e) in zip(selected, exponents))
+        end
+      end
+    end
+  end
+
+  # Check divisor splitting and independence of mutable polynomial outputs.
+  @testset "Factor-base divisor splitting" begin
+    F4 = GF(2, 2)
+    fields = (residue_ring(ZZ, 2)[1], residue_ring(ZZ, 101)[1],
+              residue_ring(ZZ, next_prime(ZZ(2)^65))[1], F4)
+    for F in fields
+      R, t = polynomial_ring(F, "t"; cached = false)
+      y = F === F4 ? t + gen(F4) : t
+      empty_base = FactorBase{elem_type(R)}(one(R), elem_type(R)[])
+      @test isempty(Hecke._factor_divisor(empty_base, one(R)))
+      leaves = [y^3, (y + 1)^2, y^2 + y + 1]
+      for n in (1, 3)
+        selected = leaves[1:n]
+        fb = FactorBase(selected)
+        divisors = [one(R), y, y^2, fb.prod, selected...]
+        n == 3 && append!(divisors, [y + 1, y^2*(y + 1)])
+        for divisor in divisors
+          before = deepcopy((divisor, selected, fb.prod))
+          expected = filter(!isone, [gcd(divisor, c) for c in selected])
+          components = Hecke._factor_divisor(fb, divisor)
+          @test Set(components) == Set(expected)
+          @test prod(components; init = one(R)) == divisor
+          @test (divisor, selected, fb.prod) == before
+          for i in eachindex(components)
+            previous = deepcopy(components)
+            setcoeff!(components[i], 0, coeff(components[i], 0) + 1)
+            @test (divisor, selected, fb.prod) == before
+            @test all(j == i || components[j] == previous[j]
+                      for j in eachindex(components))
+          end
+          @test Set(Hecke._factor_divisor(fb, before[1])) == Set(expected)
+        end
+      end
+    end
+  end
+
+  # Compare bounded zeta terms with full splitting at strict prime-power cutoffs.
+  @testset "Degree-one zeta terms" begin
+    function full_splitting_term(O, B, R)
+      X = B + mod(-B, 9)
+      X9 = div(X, 9)
+      aa = log(R(X))*sqrt(R(X))
+      aa9 = log(R(X9))*sqrt(R(X9))
+      summ = R(0)
+      p = 2
+      while p < X
+        types = prime_decomposition_type(O, p)
+        for (bound, factor, sign) in ((X, aa, -1), (X9, aa9, 1))
+          p < bound || continue
+          power = ZZ(p)
+          m = 1
+          while power < bound
+            term = Hecke._comp_summand(R, p, m, factor)
+            summ = sign == -1 ? summ - term : summ + term
+            power *= p
+            m += 1
+          end
+          for (f, _) in types
+            q = ZZ(p)^f
+            power = q
+            m = 1
+            while power < bound
+              term = Hecke._comp_summand(R, q, m, factor)
+              summ = sign == -1 ? summ + term : summ - term
+              power *= q
+              m += 1
+            end
+          end
+        end
+        p = next_prime(p)
+      end
+      scale = sqrt(R(X))*2
+      scale = scale*log(R(3*X))
+      scale = inv(scale)
+      scale = scale*3
+      return scale*summ
+    end
+
+    polynomials = (x^2 + 1, x^3 - x^2 - 2*x - 8,
+                   2*x^2 + 1, x^4 + x + 2)
+    for f in polynomials
+      K, _ = number_field(f; cached = false)
+      O = maximal_order(K)
+      for prec in (64, 128), B in (9, 10, 27, 28, 45, 46, 81, 82, 225, 226)
+        R = ArbField(prec; cached = false)
+        expected = full_splitting_term(O, B, R)
+        before = (deepcopy(defining_polynomial(K)), basis(O),
+                  basis_matrix(O), deepcopy(discriminant(O)))
+        actual = Hecke._term_bf(O, B, R)
+        @test isequal(actual, expected)
+        @test Hecke.radiuslttwopower(actual, 30 - prec)
+        add!(actual, actual, 1)
+        @test isequal(Hecke._term_bf(O, B, R), expected)
+        @test (defining_polynomial(K), basis(O), basis_matrix(O),
+               discriminant(O)) == before
+      end
+    end
+
+    K, _ = quadratic_field(-1; cached = false)
+    O = maximal_order(K)
+    R = ArbField(128; cached = false)
+    expected = log(const_pi(R)/4)
+    for error in (0.2, 0.1)
+      actual = zeta_log_residue(O, error)
+      @test radius(actual) < error
+      @test contains(actual, expected)
+    end
+  end
+
+  @testset "Factored ideal preimages" begin
+    K, a = quadratic_field(-23; cached = false)
+    O = maximal_order(K)
+    C, mC = class_group(O; do_lll = false)
+    @test order(C) == 3
+
+    # Also exercise the map between different bases of the maximal order.
+    O2 = order(K, reverse(basis(O)); is_basis = true)
+    @test is_maximal(O2)
+    mC2 = Hecke.change_base_ring(mC, O2)
+    for m in (mC, mC2)
+      P = m(C[1])
+      Q = m(2*C[1])
+      @test preimage(m, P) == C[1]
+      @test preimage(m, FacElem([P, Q], ZZRingElem[2, 3])) == 2*C[1]
+      @test preimage(m, FacElem([P, Q], ZZRingElem[2, -1])) == zero(C)
+      @test preimage(m, FacElem([P, Q], ZZRingElem[1, -1])) == -C[1]
+    end
+  end
+
   @testset "class numbers" begin
     @testset "quadratic fields" begin
       classnumbersofquadraticfields = Tuple{Int, Int}[(-50,1),(-49,1),(-48,1),(-47,5),(-46,4)
@@ -25,7 +178,7 @@
         U, mU = Hecke.unit_group(O)
         @test order(Cl) == h
 
-        O = order(K, shuffle(basis(O)), isbasis = true)
+        O = order(K, shuffle(basis(O)), is_basis = true)
         O.is_maximal = 1
         Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
         U, mU = Hecke.unit_group(O)
@@ -57,7 +210,7 @@
       U, mU = Hecke.unit_group(O)
       @test order(Cl) == 1
 
-      O = order(K, shuffle(basis(O)), isbasis = true)
+      O = order(K, shuffle(basis(O)), is_basis = true)
       O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
@@ -71,7 +224,7 @@
       Cl, mCl = Hecke.class_group(O)
       @test order(Cl) == 8
 
-      O = order(K, shuffle(basis(O)), isbasis = true)
+      O = order(K, shuffle(basis(O)), is_basis = true)
       O.is_maximal = 1
       Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
       U, mU = Hecke.unit_group(O)
@@ -128,7 +281,7 @@ end
     @test contains(AF(0.88137358701),U.tentative_regulator)
     @test order(Cl) == 1
 
-    O = order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), is_basis = true)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -169,7 +322,7 @@ end
     @test contains(AF(2027.9289425180057),U.tentative_regulator)
     @test order(Cl) == 5
 
-    O = order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), is_basis = true)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -199,7 +352,7 @@ end
     @test U.torsion_units_order == 26
     @test order(Cl) == 1
 
-    O = order(K, shuffle(basis(O)), isbasis = true, cached = false)
+    O = order(K, shuffle(basis(O)), is_basis = true, cached = false)
     O.is_maximal = 1
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
     UU, mU = Hecke.unit_group(O)
@@ -222,7 +375,7 @@ end
 
     @test order(Cl)== 36
 
-    O = order(K, shuffle(basis(O)), isbasis = true)
+    O = order(K, shuffle(basis(O)), is_basis = true)
     O.is_maximal = 1
 
     Cl, mCl = Hecke.class_group(O, redo = true, do_lll = false)
@@ -248,6 +401,51 @@ end
     OK = maximal_order(K)
     C, mC = class_group(OK, GRH = false)
     @test order(C) == 8
+  end
+
+  @testset "Minkowski unit from units of subfields" begin
+    # Test Minkowski-unit construction and saturation in QQ(sqrt(2), sqrt(3)),
+    # including subgroups that are not stable under the Galois action.
+    Qx, x = QQ["x"]
+    K, a = number_field(x^4 - 10*x^2 + 1, "a"; cached = false)
+    s2 = (a^3 - 9*a)//2
+    s6 = (a^2 - 5)//2
+    units = [1 + s2, (s2 + s6)//2, a]
+    C = Hecke.VerifyUnitGroup.initialize_verify_context(
+      units; is_galois_stable = true)
+    @test Hecke._isindependent([f(C.u) for f in C.auts])[1]
+    @test Hecke.VerifyUnitGroup._is_definitely_saturated(C, 3)
+    @test Hecke.VerifyUnitGroup._is_definitely_saturated(C, 5)
+    # The product of these is a, so that random products are tried.
+    C = Hecke.VerifyUnitGroup.initialize_verify_context(
+      [units[1], units[2], a * inv(units[1] * units[2])];
+      is_galois_stable = true)
+    @test Hecke._isindependent([f(C.u) for f in C.auts])[1]
+    C = Hecke.VerifyUnitGroup.initialize_verify_context(
+      [units[1]^3, units[2], units[3]]; is_galois_stable = true)
+    @test !Hecke.VerifyUnitGroup._is_definitely_saturated(C, 3)
+
+    OK = maximal_order(K)
+    for supplied_units in (FacElem.(units), OK.(units))
+      C = Hecke.VerifyUnitGroup.initialize_verify_context(
+        supplied_units; is_galois_stable = true, evaluate_elements = false)
+      @test Hecke._isindependent([f(C.u) for f in C.auts])[1]
+      @test Hecke.VerifyUnitGroup._is_definitely_saturated(C, 5)
+    end
+    @test Hecke.VerifyUnitGroup.verify_maximlity_up_to(
+      units, 5; is_galois_stable = true)
+
+    # This subgroup has index 5; its Galois closure contains units[1].
+    subgroup = [units[1]^5, units[2], units[1]*units[3]]
+    for supplied_units in (subgroup, FacElem.(subgroup), OK.(subgroup))
+      C = Hecke.VerifyUnitGroup.initialize_verify_context(
+        supplied_units; evaluate_elements = false)
+      @test C.is_normal
+      @test !C.is_galois_stable
+      @test is_zero(C.u)
+      @test !is_ramified(C.OK, 5)
+      @test !Hecke.VerifyUnitGroup._is_definitely_saturated(C, 5)
+    end
   end
 
   @testset "Auto but no autos" begin
@@ -352,7 +550,25 @@ end
     K, a = quadratic_field(-1)
     O = order(K, [10*a])
     @test_throws ArgumentError class_group(O)
-    @test_throws ArgumentError class_number(O)
+    @test class_number(O) == 4
+  end
+
+  let # class number of the order of conductor f in an imaginary quadratic
+      # field of discriminant d (Cox, Primes of the form x^2 + ny^2, Thm. 7.24)
+    for d in [-3, -4, -7, -8, -11, -15, -20, -23, -47], f in 2:6
+      K, a = quadratic_field(d)
+      O = order(K, [f * (d + a)//2])
+      u = d == -3 ? 3 : d == -4 ? 2 : 1 # the unit index [O_K^* : O^*]
+      h = class_number(maximal_order(K)) * QQ(f, u) *
+          prod(1 - QQ(kronecker_symbol(d, p), p) for p in prime_divisors(f))
+      @test !is_maximal(O)
+      @test class_number(O) == h
+    end
+    # real quadratic, by Neukirch, Algebraic number theory, Thm. I.12.12:
+    # Z[sqrt(5)] has conductor 2O_K, (O_K/2O_K)^* = F_4^* and (O/2O_K)^* = 1,
+    # and unit index 3, ((1 + sqrt(5))/2)^3 = 2 + sqrt(5); so h = 1 * 3/3 = 1
+    K, a = quadratic_field(5)
+    @test class_number(order(K, [a])) == 1
   end
 
   let # class number
@@ -368,5 +584,39 @@ end
     k, _ = number_field(f; cached = false)
     B = Hecke.NfFactorBase(lll(maximal_order(k)), 50; complete = false, degree_limit = 0)
     @test length(B.fb) == 10
+  end
+
+  @testset "Progress bar" begin
+    # the second call takes a different path if not interactive, as in CI
+    PB = Hecke.MiniProgressBar(header = "test")
+    io = IOBuffer()
+    Hecke.showprogress(io, PB, "")
+    PB.current = 0.5
+    Hecke.showprogress(io, PB, "")
+    @test occursin("test", String(take!(io)))
+  end
+
+  @testset "to_hecke" begin
+    Qx, x = QQ["x"]
+    K, a = number_field(x^3 + 2, "a")
+    c = Hecke.class_group_ctx(maximal_order(K))
+    mktemp() do path, io
+      close(io)
+      Hecke.to_hecke(path, c)
+      @test startswith(read(path, String), "K, a = number_field(x^3 + 2, \"a\");\n")
+    end
+  end
+
+  @testset "to_magma" begin
+    # export of a class group context to Magma
+    Qx, x = QQ["x"]
+    K, a = number_field(x^2 + 5, "a")
+    c = Hecke.class_group_ctx(maximal_order(K))
+    n = length(c.R_gen) + length(c.R_rel)
+    mktemp() do path, io
+      close(io)
+      Hecke.to_magma(path, c)
+      @test occursin("MM := SparseMatrix(Integers(), $n, ", read(path, String))
+    end
   end
 end

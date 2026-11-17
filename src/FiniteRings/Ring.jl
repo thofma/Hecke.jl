@@ -322,6 +322,8 @@ function finite_ring(M::AbstractAlgebra.Generic.MatRing{FiniteRingElem})
   MR = FiniteRing(D, homs)
   hhinv = m -> FiniteRingElem(MR, hinv(m))
   hh = hom(MR, M, h.(data.(additive_generators(MR))); inverse = hhinv, check = false)
+  # one(MR) would solve a linear system over Hom(D, D)
+  MR.one = hhinv(one(M))
   #hh = r -> h(data(r))
 
   # Let's compute the radical (chain)
@@ -479,9 +481,9 @@ Finite ring with additive group
     b = FiniteRingElem(R, a)
     push!(imgs, sum(injs[i](data(b * z[i] - z[i] * b)) for i in 1:length(injs)))
   end
-  _K, KtoA = kernel(hom(A, D, imgs))
+  _K, _KtoA = kernel(hom(A, D, imgs))
   K, StoK = snf(_K)
-  KtoA = StoK * KtoA
+  KtoA = StoK * _KtoA
   mult = FinGenAbGroupHom[]
   for k in gens(K)
     h = hom(K, K, [preimage(KtoA, data(FiniteRingElem(R, KtoA(k)) * FiniteRingElem(R, KtoA(l)))) for l in gens(K)])

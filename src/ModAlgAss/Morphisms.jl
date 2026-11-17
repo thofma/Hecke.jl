@@ -141,7 +141,7 @@ function endomorphism_algebra(V::ModAlgAss)
         @assert x[i] * b == b * x[i]
       end
     end
-    A = matrix_algebra(coefficient_ring(V), B, isbasis = true)
+    A = matrix_algebra(coefficient_ring(V), B, is_basis = true)
     f = EndAlgMap(A, V)
     set_attribute!(V, :endomorphism_algebra => f)
     return A, f

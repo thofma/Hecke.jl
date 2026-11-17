@@ -310,11 +310,11 @@ function zero_integer_genus()
 end
 
 @doc raw"""
-    genus(A::MatElem) -> ZZGenus
+    genus_from_gram(A::MatElem) -> ZZGenus
 
-Return the genus of a $\mathbb Z$-lattice with gram matrix `A`.
+Return the genus of a $\mathbb Z$-lattice with Gram matrix `A`.
 """
-function genus(A::MatElem)
+function genus_from_gram(A::MatElem)
   @req ncols(A) == nrows(A) "Input must be a square matrix"
   @req rank(A) == ncols(A) "Input must have full rank"
   return genus(integer_lattice(; gram = A))
@@ -345,7 +345,7 @@ function genus(L::ZZLat)
     if p == 2
       val += 3
     end
-    push!(symbols, genus(AZZ, p, val; offset = 2*valuation(denom, p)))
+    push!(symbols, genus_from_gram(AZZ, p, val; offset = 2*valuation(denom, p)))
   end
   DA = diagonal(rational_span(L))
   neg = count(x < 0 for x in DA)
@@ -360,10 +360,10 @@ end
 Return the local genus symbol of `L` at the prime `p`.
 """
 function genus(L::ZZLat, p::IntegerUnion)
-  return genus(gram_matrix(L), p)
+  return genus_from_gram(gram_matrix(L), p)
 end
 
-function genus(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0)
+function genus_from_gram(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0)
   symbol = _p_adic_symbol(A, p, val)
   for i in 1:size(symbol)[1]
     symbol[i][1] = symbol[i][1] - offset
@@ -372,11 +372,11 @@ function genus(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0)
 end
 
 @doc raw"""
-    genus(A::QQMatrix, p::IntegerUnion) -> ZZLocalGenus
+    genus_from_gram(A::Union{ZZMatrix, QQMatrix}, p::IntegerUnion) -> ZZLocalGenus
 
-Return the local genus symbol of a Z-lattice with gram matrix `A` at the prime `p`.
+Return the local genus symbol of a Z-lattice with Gram matrix `A` at the prime `p`.
 """
-function genus(A::QQMatrix, _p::IntegerUnion)
+function genus_from_gram(A::QQMatrix, _p::IntegerUnion)
   @req is_symmetric(A) "Input must be symmetric"
   @req rank(A) == nrows(A) "Input must have full rank"
   p = ZZ(_p)
@@ -388,10 +388,10 @@ function genus(A::QQMatrix, _p::IntegerUnion)
   if p == 2
     val += 3
   end
-  return genus(AZZ, p, val; offset)
+  return genus_from_gram(AZZ, p, val; offset)
 end
 
-genus(A::ZZMatrix, _p::IntegerUnion) = genus(change_base_ring(QQ, A), _p)
+genus_from_gram(A::ZZMatrix, p::IntegerUnion) = genus_from_gram(change_base_ring(QQ, A), p)
 
 @doc raw"""
     direct_sum(S1::ZZLocalGenus, S2::ZZLocalGenus) -> ZZLocalGenus
@@ -1722,7 +1722,7 @@ function hasse_invariant(S::ZZLocalGenus)
   #=f0 = ZZRingElem[e]
   append!(f0, eltype(f0)[one(ZZ) for i in 2:n])
   mf0 = diagonal_matrix(f0)
-  gf0 = genus(mf0, prime(S))
+  gf0 = genus_from_gram(mf0, prime(S))
   @assert g == gf0
   =#
   if excess(S) == excess(g)
@@ -2160,10 +2160,14 @@ is_definite(G::ZZGenus) = any(is_zero, signature_pair(G))
 
 Return a list of representatives of the isometry classes in this genus.
 """
-@attr Vector{ZZLat} function representatives(G::ZZGenus)
+function representatives(G::ZZGenus; kwargs...)
+  if isdefined(G, :_representatives)
+    return G._representatives
+  end
   L = representative(G)
-  rep = genus_representatives(L)
+  rep = genus_representatives(L; kwargs...)
   @hassert :Lattice 2 !is_definite(G) || mass(G) == sum(QQFieldElem[1//automorphism_group_order(S) for S in rep]; init=QQ(0))
+  G._representatives = rep
   return rep
 end
 
@@ -2196,7 +2200,7 @@ function gram_matrix(S::ZZLocalGenus)
     push!(G, _gram_from_jordan_block(p, block))
   end
   G = diagonal_matrix(QQ, G)
-  @hassert :Lattice 1  S == genus(G, p)
+  @hassert :Lattice 1  S == genus_from_gram(G, p)
   return G
 end
 
@@ -2419,7 +2423,7 @@ function automorphous_numbers(g::ZZLocalGenus)
   end
 
   # supplement (ii)
-  sort(I, by=x->valuation(x,2))
+  sort!(I, by=x->valuation(x,2))
   n = length(I)
   for i in 1:n
     for j in 1:i-1
@@ -2466,7 +2470,7 @@ Return the product $\prod_p \QQ_p* / (\QQ_p*)^2$ where `p in primes`.
 function local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
   K, _ = Hecke.rationals_as_number_field()
   # f : QQ -> K
-  f = MapFromFunc(QQ, K, x -> K(x), x -> coeff(x, 0))
+  f = map_from_func(QQ, K, K, x -> coeff(x, 0))
   OK = maximal_order(K)
   primes_as_ideals = [prime_decomposition(OK, p)[1][1] for p in primes]
   stuff = [Hecke.local_multiplicative_group_modulo_squares(P) for P in primes_as_ideals]
@@ -2497,7 +2501,7 @@ function local_multiplicative_group_modulo_squares(primes::Vector{ZZRingElem})
     @assert backwardmap(z) == x
     return z
   end
-  diagonal_morphism = inv(MapFromFunc(A, QQ, forwardmap, backwardmap))
+  diagonal_morphism = inv(map_from_func(A, QQ, forwardmap, backwardmap))
   projd = Any[(primes[i],proj[i]*maps[i]*inv(f)) for i in 1:length(primes)]
   injd = Any[(primes[i],f*inv(maps[i])*inj[i]) for i in 1:length(primes)]
   return A, Dict(projd), Dict(injd), diagonal_morphism
@@ -2514,28 +2518,28 @@ Further Delta is in bijection with the proper spinor genera of `G`.
 @attr Any function _automorphous_numbers(G::ZZGenus)
   @assert is_integral(G)
   P = [prime(g) for g in local_symbols(G)]
-  A, proj, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
+  A, _, inj, diagonal_map = local_multiplicative_group_modulo_squares(P)
   gens_automorph = elem_type(A)[]
   for g in local_symbols(G)
     p = prime(g)
     for r in automorphous_numbers(g)
       r = QQ(r)
-      S = [i for i in P if i!=p]
-      pv,u = ppio(ZZ(r),p)
-      pv = QQ(pv); u = QQ(u)
+      S = [i for i in P if i != p]
+      pv0, u0 = ppio(ZZ(r),p)
+      pv = QQ(pv0); u = QQ(u0)
       push!(gens_automorph, inj[p](u) + sum([inj[q](pv) for q in S], init=A()))
     end
   end
   s = signature_tuple(G)
   if s[1]*s[3]>0
     # -1 is -1-adically automorphous
-    for p in P
-      push!(gens_automorph, inj[p](QQ(-1)))
-    end
+    # We want to embed -1 diagonally, so we take the sum of its image
+    # in every summand
+    push!(gens_automorph, diagonal_map(QQ(-1)))
   end
   gens_local_automorphs = elem_type(A)[]
   for p in P
-    if p ==2
+    if p == 2
       u_p = inj[p](QQ(3))
       push!(gens_local_automorphs, u_p)
       u_p = inj[p](QQ(5))
@@ -2548,7 +2552,7 @@ Further Delta is in bijection with the proper spinor genera of `G`.
   B,b = sub(A,gens_local_automorphs)
   C,c = sub(B, [preimage(b,i) for i in gens_automorph])
   Delta, proj = cokernel(c, false)
-  binv = MapFromFunc(A, B, x -> preimage(b, x), b)
+  binv = map_from_func(A, B, x -> preimage(b, x), b)
   f1 = compose(diagonal_map, binv)
   f2 = compose(f1, proj)
   f3 = Dict([(p,compose(compose(inj[p], binv), proj)) for p in keys(inj)])
@@ -3306,7 +3310,7 @@ function embed(S::ZZLat, G::ZZGenus, primitive::Bool=true)
     pos, neg = signature_pair(G)
     return embed_in_unimodular(S, pos, neg; primitive, even = iseven(G))
   end
-  throw(NotImplementedError("for now G needs to be even unimodular, but you can use Nikulin's theory to get a primitive embedding by 'hand' in the non-unimodular cases"))
+  error("NotImplemented: for now G needs to be even unimodular, but you can use Nikulin's theory to get a primitive embedding by 'hand' in the non-unimodular cases")
 end
 
 @doc raw"""
@@ -3355,12 +3359,12 @@ true
 ```
 """
 function embed_in_unimodular(S::ZZLat, pos::IntegerUnion, neg::IntegerUnion; primitive=true, even=true)
-  @vprintln :Lattice 1 "computing embedding in L_$(n)"
+  @vprintln :Lattice 1 "computing embedding in L_($pos, $neg)"
   pS, kS, nS = signature_tuple(S)
   @req kS == 0 "S must be non-degenerate"
-  even || throw(NotImplementedError("for now we need the unimodular lattice to be even."))
-  pR = pos - pS
-  nR = neg - nS
+  even || error("NotImplemented: for now we need the unimodular lattice to be even.")
+  pR = Int(pos) - pS
+  nR = Int(neg) - nS
   DS = discriminant_group(S)
   DR = rescale(DS, -1)  # discriminant group of R = S^\perp in L as predicted by Nikulin
   GR = genus(DR, (pR, nR)) # genus of R
@@ -3518,7 +3522,7 @@ function rescale(G::ZZLocalGenus, a::RationalUnion)
   end
   g = ZZLocalGenus(p, data)
   #m = gram_matrix(G)
-  #@assert genus(a*m, p)==g
+  #@assert genus_from_gram(a*m, p)==g
   return g
 end
 

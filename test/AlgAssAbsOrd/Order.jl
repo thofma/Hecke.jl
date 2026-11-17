@@ -174,7 +174,7 @@
     @test count(is_maximal, S) == 2
 
     A = matrix_algebra(QQ, 6)
-    O = order(A, basis(A), isbasis = true)
+    O = order(A, basis(A), is_basis = true)
     M = maximal_order(O)
     @test is_unit(discriminant(M))
 
@@ -183,6 +183,41 @@
     ZG = order(QG, basis(QG))
     # there are exactly two maximal overorders and we hope to find them all
     @test length(unique([Hecke.new_maximal_order(ZG, false) for i in 1:20])) == 2
+  end
+
+  # Arbitrary group-algebra orders can fail maximality outside group-order primes.
+  @testset "Maximality outside group-order primes" begin
+    A = group_algebra(QQ, FinGenAbGroup([2]); cached = false)
+    e = QQ(1//2)*(one(A) + basis(A)[2])
+    O = order(A, [one(A), 3*e]; cached = false)
+    @test !isdefined(A, :maximal_order)
+    @test !Hecke.is_maximal_known(O)
+    @test discriminant(O) == 9
+    @test pmaximal_overorder(O, 2) === O
+    @test !is_maximal(O)
+    @test Hecke.is_maximal_known(O)
+    @test !is_maximal(O)
+    M = pmaximal_overorder(O, 3)
+    @test index(O, M) == 3
+    @test discriminant(M) == 1
+    @test !isdefined(A, :maximal_order)
+    @test is_maximal(M)
+    @test Hecke.is_maximal_known(M)
+    @test is_maximal(M)
+  end
+
+  # Maximality for polynomial-base orders must accept a polynomial discriminant.
+  @testset "Maximality over polynomial rings" begin
+    for k in (QQ, GF(7))
+      F, t = rational_function_field(k, :t)
+      R = parent(numerator(t))
+      A = group_algebra(F, FinGenAbGroup([1]); cached = false)
+      O = order(A, R, identity_matrix(F, 1); cached = false)
+      @test !Hecke.is_maximal_known(O)
+      @test discriminant(O) == one(R)
+      @test is_maximal(O)
+      @test Hecke.is_maximal_known(O)
+    end
   end
 
   @testset "rand" begin
@@ -207,6 +242,20 @@
     R = order(QG, basis(QG))
     M = maximal_order(R)
     @test (@inferred index(R, M)) == 2
+
+    # a maximal order given by bases with determinants of both signs, an
+    # Eichler order of level 2 inside it, and an order not contained in another
+    A = quaternion_algebra_ramified_at(QQ, 97)
+    B = Hecke._hnf_integral(basis_matrix(maximal_order(A)), :lowerleft)
+    Mp = order(A, B)
+    Mn = order(A, vcat(-B[1:1, :], B[2:4, :]))
+    @test det(basis_matrix(Mp)) > 0 && det(basis_matrix(Mn)) < 0
+    @test index(Mp) == 76 && index(Mn) == 76
+    @test index(Mp, Mn) == 1 && index(Mn, Mp) == 1
+    P = first(Hecke.maximal_integral_ideals(Mp, 2; side = :left))
+    E = intersect(Mp, right_order(P))
+    @test index(E, Mp) == 2 && index(E, Mn) == 2
+    @test_throws ArgumentError index(Mn, E)
   end
 
   @testset "numbers larger than 2^$p0" for p0 in [32, 64]

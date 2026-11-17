@@ -63,22 +63,22 @@ end
 #Reconstruct only returns one model. Twists returns all twists, but only works over finite fields.
 
 @doc raw"""
-    reconstruct_from_igusa(igusa_invs::Vector{T})
+    reconstruct_from_igusa_invariants(igusa_invs::Vector{T})
 
 Construct a genus 2 curve whose Igusa invariants are equal
 (as elements of P(2, 4, 6, 8, 10)) to the input vector igusa_invs.
 """
-function reconstruct_from_igusa(igusa_invs::Vector{T}) where T <: FieldElem
+function reconstruct_from_igusa_invariants(igusa_invs::Vector{T}) where T <: FieldElem
   return models_from_igusa_invariants(igusa_invs, false)[1]
 end
 
 @doc raw"""
-    reconstruct_from_igusa(igusa_invs::Vector{T})
+    reconstruct_from_g2_invariants(igusa_invs::Vector{T})
 
 Construct a genus 2 curve whose Cardona-Quer-Nart-Pujolas invariants are equal
 to the input vector igusa_invs.
 """
-function reconstruct_from_g2(g2_invs::Vector{T}) where T <: FieldElem
+function reconstruct_from_g2_invariants(g2_invs::Vector{T}) where T <: FieldElem
   return models_from_igusa_invariants(igusa_from_g2(g2_invs), false)[1]
 end
 
@@ -199,6 +199,10 @@ function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: Union{ZZRin
 end
 
 function reconstruct_from_igusa_C2(igusa_invs::Vector{T}) where T <: FieldElem
+  return _reconstruct_from_igusa_generic(igusa_invs)
+end
+
+function _reconstruct_from_igusa_generic(igusa_invs::Vector{T}) where T <: FieldElem
   K = parent(igusa_invs[1])
   igusa_invs = igusa_invs[(1:5)]
   R, conic, cubic = compute_conic_and_cubic_generic(igusa_invs)
@@ -234,7 +238,7 @@ function compute_conic_and_cubic_generic(igusa_invs::Vector{T}) where T <: Union
   7776*J2*J4*J6^4 + 6912*J4^3*J6^3 - 96000*J10^2*J2^2*J6 -
   512000*J10^2*J2*J4^2 - 129600*J10*J2*J6^3 + 691200*J10*J4^2*J6^2 +
   11664*J6^5 + 11520000*J10^2*J4*J6 + 51200000*J10^3
-  if R == zero(K) then
+  if is_zero(R)
       error("Could not reconstruct conic.")
   end
 

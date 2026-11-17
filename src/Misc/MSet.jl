@@ -449,8 +449,10 @@ function Base.:(+)(s1::MSet, s2::MSet)
 end
 
 function Base.:(+)(s::MSet, itrs...)
-  s2 = s + multiset(itrs[1])
-  return (+)(s2, itrs[2:end]...)
+  for itr in itrs
+    s = s + multiset(itr)
+  end
+  return s
 end
 
 Base.union(s::MSet) = copy(s)
@@ -481,8 +483,10 @@ function Base.union!(s1::MSet{T}, s2::MSet{U}) where {T, U}
 end
 
 function Base.union!(s::MSet, itrs...)
-  union!(s, multiset(itrs[1]))
-  return union!(s, itrs[2:end]...)
+  for itr in itrs
+    union!(s, multiset(itr))
+  end
+  return s
 end
 
 function Base.intersect(s::MSet, itrs...)
@@ -506,9 +510,14 @@ function Base.intersect!(s1::MSet{T}, s2::MSet) where {T}
 end
 
 function Base.intersect!(s::MSet, itrs...)
-  s2 = intersect!(s, multiset(itrs[1]))
-  return intersect!(s2, itrs[2:end]...)
+  for itr in itrs
+    intersect!(s, multiset(itr))
+  end
+  return s
 end
+
+# resolve ambiguity with intersect!(::AbstractSet, ::AbstractSet)
+Base.intersect!(s::MSet, s2::AbstractSet) = intersect!(s, multiset(s2))
 
 function Base.filter(pred, s::MSet)
   t = similar(s)
@@ -838,7 +847,27 @@ Base.IteratorSize(::Type{SubSetSizeItr}) = Base.HasLength()
 Base.IteratorEltype(::Type{SubSetSizeItr}) = Base.HasEltype()
 Base.eltype(::Type{SubSetSizeItr{T}}) where {T} = Set{T}
 
+# Iteration runs through the k-subsets of positions in M.b in decreasing
+# colexicographic order, so the i-th subset has colex rank M.length - i.
+# Unrank it with the combinatorial number system: the 0-based positions
+# c_k > ... > c_1 satisfy rank = sum_j binomial(c_j, j).
+function int_to_elt(M::SubSetSizeItr{T}, i::Int) where T
+  r = M.length - i
+  s = Set{T}()
+  c = M.len_b
+  for j in M.k:-1:1
+    c -= 1
+    while binomial(c, j) > r
+      c -= 1
+    end
+    push!(s, M.b[c + 1])
+    r -= binomial(c, j)
+  end
+  return s
+end
+
 function Base.getindex(S::SubSetSizeItr, i::Int)
+  1 <= i <= length(S) || throw(BoundsError(S, i))
   return Hecke.int_to_elt(S, i)
 end
 

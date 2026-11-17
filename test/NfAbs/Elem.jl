@@ -35,6 +35,16 @@ end
   Ky, y = K["y"]
   h = y^3+(15037//140*a^2 - 109//40*a - 915//14)*y^2+(16375724527//78400*a^2 - 993527643//4900*a + 393774209//11200)*y+(107296943419277//878080*a^2 - 2594040461688323//21952000*a + 17784340885567//878080)
   @assert is_irreducible(h)
+
+  # modular gcdx needing more than one prime
+  K, a = quadratic_field(-5)
+  Ky, y = K["y"]
+  B = ZZ(10)^40
+  f = (y^2 + a*y + 3) * (y - (B + 1)*a)
+  g = (y^2 + a*y + 3) * (y^3 + B + 7)
+  d, u, v = Hecke.gcdx_modular(f, g)
+  @test d == gcd(f, g)
+  @test u*f + v*g == d
 end
 
 @testset "Is integral" begin
@@ -192,4 +202,37 @@ end
   b = 24*a
   @test Hecke.evaluate_mod(FacElem(b)^3, b^3*ok) == b^3
   @test evaluate(Hecke.compact_presentation(FacElem(b)^3)) == b^3
+end
+
+@testset "adaptive CRT evaluation" begin
+  # Reconstruct exactly, including after a long run of unusable primes.
+  Qx, x = QQ[:x]
+  for f in (x^4 - x - 1, x^7 - x - 1, 2*x^2 + 1)
+    K, a = number_field(f; cached = false)
+    O = maximal_order(K)
+    z = FacElem(K, Dict(a + 1 => ZZ(5), a - 1 => ZZ(-3)))
+    value = evaluate(z)
+    e = ZZ(2)^20
+    cancellation = FacElem(K, Dict(a + 1 => e, a - 1 => e,
+                                  a^2 - 1 => -e, a + 2 => ZZ(1)))
+    for (u, expected) in ((z, value), (cancellation, a + 2),
+                          (FacElem(K), one(K)))
+      @test Hecke.evaluate_mod(u, expected*O) == expected
+    end
+  end
+
+  # Put the first 32 candidate primes in the denominator to trigger an
+  # increase of the degree cutoff.
+  K, a = number_field(x^4 - x - 1; cached = false)
+  O = maximal_order(K)
+  p = ZZ(Hecke.p_start)
+  d = ZZ(1)
+  for _ in 1:32
+    p = next_prime(p)
+    d *= p
+  end
+  expected = inv(K(d))
+  u = FacElem(K(d))^-1
+  @test Hecke.evaluate_mod(u, expected*O) == expected
+  @test Hecke.evaluate_mod(FacElem(a + 1), (a + 1)*O) == a + 1
 end

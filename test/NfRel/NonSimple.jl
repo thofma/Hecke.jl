@@ -4,6 +4,11 @@
   Ky, y = K["y"]
   L, (a, b) = @inferred number_field([y^2 - 3, y^3 - 5])
 
+  @testset "conformance" begin
+    M, _ = number_field([y^2 - 3, y^2 - 5], "b")
+    ConformanceTests.test_Field_interface_recursive(M)
+  end
+
   @testset "Basics" begin
     @test K == @inferred base_field(L)
     @test 6 == @inferred degree(L)
@@ -22,6 +27,21 @@
     @test_throws ErrorException QQ(gen(K) * a^0)
     @test is_rational(2*a^0)
     @test !is_rational(gen(K) * a^0)
+  end
+
+  @testset "hash" begin
+    Kns, _ = number_field([x^2 - 2])
+    for k in (K, Kns)
+      kt, t = k["t"]
+      M, (c, d) = number_field([t^2 - 3, t^3 - 5])
+      for e in (zero(M), M(2), c + d + M(gens(k)[1]))
+        e_copy = deepcopy(e)
+        @test hash(e) == hash(e_copy)
+        @test hash(e, UInt(123)) == hash(e_copy, UInt(123))
+        @test Dict(e => 1)[e_copy] == 1
+      end
+      @test hash((c + d) - d) == hash(c)
+    end
   end
 
   @testset "consistency check" begin

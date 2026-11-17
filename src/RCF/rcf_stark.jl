@@ -321,7 +321,7 @@ function _find_suitable_quadratic_extension(C::T) where T <: ClassField_pp
   inf_plc_ram = Set(w)
   bound = 10
   ctx = rayclassgrp_ctx(OK, Int(exponent(C))*2)
-  allow_cache!(ctx.class_group_map)
+  AbstractAlgebra.allow_cache!(ctx.class_group_map)
   lc = ideals_up_to(OK, bound, conductor(C)[1])
   cnt = 0
   while true

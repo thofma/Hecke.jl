@@ -565,7 +565,7 @@ end
   @test allunique(gh)
   @test all(G -> signatures(G) == sig, gh)
   @test all(G -> rank(G) == 4, gh)
-  @test all(G -> !is_integral(G), gh)
+  @test all(!is_integral, gh)
   @test all(G -> is_integral(Hecke._scale(G)*fractional_ideal(maximal_order(E), DE)^2), gh)
 
   K = base_field(E)
@@ -574,7 +574,7 @@ end
   gh = @inferred hermitian_genera(E, 8, sig, E(1//135)*maximal_order(E), min_scale = E(1//45)*maximal_order(E), max_scale = E(45)*maximal_order(E))
   @test allunique(gh)
   @test all(G -> (signatures(G), rank(G)) == (sig, 8), gh)
-  @test all(G -> !is_integral(G), gh)
+  @test all(!is_integral, gh)
   @test all(G -> is_integral(K(45)*Hecke._scale(G)), gh)
   @test all(G -> is_integral(K(45)*inv(Hecke._scale(G))), gh)
   for G in gh
@@ -587,6 +587,11 @@ end
   @test_throws ArgumentError hermitian_genera(E, -1, sig, DE)
   @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, min_scale = 0*DE)
   @test_throws ArgumentError hermitian_genera(E, 1, sig, DE, max_scale = 0*DE)
+
+  # without a determinant both scale bounds are required
+  @test_throws ArgumentError hermitian_genera(E, 8, sig)
+  @test_throws ArgumentError hermitian_genera(E, 8, sig; min_scale = DE)
+  @test_throws ArgumentError hermitian_genera(E, 8, sig; max_scale = DE)
   sig[rp[1]] = -12
   @test_throws ArgumentError hermitian_genera(E, 4, sig, DE)
 end

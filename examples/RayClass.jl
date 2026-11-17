@@ -1,5 +1,5 @@
 mutable struct MapRayClassGrpNew{T} #<: Hecke.Map{T, Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}
-  header::Hecke.MapHeader
+  header::MapHeader
   modulus_fin::Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   modulus_inf::Vector{Hecke.InfPlc}
 
@@ -49,7 +49,7 @@ function _coprime_ideal(C::FinGenAbGroup, mC::Map, m::AbsNumFieldOrderIdeal{AbsS
   end
 
   mp=Hecke.MapClassGrp{typeof(C)}()
-  mp.header=Hecke.MapHeader(C,Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O),exp, mC.header.preimage)
+  mp.header=MapHeader(C,Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O),exp, mC.header.preimage)
 
   return mp
 
@@ -191,7 +191,7 @@ function ray_class_group_std(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimp
   end
 
   mp=MapRayClassGrpNew{typeof(X)}()
-  mp.header = Hecke.MapHeader(X, Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O), expo, disclog)
+  mp.header = MapHeader(X, Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}(O), expo, disclog)
   mp.modulus_fin=m
   mp.modulus_inf=p
 
@@ -389,7 +389,7 @@ function ray_class_group_p_part(p::Integer, m::AbsNumFieldOrderIdeal{AbsSimpleNu
   end
 
   mp=Hecke.MapRayClassGrpNew{typeof(X)}()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
+  mp.header = MapHeader(X, FacElemMon(parent(m)) , expon, disclog)
   mp.modulus_fin=n
   mp.modulus_inf=inf_plc
   mp.fact_mod=lp

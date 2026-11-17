@@ -281,13 +281,13 @@ end
 function _adjoin_root(K, f::PolyRingElem)
   if K isa QQField || K isa NumField
     L, r = number_field(f; cached = false)
-    embed = x -> L(x)
+    embed = L
     return L, embed, r
   end
   if K isa FqField
-    L, h = Nemo._residue_field(f)
+    Lf, h = Nemo._residue_field(f)
     Kx = parent(f)
-    return L, a -> h(Kx(a)), h(gen(Kx))
+    return Lf, a -> h(Kx(a)), h(gen(Kx))
   end
   error("_adjoin_root not yet implemented for base field of type $(typeof(K)). Please implement this stub.")
 end
@@ -408,15 +408,15 @@ function is_gl2_equivalent(f1::PolyRingElem{T}, f2::PolyRingElem{T}, n::Int) whe
       end
     end
   elseif d == 2
-    f_irred = first(p for (p, _) in fact1 if degree(p) == d)
-    L1, embed1, rf = _adjoin_root(K, f_irred)
+    f_quad = first(p for (p, _) in fact1 if degree(p) == d)
+    L1, embed1, rf = _adjoin_root(K, f_quad)
 
     sorted_degs = sort(degs1; rev = true)
     d1 = sorted_degs[2]  # second-largest degree of a factor  # second largest (possibly equal to d=2)
 
     if d1 == 2
       # Need a second degree-2 factor of f1
-      ff_irred = first(p for (p, _) in fact1 if degree(p) == 2 && p != f_irred)
+      ff_irred = first(p for (p, _) in fact1 if degree(p) == 2 && p != f_quad)
       L2, embed2, rff = _adjoin_root(K, ff_irred)
 
       e1 = vcat(_coords(one(L1), L1, K), _coords(one(L2), L2, K))
@@ -529,7 +529,7 @@ end
 
 # Internal implementation. Always returns a HypellCrvIsom as second value;
 # if the curves are not isomorphic, returns an uninitialised (illegal) object.
-function _is_isomorphic(C1::HypellCrv{T}, C2::HypellCrv{T}) where T
+function _is_isomorphic(C1::HypellCrv{T}, C2::HypellCrv{T}, check_invariants::Bool = true) where T
   K = base_field(C1)
   @req base_field(C2) === K "Curves must have the same base field"
 
@@ -542,9 +542,9 @@ function _is_isomorphic(C1::HypellCrv{T}, C2::HypellCrv{T}) where T
 
   # Fast exit for genus 2: compare absolute invariants
   # Reference: [Igu60], implemented via Igusa-Clebsch invariants.
-  if g == 2
+  if g == 2 && check_invariants
     # test equality in P(2, 4, 6, 10)
-    if !weighted_equality(igusa_clebsch_invariants(C1), igusa_clebsch_invariants(C2), [2, 4, 6, 10])
+    if !weighted_equality(igusa_clebsch_invariants(C1)[1], igusa_clebsch_invariants(C2)[1], [2, 4, 6, 10])
       return false, dummy
     end
   end

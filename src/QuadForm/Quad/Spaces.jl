@@ -541,7 +541,7 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
 
   #// Pad with ones
   k = max(0, dim - max(3, negative))
-  D = ones(Int, k)
+  D = ones(ZZRingElem, k)
   dim = dim - k
 
   local PP::Vector{ZZRingElem}
@@ -556,7 +556,7 @@ function _quadratic_form_with_invariants(dim::Int, det::ZZRingElem,
     unique!(PP)
     finite = ZZRingElem[ p for p in PP if hilbert_symbol(d, -det, p) * (p in f ? -1 : 1) * (p in finite ? -1 : 1) == -1]
     unique!(finite)
-    D = append!(D, Int[-1 for i in 1:k])
+    D = append!(D, ZZRingElem[-1 for i in 1:k])
     det = isodd(k) ? -det : det
     dim = 3
     negative = 3
@@ -1599,7 +1599,7 @@ function _isisotropic_with_vector(F::MatrixElem)
           continue
         end
         if s == sign(D[4], rlp[i])
-          _a = _real_weak_approximation(_embedding(rlp[i]), _embedding(rlp[fix]))::elem_type(K)
+          _a = _real_weak_approximation(_embedding(rlp[i]), _embedding.(rlp[fix]))::elem_type(K)
           a = inv(_a)::elem_type(K)
           j = findfirst(Bool[sign(D[j], rlp[i]) != s for j in 1:length(D)])::Int
           r = 0

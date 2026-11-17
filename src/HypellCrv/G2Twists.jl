@@ -67,9 +67,23 @@ end
 
 function filter_g2_isomorphism_classes(curves::Vector{HypellCrv{T}}) where T <: FieldElem
   result = HypellCrv{T}[]
+  # Igusa-Clebsch invariants of the curves in result, computed once per curve
+  # instead of twice per pair inside is_isomorphic
+  result_invs = Vector{T}[]
+  ws = [2, 4, 6, 10]
   for C in curves
-    if !any([ is_isomorphic(C, D) for D in result ])
-       push!(result, C)
+    I = igusa_clebsch_invariants(C)[1]
+    is_new = true
+    for (D, J) in zip(result, result_invs)
+      weighted_equality(I, J, ws) || continue
+      if _is_isomorphic(C, D, false)[1]
+        is_new = false
+        break
+      end
+    end
+    if is_new
+      push!(result, C)
+      push!(result_invs, I)
     end
   end
   return result
@@ -318,14 +332,15 @@ function g2_models_FF_char2_M160(g2_invs::Vector{T}, all_twists::Bool = true) wh
   E1 = x^16 + x
   V = vector_space(GF(2), degree(F))
   S, phi = sub(V, [ V([E1(v[i]) for i in (1:degree(F))]) for v in basis(V)])
-  W, pi = quo(V, S)
+  Wq, pi = quo(V, S)
 
-  W = [w for w in W if w != zero(W)]
+  W = [w for w in Wq if w != zero(Wq)]
   o = gen(F)
   P, _ = polynomial_ring(GF(2))
 
   for i in (1:3)
-    vec = [preimage(pi, W[1])[i] for i in (1:degree(F)) ]
+    w1 = preimage(pi, W[1])
+    vec = [w1[i] for i in (1:degree(F)) ]
     a = P(vec)(o)
     H = hyperelliptic_curve(x^5 + a*x^4, R(1))
     push!(twists, H)

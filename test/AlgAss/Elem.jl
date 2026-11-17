@@ -4,8 +4,17 @@
   A = StructureConstantAlgebra(f)
 
   @testset "divexact" begin
-    @test divexact(A([1,1]), A([1,1])) == one(A)
-    @test_throws ErrorException divexact(zero(A), zero(A))
+    for side in (:left, :right)
+      @test divexact(A([1,1]), A([1,1]), side) == one(A)
+      @test_throws ErrorException divexact(zero(A), zero(A), side)
+    end
+    @test_throws MethodError divexact(one(A), one(A))
+
+    M = matrix_algebra(QQ, 2)
+    a = M(QQ[1 1; 0 1])
+    b = M(QQ[1 0; 1 1])
+    @test divexact(a*b, a, :left) == b
+    @test divexact(a*b, b, :right) == a
   end
 
   @testset "Is integral" begin
@@ -82,6 +91,36 @@
   A = matrix_algebra(QQ, 2)
   @test isone(mul!(zero(A), one(A), ZZRingElem(1)))
 
+  @testset "addmul! with scalars" begin
+    A = quaternion_algebra(QQ, -1, -1)
+    a = A([1, 2, 3, 4])
+    c0 = A([5, 6, 7, 8])
+
+    for s in (QQ(3), ZZ(3), 3)
+      expected = c0 + a*s
+
+      c = deepcopy(c0)
+      @test addmul!(c, a, s, QQ()) === c
+      @test c == expected
+
+      c = deepcopy(c0)
+      @test addmul!(c, s, a, QQ()) === c
+      @test c == expected
+
+      c = deepcopy(c0)
+      @test addmul!(c, a, s) === c
+      @test c == expected
+    end
+
+    c = deepcopy(a)
+    @test addmul!(c, c, ZZ(2), QQ()) === c
+    @test c == 3*a
+
+    B = quaternion_algebra(QQ, -1, -2)
+    @test_throws ArgumentError addmul!(zero(B), a, QQ(1), QQ())
+    @test_throws ArgumentError addmul!(zero(B), a, ZZ(1), QQ())
+  end
+
   # add! for matrix algebra elements
   # 1547
   let
@@ -109,5 +148,35 @@
     @test u == A(QQ.([0, 3//2, 0, 1//2]))
     @test v == A(QQ.([0, -1//2, 0, -1//2]))
     @test u + v == alpha
+  end
+end
+
+# Reduced traces remain defined when the matrix degree vanishes in the field.
+@testset "Reduced trace" begin
+  for p in (2, 3)
+    k = GF(p)
+    B = matrix_algebra(k, p)
+    b = B(diagonal_matrix(k, [one(k); fill(zero(k), p - 1)]))
+    @test iszero(tr(b))
+    @test trred(b) == one(k)
+
+    K, t = rational_function_field(GF(p), :t; cached = false)
+    A = matrix_algebra(K, p)
+    a = A(diagonal_matrix(K, [one(K); fill(t, p - 1)]))
+    @test iszero(tr(a))
+    @test trred(a) == one(K) + (p - 1)*t
+    @test trred(zero(A)) == zero(K)
+    @test trred(one(A)) == zero(K)
+    @test trred(a + one(A)) == trred(a)
+  end
+  kt, t = rational_function_field(GF(2), :t; cached = false)
+  K, b = function_field(polynomial(kt, [t^3 + t + 1, 1, 1]); cached = false)
+  A = matrix_algebra(K, 2)
+  @test trred(A(K[1 b; 0 0])) == one(K)
+  @test trred(A(K[b 1; 0 0])) == b
+
+  for K in (QQ, GF(3))
+    A = matrix_algebra(K, 2)
+    @test trred(A(K[1 2; 3 4])) == K(5)
   end
 end

@@ -605,9 +605,11 @@ function _hensel(f::Generic.Poly{AbsSimpleNumFieldElem},
         cf = lift(ZX, (change_base_ring(Q, RT[j]*den; parent = Qt) % pgg)*ap % pgg)
       end
 
-      ve = matrix(ZZ, 1, n, [coeff(cf, k) for k=0:n-1])
+      cfj = cf
+      dd = d
+      ve = matrix(ZZ, 1, n, [coeff(cfj, k) for k=0:n-1])
       _ve = ve*Mi
-      mu = matrix(ZZ, 1, n,  [ round(ZZRingElem, _ve[1, k], d) for k=1:n])
+      mu = matrix(ZZ, 1, n,  [ round(ZZRingElem, _ve[1, k], dd) for k=1:n])
       ve = ve - mu*M
       z = ZX()
       for kk=1:n

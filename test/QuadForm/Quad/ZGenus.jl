@@ -1,25 +1,34 @@
+@testset "genus_from_gram" begin
+  for A in (ZZ[2 1; 1 2], QQ[1//2 0; 0 -3//5],
+            zero_matrix(ZZ, 0, 0), zero_matrix(QQ, 0, 0))
+    L = integer_lattice(; gram = A)
+    G = genus_from_gram(A)
+    @test G == genus(L)
+  end
+end
+
 @testset "ZZGenus" begin
   A = matrix(ZZ, 2, 2, [1, 1, 1, 1])
   @test (false, 1) == Hecke._iseven(A)
   A = matrix(ZZ, 2, 2, [2, 1, 1, 2])
   @test (true, -1) == Hecke._iseven(A)
-  @test iseven(genus(A))
+  @test iseven(genus_from_gram(A))
   A = matrix(QQ, 1, 2, [1 3])
-  @test_throws ArgumentError genus(A)
-  @test_throws ArgumentError genus(A, 3)
+  @test_throws ArgumentError genus_from_gram(A)
+  @test_throws ArgumentError genus_from_gram(A, 3)
   A = matrix(QQ, 2, 2, [1 1; 1 1])
-  @test_throws ArgumentError genus(A)
-  @test_throws ArgumentError genus(A, 3)
+  @test_throws ArgumentError genus_from_gram(A)
+  @test_throws ArgumentError genus_from_gram(A, 3)
   A = matrix(QQ, 2, 2, [1 3; 2 0])
-  @test_throws ArgumentError genus(A)
-  @test_throws ArgumentError genus(A, 3)
+  @test_throws ArgumentError genus_from_gram(A)
+  @test_throws ArgumentError genus_from_gram(A, 3)
 
   A = matrix(ZZ, 2, 2, [1, 2, 2, 3])
   @test (false, 1) == Hecke._iseven(A)
   @test (1, ZZ[-1;]) == Hecke._split_odd(A)
 
-  @test length(unique!([genus(A), genus(A)]))==1
-  @test length(unique!([genus(A, 2), genus(A, 2)]))==1
+  @test length(unique!([genus_from_gram(A), genus_from_gram(A)]))==1
+  @test length(unique!([genus_from_gram(A, 2), genus_from_gram(A, 2)]))==1
 
   A = matrix(ZZ, 2, 2, [1, 2, 2, 3])
   @test (1, ZZ[-1;]) ==  Hecke._split_odd(A)
@@ -42,62 +51,62 @@
   g2 = ZZLocalGenus(2,[[0, 2, 3, 0, 0], [3, 1, 3, 1, 3]])
   @test g1 != g2
 
-  g1 = genus(A, 3)
-  g2 = genus(A, 3)
+  g1 = genus_from_gram(A, 3)
+  g2 = genus_from_gram(A, 3)
   @test g1 == g2
   @test iseven(g1)
   @test 4==dim(g1)
   @test 4 == rank(g1)
   @test 4 == dim(g1)
   @test 6 == det(g1)
-  g1 = genus(A,2)
+  g1 = genus_from_gram(A,2)
   @test det(g1) == 3*8
 
   A = diagonal_matrix(map(ZZ,[1,3,-3]))
-  @test excess(genus(A, 2)) == 2
-  @test excess(genus(A, 3)) == 0
-  @test excess(genus(A, 5)) == 0
-  @test excess(genus(A, 7)) == 0
-  @test excess(genus(A, 11)) == 0
+  @test excess(genus_from_gram(A, 2)) == 2
+  @test excess(genus_from_gram(A, 3)) == 0
+  @test excess(genus_from_gram(A, 5)) == 0
+  @test excess(genus_from_gram(A, 7)) == 0
+  @test excess(genus_from_gram(A, 11)) == 0
   A = 2*diagonal_matrix(map(ZZ,[1,3,-3]))
-  @test excess(genus(A, 2)) == 2
-  @test excess(genus(A, 3)) == 0
-  @test excess(genus(A, 5)) == 0
-  @test excess(genus(A, 7)) == 0
-  @test excess(genus(A, 11)) == 0
+  @test excess(genus_from_gram(A, 2)) == 2
+  @test excess(genus_from_gram(A, 3)) == 0
+  @test excess(genus_from_gram(A, 5)) == 0
+  @test excess(genus_from_gram(A, 7)) == 0
+  @test excess(genus_from_gram(A, 11)) == 0
 
   A = 2*diagonal_matrix(map(ZZ,[1,2,3,4]))
-  @test excess(genus(A, 2)) == 2
-  @test excess(genus(A, 3)) == 6
-  @test excess(genus(A, 5)) == 0
-  @test excess(genus(A, 7)) == 0
-  @test excess(genus(A, 11)) == 0
+  @test excess(genus_from_gram(A, 2)) == 2
+  @test excess(genus_from_gram(A, 3)) == 6
+  @test excess(genus_from_gram(A, 5)) == 0
+  @test excess(genus_from_gram(A, 7)) == 0
+  @test excess(genus_from_gram(A, 11)) == 0
 
   A = diagonal_matrix(map(ZZ,[2, 4, 18]))
-  G = genus(A, 2)
+  G = genus_from_gram(A, 2)
   @test level(G) == 4
 
   A = diagonal_matrix(map(ZZ,[2, 4, 18]))
-  G = genus(A, 2)
+  G = genus_from_gram(A, 2)
   @test norm(G) == 2
   @test scale(G) == 2
-  @test scale(genus(A, 3)) == 1
+  @test scale(genus_from_gram(A, 3)) == 1
   A = ZZ[0 1; 1 0]
-  @test norm(genus(A, 2)) == 2
+  @test norm(genus_from_gram(A, 2)) == 2
 
   A = diagonal_matrix(map(ZZ, [1, 2, 3]))
-  g = genus(A, 2)
+  g = genus_from_gram(A, 2)
   @test signature(g) == 5
-  g = genus(A, 3)
+  g = genus_from_gram(A, 3)
   @test signature(g) == 1
 
   A = matrix(ZZ, 2, 2, [1,1,1,2])
-  G2 = genus(A, 2)
+  G2 = genus_from_gram(A, 2)
   @test Hecke._is2adic_genus(G2._symbol)
   @test Hecke._is2adic_genus(G2)
   @test sprint(show, G2) isa String
   A = matrix(ZZ, 2, 2, [1,0,0,2])
-  G = genus(A)
+  G = genus_from_gram(A)
   @test 2 == det(G)
   @test !iseven(G)
   @test G != rescale(G, -1)
@@ -118,16 +127,16 @@
 
   @test length(integer_genera((2,2), 10, even=true))==0  # check that a bug in catesian_product_iterator is fixed
   @test 4 == length(integer_genera((4,0), 125, even=true))
-  G = genus(diagonal_matrix(map(ZZ,[2, 4, 18])))
+  G = genus_from_gram(diagonal_matrix(map(ZZ,[2, 4, 18])))
   @test 36 == level(G)
-  G = genus(diagonal_matrix(map(ZZ,[2, 4, 18])))
+  G = genus_from_gram(diagonal_matrix(map(ZZ,[2, 4, 18])))
   @test 2 == scale(G)
   @test 2 == norm(G)
 
-  G = genus(diagonal_matrix(map(ZZ,[6, 4, 18])))
+  G = genus_from_gram(diagonal_matrix(map(ZZ,[6, 4, 18])))
   @test norm(G) == 2
   @test sprint(show, G) isa String
-  G = genus(matrix(ZZ, 2, 2, [0, 1, 1, 0]))
+  G = genus_from_gram(matrix(ZZ, 2, 2, [0, 1, 1, 0]))
   @test norm(G) == 2
 
 
@@ -138,14 +147,14 @@
   @test all(hasse_invariant(g) == hasse_invariant(ambient_space(representative(g)),prime(g)) for g in Hecke._local_genera(5,2,2,0,2,true))
 
   A = diagonal_matrix(ZZRingElem[2, -4, 6, 8])
-  G = genus(A)
+  G = genus_from_gram(A)
   q1 = discriminant_group(G)
   q2 = discriminant_group(integer_lattice(gram=A))
 
   A = matrix(ZZ, 0, 0, [])
-  g2 = genus(A, 2)
-  g3 = genus(A, 3)
-  g = genus(A)
+  g2 = genus_from_gram(A, 2)
+  g3 = genus_from_gram(A, 3)
+  g = genus_from_gram(A)
   @test norm(g) == 0
   @test scale(g) == 0
   @test det(g) == 1
@@ -171,14 +180,14 @@
   @test rank(representative(g2))==0
 
 
-  g3 = genus(diagonal_matrix(map(ZZ,[1,3,27])), 3)
-  n3 = genus(matrix(ZZ,0,0,[]),3)
-  n5 = genus(matrix(ZZ,0,0,[]),5)
+  g3 = genus_from_gram(diagonal_matrix(map(ZZ,[1,3,27])), 3)
+  n3 = genus_from_gram(matrix(ZZ,0,0,[]),3)
+  n5 = genus_from_gram(matrix(ZZ,0,0,[]),5)
   @test g3 == direct_sum(n3, g3)
   @test_throws ArgumentError direct_sum(n3, n5)
   @test n3 == direct_sum(n3, n3)
   @test Hecke._species_list(g3) == [1, 1, 1]
-  h3 = genus(diagonal_matrix(map(ZZ,[1,3,9])), 3)
+  h3 = genus_from_gram(diagonal_matrix(map(ZZ,[1,3,9])), 3)
   @test Hecke._standard_mass(h3) ==  9//16
   @test direct_sum(g3,h3)==direct_sum(h3,g3)
 
@@ -224,7 +233,7 @@
   @test M_p(4, 5) == 625//1152
 
   A = diagonal_matrix(ZZRingElem[1, 1, 1, 1])
-  G = genus(A)
+  G = genus_from_gram(A)
   @test Hecke._standard_mass_squared(G) == (1//48)^2
 
   @test Hecke._quadratic_L_function_squared(1, -4) == (1//4)^2
@@ -253,9 +262,9 @@
 
 
   A = matrix(ZZ, 2, 2, [1, 1, 1, 2])
-  G = genus(A)
+  G = genus_from_gram(A)
   @test Hecke._isglobal_genus(G)
-  G = genus(diagonal_matrix(ZZRingElem[2, 2, 2, 2]))
+  G = genus_from_gram(diagonal_matrix(ZZRingElem[2, 2, 2, 2]))
   G._symbols[1]._symbol=[[0,2,3,0,0], [1,2,5,1,0]]
   @test !Hecke._isglobal_genus(G)
 
@@ -277,7 +286,7 @@
   G = integer_genera((8,0), 1, even=true)[1]
   @test mass(G) == 1//696729600
 
-  G = genus(diagonal_matrix(ZZRingElem[1, 3, 9]),3)
+  G = genus_from_gram(diagonal_matrix(ZZRingElem[1, 3, 9]),3)
   @test Hecke._mass_squared(G) == (9//8)^2
 
   # representatives, mass and genus enumeration
@@ -423,7 +432,7 @@
   end
   G = [genus(root_lattice(:D, j)) for j in [4,5,6,7]]
   @test all(g -> is_primary(g, 2), G)
-  @test all(g -> !is_unimodular(g), G)
+  @test all(!is_unimodular, G)
   j = any(g -> !is_elementary(g,2), G)
   @test j !== nothing
 
@@ -434,7 +443,7 @@ end
   # [CS99] 3rd edition, Chapter 15, 9.6 pp. 392
 
   A = diagonal_matrix(QQFieldElem[3, 16])
-  G = genus(A)
+  G = genus_from_gram(A)
   sym2 = local_symbols(G)[1]
   @test automorphous_numbers(sym2) == [3, 5]
 
@@ -448,21 +457,21 @@ end
   # The first supplementation rule is used here::
 
   A = diagonal_matrix(QQFieldElem[2, 2, 4])
-  G = genus(A)
+  G = genus_from_gram(A)
   sym = local_symbols(G)
   @test automorphous_numbers(sym[1]) == [1, 2, 3, 5, 7]
 
   # but not there::
 
   A = diagonal_matrix(QQFieldElem[2, 2, 32])
-  G = genus(A)
+  G = genus_from_gram(A)
   sym = local_symbols(G)
   @test automorphous_numbers(sym[1]) == [1, 2, 5]
 
   # Here the second supplementation rule is used::
 
   A = diagonal_matrix(QQFieldElem[2, 2, 64])
-  G = genus(A)
+  G = genus_from_gram(A)
   sym = local_symbols(G)
   @test automorphous_numbers(sym[1]) == [1, 2, 5]
 
@@ -550,7 +559,7 @@ end
   gen = @inferred integer_genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12)
   @test length(gen) == 8
   @test all(g -> det(g) == -4//3, gen)
-  @test all(g -> !is_integral(g), gen)
+  @test all(!is_integral, gen)
   @test all(g -> scale(g) in [1//9, 1//3, 2//9, 2//3], gen)
   gen = @inferred integer_genera((1, 1), 4//3, min_scale = 1//18, max_scale = 12, even = true)
   @test isempty(gen)
@@ -624,6 +633,15 @@ end
 @testset "Fix issues" begin
   ## Issue 1103
   @test sprint(show, "text/plain", genus(root_lattice(:E, 8), 2)) isa String
+
+  # embed_in_unimodular with ZZRingElem signature agrees with the Int version
+  S = root_lattice(:A, 2)
+  L1, S1, = embed_in_unimodular(S, ZZ(8), ZZ(0))
+  L2, S2, = embed_in_unimodular(S, 8, 0)
+  @test gram_matrix(L1) == gram_matrix(L2)
+  @test basis_matrix(S1) == basis_matrix(S2)
+  @test genus(L1) == genus(root_lattice(:E, 8))
+  @test is_primitive(L1, S1)
 end
 
 @testset "Canonical symbols" begin
@@ -654,4 +672,25 @@ end
   test2 = [hash(G, zero(UInt); use_canonical_symbol=false) for G in l2]
   @test all(g -> count(g2 -> ==(g, g2; use_canonical_symbol=false), l1) == 1, l1)
   @test all(g -> count(g2 -> ==(g, g2; use_canonical_symbol=false), l2) == 1, l2)
+end
+
+@testset "Fix enumeration odd indefinite lattice of rank 3" begin
+  s = Vector{Int}[[ 1, 0, 0, 0, -12, -102, 0, -102, -3 ],
+                  [ -2, 4, -2, 4, 67, -17, -2, -17, 73 ],
+                  [ -12, 6, 0, 6, 22, -6, 0, -6, 36 ],
+                  [ 1, 6, -3, 6, -12, 6, -3, 6, 222 ],
+                  [ 13, 5, 7, 5, 13, -25, 7, -25, -2 ],
+                  [ -1, 7, 0, 7, -1, 0, 0, 0, 27 ],
+                  [ 1, 0, 0, 0, -12, 6, 0, 6, 213 ],
+                  [ -2, 1, 17, 1, 13, 5, 17, 5, 13 ],
+                  [ 1, 15, 6, 15, 6, -9, 6, -9, 9 ],
+                  [ -4, 14, 0, 14, -1, 0, 0, 0, 27 ],
+                  [ -1, 7, 0, 7, -1, 0, 0, 0, 108 ],
+                  [ 8, 0, -14, 0, 18, -9, -14, -9, -25 ],
+                  [ -1, -8, 13, -8, 11, 11, 13, 11, 50 ]]
+
+  for m in s
+    L = integer_lattice(; gram=matrix(QQ, 3, 3, m))
+    @test length(genus_representatives(L)) == 2
+  end
 end

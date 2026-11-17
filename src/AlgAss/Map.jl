@@ -463,7 +463,7 @@ function (f::AbsAlgAssMor)(O::AlgAssAbsOrd)
   B = codomain(f)
   # dirty trick, because it does not work for orders
   J = ideal_from_lattice_gens(B, elem_type(B)[f(b) for b in O.basis_alg])
-  C = order(B, basis(J), check = false, isbasis = true)
+  C = order(B, basis(J), check = false, is_basis = true)
   return C
 end
 

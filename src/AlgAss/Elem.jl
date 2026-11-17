@@ -17,7 +17,7 @@ function AbstractAlgebra.promote_rule(U::Type{<:AbstractAssociativeAlgebraElem},
   end
 end
 
-function AbstractAlgebra.promote_rule(::Type{S}, ::Type{S}) where {T, S <: AbstractAssociativeAlgebraElem{T}}
+function AbstractAlgebra.promote_rule(::Type{S}, ::Type{S}) where {S <: AbstractAssociativeAlgebraElem}
   return S
 end
 
@@ -226,6 +226,14 @@ end
 function *(a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
   A = parent(a)
+  fl, j, c = _is_group_algebra_monomial(b)
+  if fl
+    return _mul_group_elem(a, A.base_to_group[j], Val(false), c)
+  end
+  fl, j, c = _is_group_algebra_monomial(a)
+  if fl
+    return _mul_group_elem(b, A.base_to_group[j], Val(true), c)
+  end
   if !_is_sparse(a)
     d = dim(A)
     v = Vector{T}(undef, d)
@@ -254,6 +262,72 @@ function *(a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
       s += r
     end
     return A(s)
+  end
+end
+
+function _is_group_algebra_monomial(a::GroupAlgebraElem)
+  if _is_sparse(a)
+    ca = a.coeffs_sparse::sparse_row_type(base_ring(parent(a)))
+    if length(ca) == 1
+      return true, ca.pos[1], ca.values[1]
+    end
+    i = isempty(ca) ? 1 : ca.pos[1]
+    return false, 0, ca[i]
+  end
+  ca = coefficients(a, copy = false)
+  j = 0
+  # A second nonzero coefficient rules out singleton support.
+  for i in 1:length(ca)
+    if !iszero(ca[i])
+      j != 0 && return (false, 0, ca[i])
+      j = i
+    end
+  end
+  return j == 0 ? (false, 0, ca[1]) : (true, j, ca[j])
+end
+
+# Integer coefficients can be copied without deepcopy's temporary IdDict.
+# TODO: Replace this helper with mutable_copy once it is available.
+_copy_group_algebra_coeff(c::ZZRingElem) = set!(ZZ(), c)
+_copy_group_algebra_coeff(c) = deepcopy(c)
+
+function *(a::GroupAlgebraElem{T, GroupAlgebra{T, S, R}}, g::R) where {T, S, R}
+  return _mul_group_elem(a, g, Val(false))
+end
+
+function *(g::R, a::GroupAlgebraElem{T, GroupAlgebra{T, S, R}}) where {T, S, R}
+  return _mul_group_elem(a, g, Val(true))
+end
+
+function _mul_group_elem(a::GroupAlgebraElem{T}, g, ::Val{left}, c = nothing) where {T, left}
+  if c !== nothing && isone(c)
+    return _mul_group_elem(a, g, Val(left))
+  end
+  A = parent(a)
+  @req parent(g) == group(A) "Parents don't match"
+  if _is_dense(a)
+    j = A.group_to_base[g]
+    mt = multiplication_table(A, copy = false)
+    ca = coefficients(a, copy = false)
+    v = Vector{T}(undef, dim(A))
+    # Each row and column of the multiplication table is a permutation.
+    for i in 1:dim(A)
+      k = left ? mt[j, i] : mt[i, j]
+      v[k] = c === nothing ? _copy_group_algebra_coeff(ca[i]) : (left ? c*ca[i] : ca[i]*c)
+    end
+    return A(v)
+  else
+    op = _op(A)
+    ca = a.coeffs_sparse::sparse_row_type(base_ring(A))
+    v = Tuple{Int, T}[]
+    sizehint!(v, length(ca))
+    for (i, ci) in ca
+      h = left ? op(g, A.base_to_group[i]) : op(A.base_to_group[i], g)
+      ci = c === nothing ? _copy_group_algebra_coeff(ci) : (left ? c*ci : ci*c)
+      push!(v, (__elem_index(A, h), ci))
+    end
+    # Translation can change the order of the support indices.
+    return A(sparse_row(base_ring(A), v))
   end
 end
 
@@ -354,6 +428,40 @@ function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
 end
 
 mul!(c::AbstractAssociativeAlgebraElem{T}, a::Union{ Int, ZZRingElem }, b::AbstractAssociativeAlgebraElem{T}) where {T} = mul!(c, b, a)
+
+function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::T, t::T) where {T}
+  @req parent(a) === parent(c) "Parents don't match"
+
+  ccoeffs = coefficients(c, copy = false)
+  acoeffs = coefficients(a, copy = false)
+  for i in 1:dim(parent(a))
+    ccoeffs[i] = addmul!(ccoeffs[i], acoeffs[i], b, t)
+  end
+  return c
+end
+
+function addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{Int, ZZRingElem}, t::T) where {T}
+  @req parent(a) === parent(c) "Parents don't match"
+
+  ccoeffs = coefficients(c, copy = false)
+  acoeffs = coefficients(a, copy = false)
+  for i in 1:dim(parent(a))
+    ccoeffs[i] = addmul!(ccoeffs[i], acoeffs[i], b, t)
+  end
+  return c
+end
+
+addmul!(c::AssociativeAlgebraElem{T}, a::T, b::AssociativeAlgebraElem{T}, t::T) where {T} = addmul!(c, b, a, t)
+
+addmul!(c::AssociativeAlgebraElem{T}, a::Union{Int, ZZRingElem}, b::AssociativeAlgebraElem{T}, t::T) where {T} = addmul!(c, b, a, t)
+
+addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::T) where {T} = addmul!(c, a, b, base_ring(parent(c))())
+
+addmul!(c::AssociativeAlgebraElem{T}, a::AssociativeAlgebraElem{T}, b::Union{Int, ZZRingElem}) where {T} = addmul!(c, a, b, base_ring(parent(c))())
+
+addmul!(c::AssociativeAlgebraElem{T}, a::T, b::AssociativeAlgebraElem{T}) where {T} = addmul!(c, b, a)
+
+addmul!(c::AssociativeAlgebraElem{T}, a::Union{Int, ZZRingElem}, b::AssociativeAlgebraElem{T}) where {T} = addmul!(c, b, a)
 
 function mul!(c::GroupAlgebraElem{T, S}, a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
   parent(a) != parent(b) && error("Parents don't match.")
@@ -479,7 +587,7 @@ function is_divisible(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeA
 end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
-function divexact(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol = :left; check::Bool=true)
+function divexact(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol; check::Bool=true)
   t, c = is_divisible(a, b, action)
   if !t
     error("Division not possible")
@@ -744,7 +852,7 @@ end
 (A::AbstractAssociativeAlgebra{T})(x::T) where {T <: AssociativeAlgebraElem} = x * one(A)
 
 # resolve ambiguity
-(A::AbstractAssociativeAlgebra{ZZRingElem})(x::ZZRingElem) = x * one(A)
+(A::AbstractAssociativeAlgebra{T})(x::ZZRingElem) where {ZZRingElem <: T <: RingElem} = x * one(A)
 
 
 ################################################################################
@@ -1063,7 +1171,7 @@ function iszero(a::AbstractAssociativeAlgebraElem)
   if _is_sparse(a)
     return length(a.coeffs_sparse) == 0
   end
-  return all(i -> iszero(i), coefficients(a, copy = false))
+  return all(iszero, coefficients(a, copy = false))
 end
 
 ################################################################################
@@ -1107,6 +1215,14 @@ function trred(a::AbstractAssociativeAlgebraElem)
     n = divexact(dim(A), d)
     m = isqrt(n)
     @assert m^2 == n
+    if iszero(base_ring(A)(m))
+      # The regular trace is m times the reduced trace, so division by m
+      # is unavailable here. Use the defining characteristic coefficient
+      # (Voight, Quaternion Algebras, Definition 7.8.9).
+      R = polynomial_ring(base_ring(A), "x"; cached = false)[1]
+      f = _reduced_charpoly_simple(a, R)
+      return -coeff(f, degree(f) - 1)
+    end
     return divexact(tr(a), m)
   else
     W = decompose(A)
@@ -1287,4 +1403,3 @@ function jordan_chevalley_decomposition(x::AbstractAssociativeAlgebraElem)
   u = x - v
   return u, v
 end
-

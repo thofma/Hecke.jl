@@ -22,6 +22,18 @@ end
   @test all(i->iszero(mp[i](b[i])), 1:length(b))
 end
 
+@testset "FldNum non-monic" begin
+  # integral closure over Z_(5) of a field given by a non-integral polynomial
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 - 1//5)
+  R = Hecke.localization(ZZ, ZZ(5))
+  O = integral_closure(R, K)
+  for c in basis(O, K), e in coefficients(minpoly(c))
+    @test iszero(e) || valuation(e, 5) >= 0
+  end
+  @test valuation(discriminant(O), R(5)) == 1
+end
+
 @testset "FldFin" begin
   for q = [GF(17), GF(next_prime(ZZRingElem(10)^30)), finite_field(5, 2)[1], finite_field(next_prime(ZZRingElem(10)^25), 2, "a", cached = false)[1]]
     qt, t = rational_function_field(q, "t", cached = false)

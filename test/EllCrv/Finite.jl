@@ -158,6 +158,102 @@
     E = elliptic_curve_from_j_invariant(a)
     @test !(@inferred is_supersingular(E))
     @inferred is_probable_supersingular(E)
+
+    # A j-invariant with complex multiplication by an order of discriminant d
+    # and class number 1 is supersingular exactly when p does not split in
+    # Q(sqrt(d)) (Deuring). Phi_2(-3375, X) has the double root -3375.
+    cm = [(-7, -3375), (-8, 8000), (-11, -32768), (-12, 54000),
+          (-16, 287496), (-19, -884736), (-27, -12288000), (-28, 16581375),
+          (-43, -884736000), (-67, -147197952000),
+          (-163, -262537412640768000)]
+    for p in [ZZ(1013), next_prime(ZZ(2)^61), next_prime(ZZ(2)^127 + 50)]
+      for K in [GF(p), GF(p, 2)], (d, j) in cm
+        E = elliptic_curve_from_j_invariant(K(j))
+        @test is_supersingular(E) == (kronecker_symbol(ZZ(d), p) != 1)
+      end
+    end
+
+    # the table of class number 1 j-invariants against the Hilbert class
+    # polynomials, and the walk (without the table) against Deuring's criterion
+    Zx, x = ZZ[:x]
+    @test length(Set(first.(Hecke._CLASS_NUMBER_ONE_J_INVARIANTS))) == 13
+    for (d, j) in Hecke._CLASS_NUMBER_ONE_J_INVARIANTS
+      @test hilbert_class_polynomial(d, Zx) == x - j
+    end
+    for p in [ZZ(1013), next_prime(ZZ(2)^61), next_prime(ZZ(2)^127 + 50)]
+      F = GF(p)
+      for (d, j) in Hecke._CLASS_NUMBER_ONE_J_INVARIANTS
+        @test Hecke._is_supersingular_prime_field(F(j)) ==
+          (kronecker_symbol(ZZ(d), p) != 1)
+      end
+    end
+
+    # every j in F_p; at (191, 150), (239, 68) and (359, 91) all three paths
+    # stay in F_p
+    for p in filter(is_prime, 5:400)
+      F = GF(p)
+      ss = roots(map_coefficients(F, supersingular_polynomial(p)))
+      @test all(F) do j
+        is_supersingular(elliptic_curve_from_j_invariant(j)) == (j in ss)
+      end
+    end
+
+    # large p: roots of Hilbert class polynomials H_{-q} for p inert in
+    # Q(sqrt(-q)) are supersingular (h(-q) odd, so one is in F_p); a point P
+    # with (p + 1)*P != 0 shows that a curve is ordinary
+    for p in [next_prime(ZZ(2)^61), next_prime(ZZ(2)^127 + 50)]
+      F = GF(p)
+      for q in [23, 31, 47, 59, 71, 79, 83, 103, 107, 127]
+        kronecker_symbol(ZZ(-q), p) == -1 || continue
+        r = roots(map_coefficients(F, hilbert_class_polynomial(-q, Zx)))
+        @test all(j -> is_supersingular(elliptic_curve_from_j_invariant(j)), r)
+      end
+      for j in F.(1:20)
+        E = elliptic_curve_from_j_invariant(j)
+        @test !is_zero((p + 1) * rand(rng, E))
+        @test !is_supersingular(E)
+      end
+    end
+
+    # the specialised modular polynomial and one step of a path
+    F = GF(1013, 2)
+    Fx, X = polynomial_ring(F, :X)
+    S, (x, y) = polynomial_ring(ZZ, [:x, :y])
+    Phi2 = map_coefficients(F, classical_modular_polynomial(S, 2))
+    for j in [F(-3375), F(8000), gen(F), gen(F) + 5]
+      a, b, c = Hecke._modular_polynomial_2(j)
+      f = X^3 + a*X^2 + b*X + c
+      @test f == evaluate(Phi2, [Fx(j), X])
+      for back in roots(f)
+        step = Hecke._next_2_isogeny_step(j, back)
+        if step === nothing
+          @test length(roots(divexact(f, X - back))) == 0
+        else
+          @test (X - back) * (X - step[1]) * (X - step[2]) == f
+        end
+      end
+    end
+  end
+
+  @testset "is_supersingular: different base field types" begin
+    for K in [finite_field(37, 2, :a; cached = false)[1],
+              finite_field(ZZ(37), 2, :a; cached = false)[1],
+              Native.finite_field(37, 2, :a; cached = false)[1],
+              Native.finite_field(ZZ(37), 2, :a; cached = false)[1],
+              GF(37, 2; cached = false),
+              GF(ZZ(37), 2; cached = false),
+              Native.GF(37, 2; cached = false),
+              Native.GF(ZZ(37), 2; cached = false)]
+      # F_{37^2} = F_{37}(sqrt(15))
+      # 3 +- sqrt(15): supersingular, roots of x^2 + 31*x + 31
+      # 13 +- 5*sqrt(15): ordinary, roots of x^2 + 11*x + 16
+      #   Phi_2(j, Y) splits over F_{37^2}
+      Kx, x = polynomial_ring(K, :x; cached = false)
+      j1 = first(roots(x^2 + 31*x + 31))
+      @test is_supersingular(elliptic_curve_from_j_invariant(j1))
+      j2 = first(roots(x^2 + 11*x + 16))
+      @test !is_supersingular(elliptic_curve_from_j_invariant(j2))
+    end
   end
 
   @testset "Order of points" begin
@@ -280,5 +376,43 @@
     Q = rand(1:1031352) * P
     m = disc_log(P, Q)
     @test m * P == Q
+  end
+
+  @testset "Curves with a point of given order" begin
+    # (0, 0) of order exactly N over prime fields, extension fields and
+    # characteristics 2 and 3 not dividing N; N beyond 30; the default rng;
+    # the exhaustive fallback; the limits
+    rng = Random.Xoshiro(1)
+    # order exactly N, without counting the points of E
+    has_order(P, N) = is_infinite(N * P) &&
+                      all(l -> !is_infinite(div(N, l) * P), prime_divisors(N))
+    fields = [GF(101), GF(next_prime(ZZ(2)^61)), GF(7, 3), GF(2, 10), GF(3, 7)]
+    for N in 2:30, K in fields
+      is_divisible_by(ZZ(N), characteristic(K)) && continue
+      E, P = elliptic_curve_with_point_of_order(K, N; rng)
+      @test base_field(E) === K
+      @test has_order(P, N)
+    end
+    for N in (31, 40), K in fields[1:2]
+      E, P = elliptic_curve_with_point_of_order(K, N; rng)
+      @test has_order(P, N)
+    end
+    E, P = elliptic_curve_with_point_of_order(GF(1009), 11)
+    @test order(P) == 11
+    K = GF(7)
+    none = Vector{elem_type(K)}[]
+    found = (u, all) -> all && u == K(3) ? [[K(u)]] : none
+    @test Hecke._first_curve(found, K, rng) == [K(3)]
+    @test Hecke._first_curve((u, all) -> none, K, rng) === nothing
+    curve = elliptic_curve_with_point_of_order
+    # no curve over F_2 has 13 points or more, by the Hasse bound
+    @test_throws ErrorException curve(GF(2), 13)
+    # 61 > 2 + 1 + 2 sqrt(2): an error before F_61 is computed
+    @test_throws ErrorException curve(GF(2), 61)
+    @test !haskey(Hecke._X1_RAW_FORMS, 61)
+    @test_throws ArgumentError curve(GF(101), 1)
+    @test_throws ArgumentError curve(GF(101), ZZ(2)^70)
+    @test_throws ArgumentError curve(GF(7), 14)
+    @test_throws ArgumentError curve(GF(2, 3), 6)
   end
 end

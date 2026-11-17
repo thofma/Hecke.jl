@@ -25,7 +25,7 @@
     end
     if length(action_of_gens) > 0
       z.action_of_gens = action_of_gens
-      if !isdefined(z.dim)
+      if length(action_of_basis) == 0
         z.dim = nrows(action_of_gens[1])
       end
     end
@@ -651,7 +651,7 @@ function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
   end
   B = _basis_of_hom(W, V)
   if length(B) == 0
-    return false, hom(V, W, zero_matrix(br, dim(W)); check=false)
+    return false, hom(V, W, zero_matrix(br, dim(V), dim(W)); check=false)
   end
   l = length(B)
   for i in 1:50

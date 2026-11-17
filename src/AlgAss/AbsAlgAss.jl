@@ -754,7 +754,7 @@ of the basis elements of $A$ and a map from $B$ to $A$.
 """
 function regular_matrix_algebra(A::Union{ StructureConstantAlgebra, GroupAlgebra })
   K = base_ring(A)
-  B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], isbasis = true)
+  B = matrix_algebra(K, [ representation_matrix(A[i], :right) for i = 1:dim(A) ], is_basis = true)
   return B, hom(B, A, identity_matrix(K, dim(A)), identity_matrix(K, dim(A)); check = false)
 end
 
@@ -938,33 +938,21 @@ end
 #
 ################################################################################
 
-# This is the generic fallback which constructs an associative algebra
+# Generic fallback; the restrictions to proper subfields are in ChangeRing.jl
 @doc raw"""
     restrict_scalars(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, Q::QQField)
     restrict_scalars(A::AbstractAssociativeAlgebra{fqPolyRepFieldElem}, Fp::fpField)
     restrict_scalars(A::AbstractAssociativeAlgebra{FqPolyRepFieldElem}, Fp::EuclideanRingResidueField{ZZRingElem})
-      -> StructureConstantAlgebra, Function, Function
+      -> StructureConstantAlgebra, Map
 
 Given an algebra $A$ over a field $L$ and the prime field $K$ of $L$, this
-function returns the restriction $B$ of $A$ to $K$ and maps from $A$ to $B$
-and from $B$ to $A$.
+function returns the restriction $B$ of $A$ to $K$ and the morphism $B \to A$.
+If $K = L$, it returns $A$ and the identity of $A$.
 """
-function restrict_scalars(A::AbstractAssociativeAlgebra{T}, K::Field) where {T}
-  #K == base_ring(A) && error("Not yet implemented")
-  B, BtoA = StructureConstantAlgebra(A)::Tuple{StructureConstantAlgebra{T}, morphism_type(StructureConstantAlgebra{T}, typeof(A))}
-  C, BtoC, CtoB = restrict_scalars(B, K)
-
-  function CtoA(x::AbstractAssociativeAlgebraElem)
-    @assert parent(x) === C
-    return BtoA(CtoB(x))
-  end
-
-  function AtoC(x::AbstractAssociativeAlgebraElem)
-    @assert parent(x) === A
-    return BtoC(BtoA\x)
-  end
-
-  return C, AtoC, CtoA
+function restrict_scalars(A::AbstractAssociativeAlgebra, K::Field)
+  @req K == base_ring(A) "Restriction of scalars from $(base_ring(A)) to $K " *
+                         "not implemented"
+  return A, id_hom(A)
 end
 
 ################################################################################
@@ -1300,7 +1288,8 @@ function skolem_noether_conjugator(
   end
   sn = ker[1]
   while !first(is_invertible(sn))
-    cc = [rand(base_ring(alg), -length(ker):length(ker)) for _ in 1:length(ker)]
+    nk = length(ker)
+    cc = [rand(base_ring(alg), -nk:nk) for _ in 1:nk]
     sn = sum(cc .* ker)
   end
   for x in basis(domain(emb1))

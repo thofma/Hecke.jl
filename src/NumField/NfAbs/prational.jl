@@ -96,7 +96,7 @@ function _mod(Zell2x, u::FacElem, dpoly, dpolymodl, Zellx; D = Dict{AbsSimpleNum
   res = one(Zell2x)
   w = Zellx()
   for (b, e) in u
-    v = get!(D, b) do
+    v0 = get!(D, b) do
       _mod(Zell2x, b, dpoly, dpolymodl, Zellx)
     end
     if e < 0
@@ -113,7 +113,7 @@ function _mod(Zell2x, u::FacElem, dpoly, dpolymodl, Zellx; D = Dict{AbsSimpleNum
         twowinv2 = 2*winv2
         Hecke.mul!(winv2, winv2, winv2)
         Hecke.mod!(winv2, winv2, dpoly)
-        Hecke.mul!(winv2, winv2, v)
+        Hecke.mul!(winv2, winv2, v0)
         Hecke.mod!(winv2, winv2, dpoly)
         _v = sub!(twowinv2, twowinv2, winv2)
         #_v = mod(2*winv2 - v * winv2^2, dpoly)
@@ -124,6 +124,8 @@ function _mod(Zell2x, u::FacElem, dpoly, dpolymodl, Zellx; D = Dict{AbsSimpleNum
         _v
       end
       e = -e
+    else
+      v = v0
     end
     res = Hecke.mul!(res, res, powermod(v, e, dpoly))
     res = Hecke.mod!(res, res, dpoly)
@@ -263,7 +265,7 @@ function _schirokauer_map_data_generic(K, u::Vector, ell, ell2, OK)
   ZZy, = ZZ[:y]
   gmodell2 = change_base_ring(base_ring(Zell2x), g; parent = Zell2x)
   gmodell = change_base_ring(base_ring(Zellx), g; parent = Zellx)
-  sort!(lP, by = P -> norm(P))
+  sort!(lP, by = norm)
   # We do the computations prime ideal by prime ideal.
   # We sort the prime ideals, so that we can reuse the powers u^norm(P) in case
   # the prime ideal has the same norm as the previous one
@@ -452,7 +454,7 @@ function _p_rationality_context(K::AbsSimpleNumField; GRH::Bool = false, fundame
   tor = FacElem(torsion_units_generator(K))
   maxindepnotmaximal = ZZRingElem[]
   if class_number === nothing
-    classnumber = Hecke.class_number(OK; GRH)
+    classnumber = order(class_group(OK; GRH)[1])
   else
     classnumber = class_number
   end
@@ -470,14 +472,15 @@ function _p_rationality_context_normal(K::AbsSimpleNumField; GRH::Bool = false, 
   tor = FacElem(torsion_units_generator(K))
   maxindepnotmaximal = ZZRingElem[]
   if class_number === nothing
-    classnumber = Hecke.class_number(OK; GRH)
+    classnumber = order(class_group(OK; GRH)[1])
   else
     classnumber = class_number
   end
   autfull = automorphism_list(K)
   aut = _pick_automorphisms(K)
   #@info "Computing random Minkowski unit"
-  mink = _random_cyclic_subgroup(K, aut, us)
+  # without units there is no Minkowski unit
+  mink = isempty(us) ? nothing : _random_cyclic_subgroup(K, aut, us)
 
   return pRationalityTestGenericCtx(K, us, maxindepnotmaximal, mink, tor, aut, classnumber)
 end
@@ -575,6 +578,9 @@ _nf(K) = K.K
 
 function _dim_image_of_schirokauer_map(_K::pRationalityTestGenericCtx, us, p)
   K = _nf(_K)
+  if _K.minkowski === nothing
+    return _dim_image_of_schirokauer_map(K, us, p)
+  end
   rK = Hecke.unit_group_rank(K)
   try
     fl, _, dimimage  = _schirokauer_map_data_minkowski_unit(K, _K.minkowski, p, _K.aut; new = true)
@@ -599,6 +605,7 @@ function _dim_image_of_schirokauer_map(K::AbsSimpleNumField, us, p)
 end
 
 function _dim_image_of_eta_map(K, us, p; OK = lll(maximal_order(K)))
+  isempty(us) && return 0
   U, f = _create_eta_map(K, p; OK = OK)
   V, = sub(U, f.(us))
   r = rank(V, p)
@@ -704,7 +711,7 @@ function _is_p_rational(K::Union{pRationalityTestGenericCtx, AbsSimpleNumField},
   _, cK = signature(K)
 
   # (3)
-  if cK == 0 && is_tamely_ramified(K, p) # this is at most tamely ramified
+  if cK == 0 && is_tamely_ramified(_nf(K), p) # this is at most tamely ramified
     return false
   end
 

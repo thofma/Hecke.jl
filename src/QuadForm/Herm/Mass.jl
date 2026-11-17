@@ -290,7 +290,8 @@ function _standard_mass(L::HermLat, prec::Int = 10)
   local relzeta::ArbFieldElem
 
   while true
-    relzeta = prod(_L_function(E, 1 - i, wprec) for i in 1:2:m; init = one(ArbField(wprec, cached = false)))
+    w = wprec
+    relzeta = prod(_L_function(E, 1 - i, w) for i in 1:2:m; init = one(ArbField(w, cached = false)))
     if radiuslttwopower(relzeta * _stdmass, -prec)
       break
     end

@@ -74,7 +74,8 @@ function Base.rand(P::LineEnumCtx)
     v = rand(K, n)
   end
   j = findfirst(!iszero, v)
-  map!(x -> x*inv(v[j]), v, v)
+  vj_inv = inv(v[j])
+  map!(x -> x*vj_inv, v, v)
   return v
 end
 
@@ -412,7 +413,7 @@ end
 ################################################################################
 
 function inc!(a::BigInt)
-  ccall((:__gmpz_add_ui, :libgmp), Nothing,
+  ccall((:__gmpz_add_ui, Base.GMP.libgmp), Nothing,
         (Ref{BigInt}, Ref{BigInt}, UInt), a, a, UInt(1))
   return a
 end
@@ -427,7 +428,7 @@ end
 function set!(a::fpMatrix, z::Vector{fpFieldElem})
   @assert ncols(a) == length(z)
   for i in 1:length(z)
-    Nemo.setindex_raw!(a, z[i].data, 1, i) # no reduction necessary
+    Nemo.setindex_raw!(a, data(z[i]), 1, i) # no reduction necessary
   end
 end
 
@@ -449,7 +450,7 @@ function _normalize!(x::fpMatrix)
 
     for j in (piv+1):ncols(x)
       el = x[j] * ell
-      Nemo.setindex_raw!(x, el.data, 1, j)
+      Nemo.setindex_raw!(x, data(el), 1, j)
     end
     Nemo.setindex_raw!(x, UInt(1), 1, piv)
   end

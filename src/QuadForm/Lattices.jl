@@ -1430,6 +1430,12 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
 
   E = base_ring(ambient_space(L))
 
+  if rank(L) == 0
+    L.automorphism_group_generators = [identity_matrix(E, 0)]
+    L.automorphism_group_order = one(ZZ)
+    return nothing
+  end
+
   ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
   @assert isone(generatorsL[1])
 
@@ -1510,10 +1516,10 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
                             for g in t_gens)
 
   pm = pseudo_matrix(L)
-  C = coefficient_ideals(pm)
+  CI = coefficient_ideals(pm)
 
   for g in t_gens
-    @hassert :Lattice 1 all(g[i, j] in C[j] * inv(C[i])
+    @hassert :Lattice 1 all(g[i, j] in CI[j] * inv(CI[i])
                               for i in 1:nrows(g), j in 1:nrows(g))
   end
 
@@ -1626,7 +1632,8 @@ performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
 function is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0)
-  if is_definite(L)
+  rank(L) == rank(M) || return false
+  if rank(L) == 0 || is_definite(L)
     return is_isometric_with_isometry(L, M; depth = depth, bacher_depth = bacher_depth)[1]
   end
   genus(L) == genus(M) || return false
@@ -1666,6 +1673,12 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
   K = base_field(E)
   @assert base_ring(V) == base_ring(W)
   @assert base_ring(L) == base_ring(M)
+  if rank(L) != rank(M)
+    return false, zero_matrix(E, 0, 0)
+  end
+  if rank(L) == 0
+    return true, zero_matrix(E, 0, 0)
+  end
   @req is_definite(L) "Only implemented for definite lattices"
   ZgramL, scalarsL, BabsmatL, generatorsL = Zforms(L)
   ZgramM, scalarsM, BabsmatM, generatorsM = Zforms(M, generatorsL)
@@ -1849,7 +1862,7 @@ end
 ################################################################################
 
 @doc raw"""
-    direct_sum(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
+    direct_sum(x::T, y::T...) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
     direct_sum(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
@@ -1874,10 +1887,10 @@ function direct_sum(x::Vector{T};cached::Bool=true) where T <: AbstractLat
   return lattice(W, H), inj
 end
 
-direct_sum(x::Vararg{AbstractLat};cached::Bool=true) = direct_sum(collect(x);cached)
+direct_sum(x::AbstractLat, y::AbstractLat...; cached::Bool=true) = direct_sum(collect((x, y...)); cached)
 
 @doc raw"""
-    direct_product(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
+    direct_product(x::T, y::T...) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
     direct_product(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
@@ -1902,10 +1915,10 @@ function direct_product(x::Vector{T};cached::Bool=true) where T <: AbstractLat
   return lattice(W, H), proj
 end
 
-direct_product(x::Vararg{AbstractLat}) = direct_product(collect(x))
+direct_product(x::AbstractLat, y::AbstractLat...) = direct_product(collect((x, y...)))
 
 @doc raw"""
-    biproduct(x::Vararg{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::T, y::T...) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
     biproduct(x::Vector{T}) where T <: AbstractLat -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian lattices $L_1, \ldots, L_n$,
@@ -1930,7 +1943,7 @@ function biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractLat
   return lattice(W, H), inj, proj
 end
 
-biproduct(x::Vararg{AbstractLat}; cached::Bool=true) = biproduct(collect(x);cached)
+biproduct(x::AbstractLat, y::AbstractLat...; cached::Bool=true) = biproduct(collect((x, y...)); cached)
 
 function _biproduct(x::Vector{T}) where T <: AbstractLat
   px = pseudo_matrix.(x)

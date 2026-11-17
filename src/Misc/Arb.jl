@@ -25,17 +25,17 @@ function muleq!(z::ArbFieldElem, x::ArbFieldElem, y::ZZRingElem)
 end
 
 function abs!(z::ArbFieldElem, x::ArbFieldElem)
-  ccall((:arb_abs, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, parent(x).prec)
+  ccall((:arb_abs, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, precision(parent(x)))
   return nothing
 end
 
 function abs!(z::ArbFieldElem, x::AcbFieldElem)
-  ccall((:acb_abs, libflint), Nothing, (Ref{ArbFieldElem}, Ref{AcbFieldElem}, Int), z, x, parent(x).prec)
+  ccall((:acb_abs, libflint), Nothing, (Ref{ArbFieldElem}, Ref{AcbFieldElem}, Int), z, x, precision(parent(x)))
   return nothing
 end
 
 function log!(z::ArbFieldElem, x::ArbFieldElem)
-  ccall((:arb_log, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, parent(x).prec)
+  ccall((:arb_log, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, precision(parent(x)))
   return nothing
 end
 

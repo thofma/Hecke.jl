@@ -84,6 +84,15 @@
   @test isempty(intersect(m1, m2, m3))
   intersect!(m3, m1, m4)
   @test length(m3) == 1
+
+  # last argument is not a multi-set
+  m = multiset(Int[1, 1, 2])
+  @test m + [1] == multiset(Int[1, 1, 1, 2])
+  @test union(m, [1, 3]) == multiset(Int[1, 1, 2, 3])
+  @test union(m, m, Set([3])) == multiset(Int[1, 1, 2, 3])
+  @test intersect(m, [1, 3]) == multiset(Int[1])
+  @test intersect(m, Set([1, 3])) == multiset(Int[1])
+  @test intersect(m, m, [2]) == multiset(Int[2])
 end
 
 @testset "Sub-multi-set iterator" begin
@@ -128,4 +137,12 @@ end
   @test eltype(S) == typeof(s)
   @test length(collect(S)) == length(S)
   @test length(iterate(S, iterate(S)[2])[1]) == 2
+
+  # indexing sub-sets of a given size agrees with the iteration order
+  for n in 0:6, k in 0:n+1
+    S = subsets(Set(1:n), k)
+    @test [S[i] for i in 1:length(S)] == collect(S)
+    @test_throws BoundsError S[0]
+    @test_throws BoundsError S[length(S) + 1]
+  end
 end

@@ -50,7 +50,19 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   return S
 end
 
-function _hnf(x::T, shape::Symbol = :upperright) where {T <: MatElem}
+function _hnf(x::T; shape::Symbol = :upperright, trim::Bool = false) where {T <: MatElem}
+  x = _hnf(x, shape)
+  if trim
+    if shape === :lowerleft
+      return trim_lowerleft(x)
+    else
+      return trim_upperright(x)
+    end
+  end
+  return x
+end
+
+function _hnf(x::T, shape::Symbol) where {T <: MatElem}
   if shape == :lowerleft
     h = hnf(reverse_cols(x))
     reverse_cols!(h)
@@ -73,8 +85,7 @@ function _hnf_with_transform(x::T, shape::Symbol = :upperright) where {T <: MatE
   return hnf_with_transform(x)::Tuple{T, T}
 end
 
-
-function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
+function _hnf!(x::T, shape::Symbol) where {T <: MatElem}
   if shape == :lowerleft
     reverse_cols!(x)
     hnf!(x)
@@ -86,7 +97,19 @@ function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   return x::T
 end
 
-function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem, shape::Symbol = :upperright)
+function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem; shape::Symbol = :upperright, trim::Bool = false)
+  x = _hnf_modular_eldiv(x, m, shape)
+  if trim
+    if shape === :lowerleft
+      return trim_lowerleft(x)
+    else
+      return trim_upperright(x)
+    end
+  end
+  return x
+end
+
+function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem, shape::Symbol)
   if shape == :lowerleft
     h = hnf_modular_eldiv!(reverse_cols(x), m)
     reverse_cols!(h)
@@ -389,8 +412,8 @@ function mult_by_2pow_diag!(a::Matrix{BigFloat}, d::ZZMatrix, R=_RealRings[Threa
   tmp_mpz::BigInt = R.z1
   for i = 1:s[1]
       for j = 1:s[2]
-          e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}), tmp_mpz, a[i, j])
-          ccall((:mpfr_set_z_2exp, :libmpfr), Nothing, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i, j], tmp_mpz, e + Clong(Int(d[1, j])), __get_rounding_mode())
+          e = ccall((:mpfr_get_z_2exp, Base.MPFR.libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}), tmp_mpz, a[i, j])
+          ccall((:mpfr_set_z_2exp, Base.MPFR.libmpfr), Nothing, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i, j], tmp_mpz, e + Clong(Int(d[1, j])), __get_rounding_mode())
       end
   end
 end
@@ -416,9 +439,9 @@ function round_scale!(b::ZZMatrix, a::Matrix{BigFloat}, l::Int, R=_RealRings[Thr
       for j = 1:s[2]
           e = a[i, j].exp
           a[i, j].exp += l
-          ccall((:mpfr_round, :libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), tmp_mpfr, a[i, j], rd)
+          ccall((:mpfr_round, Base.MPFR.libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), tmp_mpfr, a[i, j], rd)
           a[i, j].exp = e
-          f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
+          f = ccall((:mpfr_get_z_2exp, Base.MPFR.libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
               tmp_mpz, tmp_mpfr)
           ccall((:fmpz_set_mpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
           if f > 0
@@ -1002,13 +1025,55 @@ end
 #
 ################################################################################
 
-# we avoid to compute twice the minpoly in case of finite order
-function _has_finite_multiplicative_order(f)
-  @assert is_square(f)
-  chi = minpoly(f)
-  !Hecke.is_squarefree(chi) && return (false, [Pair(chi, 1)])
-  fact = collect(factor(chi))
-  return all(p -> is_cyclotomic_polynomial(p[1]), fact), fact
+# All pairs `(n, euler_phi(n))` with `euler_phi(n) <= d`.
+function _euler_phi_at_most(d::Int)
+  res = [(1, 1)]
+  for p in PrimesSet(2, d + 1)
+    for i in 1:length(res)
+      n, e = res[i]
+      q, f = p, p - 1
+      while e * f <= d
+        push!(res, (n * q, e * f))
+        q *= p
+        f *= p
+      end
+    end
+  end
+  return res
+end
+
+# Return the multiplicative order of `f` if it is finite, `-1` if `f` is not
+# invertible over its base ring, and `0` otherwise.
+#
+# Dividing the cyclotomic factors off the characteristic polynomial takes
+# 4 us in degree 8, factoring it 50 us. If nothing remains, `f` has finite
+# order if and only if `f^L` is one, where `L` is the lcm of the orders of
+# the eigenvalues.
+function _multiplicative_order(f::Union{ZZMatrix, QQMatrix})
+  is_one(f) && return ZZ(1)
+  # involutions are common and cost a single product
+  is_one(f * f) && return ZZ(2)
+  chi = charpoly(f)
+  is_unit(constant_coefficient(chi)) || return ZZ(-1)
+  if chi isa QQPolyRingElem
+    is_one(denominator(chi)) || return ZZ(0)
+    chi = numerator(chi)
+  end
+  x = gen(parent(chi))
+  L = ZZ(1) # can exceed `typemax(Int)`
+  for (n, e) in _euler_phi_at_most(degree(chi))
+    e > degree(chi) && continue
+    c = cyclotomic(n, x)
+    b, q = divides(chi, c)
+    while b
+      L = lcm(L, n)
+      chi = q
+      b, q = divides(chi, c)
+    end
+  end
+  is_one(chi) || return ZZ(0)
+  is_one(f^L) || return ZZ(0)
+  return L
 end
 
 @doc raw"""
@@ -1043,7 +1108,7 @@ false
 """
 function has_finite_multiplicative_order(f::Union{ZZMatrix, QQMatrix})
   @req is_square(f) "Matrix must be square"
-  return _has_finite_multiplicative_order(f)[1]
+  return _multiplicative_order(f) > 0
 end
 
 @doc raw"""
@@ -1078,19 +1143,11 @@ infinity
 ```
 """
 function multiplicative_order(f::Union{ZZMatrix, QQMatrix})
-  @req is_invertible(f) "Matrix must be invertible"
-  bool, fact = _has_finite_multiplicative_order(f)
-  bool || return PosInf()
-  degs = unique([degree(p[1]) for p in fact])
-  exps = Int.(euler_phi_inv(degs[1]))
-  for i in 1:length(degs)
-    union!(exps, Int.(euler_phi_inv(degs[i])))
-  end
-  maxdeg = lcm(exps)
-  divmd = sort(divisors(maxdeg))
-  n = findfirst(k -> isone(f^k), divmd)
-  @assert n !== nothing
-  return divmd[n]
+  @req is_square(f) "Matrix must be square"
+  n = _multiplicative_order(f)
+  @req n >= 0 "Matrix must be invertible"
+  is_zero(n) && return PosInf()
+  return Int(n)
 end
 
 ################################################################################

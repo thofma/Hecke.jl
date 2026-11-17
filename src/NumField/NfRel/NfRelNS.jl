@@ -323,7 +323,7 @@ function Nemo.add!(c::RelNonSimpleNumFieldElem{T}, a::RelNonSimpleNumFieldElem{T
   return c
 end
 
-function Base.hash(a::RelNonSimpleNumFieldElem{AbsSimpleNumFieldElem}, b::UInt)
+function Base.hash(a::RelNonSimpleNumFieldElem, b::UInt)
   return hash(a.data, b)
 end
 
@@ -589,6 +589,7 @@ function resultant(f::UniversalPolyRingElem, g::UniversalPolyRingElem, x::Univer
 end
 
 function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
+  check_parent(f, g)
   Kt = parent(f)
   gKt = gens(Kt)
   n = nvars(Kt)
@@ -619,11 +620,9 @@ function resultant(f::MPolyRingElem, g::MPolyRingElem, i::Int)
   return evaluate(res, new_vals)
 end
 
-function rand(L::RelNonSimpleNumField, rg::AbstractUnitRange)
-  B = absolute_basis(L)
-  return rand(B, rg)
+function ConformanceTests.generate_element(L::RelNonSimpleNumField)
+  return rand(L, -10:10)
 end
-
 
 function mod(a::RelNonSimpleNumFieldElem{T}, p::ZZRingElem) where T
   K = parent(a)
@@ -660,13 +659,7 @@ end
 
 #trivia, missing in RelSimpleNumField
 function basis(K::RelSimpleNumField)
-  a = gen(K)
-  z = one(K)
-  b = elem_type(K)[z, a]
-  while length(b) < degree(K)
-    push!(b, b[end]*a)
-  end
-  return b
+  return powers(gen(K), degree(K) - 1)
 end
 
 function (K::RelNonSimpleNumField)(a::Vector)

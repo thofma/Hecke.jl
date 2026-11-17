@@ -721,6 +721,17 @@ end
 #
 ################################################################################
 
+function Base.:(==)(f::TorQuadModuleMap, g::TorQuadModuleMap)
+  return domain(f) === domain(g) && codomain(f) === codomain(g) &&
+         abelian_group_homomorphism(f) == abelian_group_homomorphism(g)
+end
+
+function hash(x::TorQuadModuleMap, u::UInt)
+  u = hash(domain(x), u)
+  u = hash(codomain(x), u)
+  return hash(abelian_group_homomorphism(x), u)
+end
+
 @doc raw"""
     hom(
       T::TorQuadModule,
@@ -1488,7 +1499,7 @@ function sub(T::TorQuadModule, gens::Vector{TorQuadModuleElem})
     V = ambient_space(T.cover)
     _gens_mat = matrix(QQ, _gens)
     gens_new = [basis_matrix(T.rels); _gens_mat]::QQMatrix
-    cover = lattice(V, gens_new; isbasis = false)
+    cover = lattice(V, gens_new; is_basis = false)
   else
     cover = T.rels
     _gens = nothing
@@ -1504,7 +1515,7 @@ end
 function _sub(T::TorQuadModule, _gens_mat::QQMatrix)
   V = ambient_space(T.cover)
   gens_new = [basis_matrix(T.rels); _gens_mat]::QQMatrix
-  cover = lattice(V, gens_new; isbasis = false)
+  cover = lattice(V, gens_new; is_basis = false)
   S = torsion_quadratic_module(cover, T.rels;
                                modulus=modulus_bilinear_form(T),
                                modulus_qf=modulus_quadratic_form(T),
@@ -1705,8 +1716,8 @@ function rescale(T::TorQuadModule, k::RingElement; cached=false)
   @req !iszero(k) "Parameter ($k) must be non-zero"
   C = cover(T)
   V = rescale(ambient_space(C), k; cached=false)
-  M = lattice(V, basis_matrix(C); check=false, isbasis=true)
-  N = lattice(V, basis_matrix(T.rels); check=false, isbasis=true)
+  M = lattice(V, basis_matrix(C); check=false, is_basis=true)
+  N = lattice(V, basis_matrix(T.rels); check=false, is_basis=true)
   gene = ngens(T) == 0 ? nothing : lift.(gens(T))
   return torsion_quadratic_module(M, N; gens = gene,
                                         modulus = abs(k)*modulus_bilinear_form(T),
@@ -1780,12 +1791,12 @@ function normal_form(
     end
 
     D1, U1 = _normalize(D, ZZ(p), false)
-    UR = U1 * UR
+    U1R = U1 * UR
     #apply U to the generators
-    n1 = ncols(UR)
+    n1 = ncols(U1R)
     Gp =  gens(D_p);
-    for i in 1:nrows(UR)
-      g = sum(lift(UR[i,j]) * Gp[j] for j in 1:ncols(UR))
+    for i in 1:nrows(U1R)
+      g = sum(lift(U1R[i,j]) * Gp[j] for j in 1:ncols(U1R))
       push!(normal_gens, I_p(g))
     end
   end
@@ -1959,7 +1970,7 @@ function _is_genus_with_genus(
       # get rid of denominators without changing the local equivalence class
       map_entries!(x -> x*dp, G_p, G_p)
       G_pZZ = change_base_ring(ZZ, G_p)
-      genus_p = genus(G_pZZ, p, valuation(elementary_divisors(D)[end], p))
+      genus_p = genus_from_gram(G_pZZ, p, valuation(elementary_divisors(D)[end], p))
     else
       genus_p = ZZLocalGenus(p, Vector{Int}[])
     end
@@ -2305,7 +2316,11 @@ end
 
 @doc raw"""
     direct_sum(
-      x::Union{Vector{TorQuadModule}, Vararg{TorQuadModule}};
+      x::Vector{TorQuadModule};
+      as_bilinear_module::Bool=false
+    ) -> TorQuadModule, Vector{TorQuadModuleMap}
+    direct_sum(
+      x::TorQuadModule, y::TorQuadModule...;
       as_bilinear_module::Bool=false
     ) -> TorQuadModule, Vector{TorQuadModuleMap}
 
@@ -2336,11 +2351,15 @@ function direct_sum(
   return T, inj
 end
 
-direct_sum(x::Vararg{TorQuadModule}; cached::Bool=false, as_bilinear_module::Bool=false) = direct_sum(collect(x); cached, as_bilinear_module)
+direct_sum(x::TorQuadModule, y::TorQuadModule...; cached::Bool=false, as_bilinear_module::Bool=false) = direct_sum(collect((x, y...)); cached, as_bilinear_module)
 
 @doc raw"""
     direct_product(
-      x::Union{Vector{TorQuadModule}, Vararg{TorQuadModule}};
+      x::Vector{TorQuadModule};
+      as_bilinear_module::Bool=false,
+    ) -> TorQuadModule, Vector{TorQuadModuleMap}
+    direct_product(
+      x::TorQuadModule, y::TorQuadModule...;
       as_bilinear_module::Bool=false,
     ) -> TorQuadModule, Vector{TorQuadModuleMap}
 
@@ -2371,11 +2390,15 @@ function direct_product(
   return T, proj
 end
 
-direct_product(x::Vararg{TorQuadModule}; cached::Bool=false, as_bilinear_module::Bool=false) = direct_product(collect(x); cached, as_bilinear_module)
+direct_product(x::TorQuadModule, y::TorQuadModule...; cached::Bool=false, as_bilinear_module::Bool=false) = direct_product(collect((x, y...)); cached, as_bilinear_module)
 
 @doc raw"""
     biproduct(
-      x::Union{Vector{TorQuadModule}, Vararg{TorQuadModule}};
+      x::Vector{TorQuadModule};
+      as_bilinear_module::Bool=false,
+    ) -> TorQuadModule, Vector{TorQuadModuleMap}, Vector{TorQuadModuleMap}
+    biproduct(
+      x::TorQuadModule, y::TorQuadModule...;
       as_bilinear_module::Bool=false,
     ) -> TorQuadModule, Vector{TorQuadModuleMap}, Vector{TorQuadModuleMap}
 
@@ -2405,7 +2428,7 @@ function biproduct(
   return _biproduct(x; cached, as_bilinear_module)
 end
 
-biproduct(x::Vararg{TorQuadModule}; cached::Bool=false, as_bilinear_module::Bool=false) = biproduct(collect(x); cached, as_bilinear_module)
+biproduct(x::TorQuadModule, y::TorQuadModule...; cached::Bool=false, as_bilinear_module::Bool=false) = biproduct(collect((x, y...)); cached, as_bilinear_module)
 
 ###############################################################################
 #
@@ -2494,8 +2517,8 @@ function snf(T::TorQuadModule)
   if is_snf(A)
     return T, id_hom(T)
   end
-  G, f = snf(A)
-  S, f = sub(T, [T(f(g)) for g in gens(G)])
+  G, mG = snf(A)
+  S, f = sub(T, [T(mG(g)) for g in gens(G)])
   @assert is_bijective(f)
   return (S, f)::Tuple{TorQuadModule, TorQuadModuleMap}
 end

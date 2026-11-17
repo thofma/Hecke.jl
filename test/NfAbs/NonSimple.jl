@@ -9,6 +9,10 @@
   @test !is_simple(K)
   @test !is_simple(AbsNonSimpleNumField)
 
+  @testset "conformance" begin
+    ConformanceTests.test_Field_interface_recursive(K)
+  end
+
   @testset "Basics" begin
     @test QQ == @inferred base_ring(K)
     @test 6 == @inferred degree(K)
@@ -176,6 +180,10 @@
     @test (@inferred QQ(2*a^0)) == 2*one(QQ)
     @test_throws ArgumentError QQ(a)
   end
+
+  # variable name given as a Char
+  K, (a, b) = number_field([x^2 - 2, x^2 - 3], 'a')
+  @test string(a) == "a1" && string(b) == "a2"
 
   K, (a,) = @inferred number_field([x])
   @test tr(a) == 0

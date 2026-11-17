@@ -253,15 +253,19 @@ function Base.gcd(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{Padic
   end
   f = setprecision(f, precision(f))
   g = setprecision(g, precision(g))
+  # Truncating to a common coefficient precision can erase a nonzero input.
+  @req !iszero(f) && !iszero(g) "Insufficient precision for polynomial gcd"
   while true
     cf = _content(f)
     if !isone(cf)
       f = divexact(f, cf)
     end
+    @req !iszero(f) && precision(f) > 0 "Insufficient precision for polynomial gcd"
     cg = _content(g)
     if !isone(cg)
       g = divexact(g, cg)
     end
+    @req !iszero(g) && precision(g) > 0 "Insufficient precision for polynomial gcd"
     if !iszero(valuation(leading_coefficient(g)))
       u, g1 = fun_factor(g)
       if iszero(valuation(leading_coefficient(f)))
@@ -496,9 +500,7 @@ function divexact(f1::AbstractAlgebra.PolyRingElem{T}, g1::AbstractAlgebra.PolyR
    while !iszero(q*g1 - f1)
      pr = precision(q)
      q = setprecision(q, pr-1)
-     if iszero(q)
-       error("division was not exact:\n$f1\nby\n$g1")
-     end
+     @req !iszero(q) "Insufficient precision for exact polynomial division:\n$f1\nby\n$g1"
      @assert precision(q) < pr
    end
    return q
@@ -710,12 +712,17 @@ function _rres(f::Generic.Poly{T}, g::Generic.Poly{T}) where T <: Union{PadicFie
 end
 
 function norm(f::PolyRingElem{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
-  Kx = parent(f)
+  Rx, = polynomial_ring(base_field(base_ring(f)), "x", cached = false)
+  return norm(Rx, f)
+end
+
+function norm(Rx::PolyRing, f::PolyRingElem{T}) where T <: Union{QadicFieldElem, LocalFieldElem}
   K = base_ring(f)
+  @req base_ring(Rx) === base_field(K) "Polynomial ring must be over the base field"
   f, i = deflate(f)
   P = polynomial_to_power_sums(f, degree(f)*degree(K))
   PQ = elem_type(base_field(K))[tr(x) for x in P]
-  N = power_sums_to_polynomial(PQ)
+  N = power_sums_to_polynomial(PQ, Rx)
   return inflate(N, i)
 end
 
@@ -802,8 +809,10 @@ Computes a factorization of $f$ such that every factor has a unique irreducible 
 The output is a dictionary whose keys are lifts of the irreducible factors over the residue field and values the corresponding factors of $f$.
 """
 function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
+  @req !iszero(f) "Insufficient precision for Hensel factorization"
   cf = _content(f)
   f = divexact(f, cf)
+  @req precision(f) > 0 "Insufficient precision for Hensel factorization"
   Kt = parent(f)
   D = Dict{Generic.Poly{T}, Generic.Poly{T}}()
   _f = f
@@ -811,6 +820,10 @@ function Hensel_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldEle
     vf, f = fun_factor(f)
   else
     vf = one(Kt)
+  end
+  # A polynomial that is a unit modulo the uniformizer has no factors to lift.
+  if degree(f) == 0
+    return D
   end
   @assert iszero(valuation(leading_coefficient(f)))
   K = base_ring(Kt)
@@ -924,8 +937,9 @@ function lift(C::HenselCtxdr, mx::Int)
   N = minimum([precision(x) for x in C.lf])
   N = min(N, minimum([precision(x) for x in C.la]))
   #have: N need mx
-  one = setprecision(parent(p), mx) do
-    Base.one(parent(p))
+  K = parent(p)
+  one = setprecision(K, mx) do
+    Base.one(K)
   end
   ch = Int[mx]
   while ch[end] > N
@@ -999,6 +1013,7 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem
   fact = Dict{Generic.Poly{T}, Int}()
   cf = _content(f)
   f = divexact(f, cf)
+  normalized_f = f
   if !iszero(valuation(leading_coefficient(f)))
     u, f = fun_factor(f)
     u1 = reverse(u)
@@ -1019,10 +1034,16 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem
       fphi1 = fphi
       NP = newton_polygon(fphi, phi)
       L = lines(NP)
-      L1 = sort(L, rev = true, by = x -> slope(x))
+      L1 = sort(L, rev = true, by = slope)
       last_s = QQFieldElem(0)
       for l in L1
         if l == L1[end]
+          # Precision loss can change the remaining slope and hide roots even
+          # when the approximate factors still multiply to the input.
+          if degree(fphi1) > degree(phi)
+            remaining_NP = newton_polygon(fphi1, phi)
+            @req is_one_sided(remaining_NP) && slope(only(lines(remaining_NP))) == slope(l) "Insufficient precision for slope factorization"
+          end
           push!(factfphi, fphi1)
           break
         end
@@ -1037,12 +1058,14 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem
             continue
           end
           com = fff(mu)
+          @req !iszero(com) "Insufficient precision for slope factorization"
           com = divexact(com, _content(com))
           gc = gcd(com, fphi1)
-          @assert degree(gc) > 0
-          if degree(gc) < 1
-            continue
-          end
+          # Other slopes remain, so extracting this component must leave a
+          # nonconstant factor. Low precision can make the gcd too large.
+          @req 0 < degree(gc) < degree(fphi1) "Insufficient precision for slope factorization"
+          component_NP = newton_polygon(gc, phi)
+          @req is_one_sided(component_NP) && slope(only(lines(component_NP))) == s "Insufficient precision for slope factorization"
           push!(factfphi, gc)
           fphi1 = divexact(fphi1, gc)
         end
@@ -1053,6 +1076,11 @@ function slope_factorization(f::Generic.Poly{T}) where T <: Union{PadicFieldElem
       end
     end
   end
+  # Distinct approximate factors can coincide as dictionary keys, or their
+  # coefficients can lose too much precision to reconstruct the input.
+  @req sum((degree(g)*m for (g, m) in fact); init = 0) == degree(normalized_f) "Insufficient precision for slope factorization"
+  factor_product = prod((g^m for (g, m) in fact); init = one(Kt))
+  @req !iszero(factor_product) && normalized_f*leading_coefficient(factor_product) == factor_product*leading_coefficient(normalized_f) "Insufficient precision for slope factorization"
   return fact
 end
 
@@ -1100,7 +1128,7 @@ end
 function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   K = base_ring(phi)
   e = absolute_ramification_index(K)
-  s = characteristic_polynomial(f, mu)
+  s = characteristic_polynomial(f, phi)
   E = Int(denominator(QQFieldElem(Int(valuation(constant_coefficient(s))*absolute_ramification_index), degree(s))))
   k, mk = residue_field(K)
   sp = map_coefficients(mk, s, cached = false)

@@ -140,11 +140,11 @@ function make_admissible!(
 
   # Solve the system to find v'
   vK = reduce(vcat, dense_matrix_type(K)[identity_matrix(K, 1), vK])
-  L = kernel(vK)
-  @hassert :ZGenRep 3 !iszero(view(L, :, 1))
-  j = findfirst(j -> !iszero(L[j, 1]), 1:nrows(L))
+  L0 = kernel(vK)
+  @hassert :ZGenRep 3 !iszero(view(L0, :, 1))
+  j = findfirst(j -> !iszero(L0[j, 1]), 1:nrows(L0))
   @hassert :ZGenRep 3 !isnothing(j)
-  L = map_entries(b -> b//L[j, 1], L)
+  L = map_entries(b -> b//L0[j, 1], L0)
   v = ZZRingElem[lift(ZZ, a) for a in L[j, 2:ncols(L)]]
 
   # Now we modify the entries in w by adding p*v
@@ -532,12 +532,10 @@ function default_invariant_function(L::ZZLat)
   return _invariants
 end
 
-function _theta_series(L, n)
-  r = zeros(ZZRingElem,n)
-  for (_,i) in short_vectors_iterator(L,n, Int64)
-    r[Int(i)] += 1
-  end
-  return r
+# The number of vectors of norm 1, ..., n in L, up to sign
+function _theta_series(L::ZZLat, n::Int)
+  t = theta_series(L, n)
+  return ZZRingElem[divexact(coeff(t, k), 2) for k in 1:n]
 end
 
 ###############################################################################
@@ -808,8 +806,9 @@ function _enumerate_definite_genus!(
     return invariant_function(M)
   end
 
+  lats = res
   callback = function(M::ZZLat)
-    any(isequal(M), res) && return false
+    any(isequal(M), lats) && return false
     invM = _invariants(M)
     !haskey(inv_dict, invM) && return true
     keep = all(N -> !is_isometric(N, M), inv_dict[invM])
@@ -1051,7 +1050,7 @@ function enumerate_definite_genus(
     append!(edg, _edg)
     length(edg) >= max && return edg
   end
-  sc != 1 && map!(L -> lattice_in_same_ambient_space(_L, basis_matrix(L); check=false, isbasis=true), edg, edg)
+  sc != 1 && map!(L -> lattice_in_same_ambient_space(_L, basis_matrix(L); check=false, is_basis=true), edg, edg)
   return edg
 end
 

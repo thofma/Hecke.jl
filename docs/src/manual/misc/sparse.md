@@ -105,6 +105,7 @@ Sparse matrices can also be created from dense matrices as well as from julia ar
 
 ```@docs
 sparse_matrix(::MatElem; keepzrows)
+sparse_matrix(::Ring, ::MatElem; keepzrows)
 sparse_matrix(::Matrix{T}) where {T}
 sparse_matrix(::Ring, ::Matrix{T}) where {T}
 ```
@@ -165,7 +166,6 @@ hnf_extend!(::SMat{ZZRingElem}, ::SMat{ZZRingElem})
 is_diagonal(::SMat)
 det(::SMat{ZZRingElem})
 det_mc(::SMat{ZZRingElem})
-valence_mc(::SMat)
 saturate(::SMat{ZZRingElem})
 Hecke.hnf_kannan_bachem(::SMat{ZZRingElem})
 diagonal_form(::SMat{ZZRingElem})
@@ -222,10 +222,10 @@ dot(::AbstractVector{T}, ::SMat{T}, ::AbstractVector{T}) where T
 
 Other:
 ```@docs
-sparse(::SMat)
 ZZMatrix(::SMat{ZZRingElem})
 ZZMatrix(::SMat{T}) where {T <: Integer}
 Matrix(::SMat)
 Array(::SMat)
 ```
 
+With SparseArrays loaded, `sparse(A::SMat)` returns the same matrix as a `SparseMatrixCSC`.

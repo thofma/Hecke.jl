@@ -4,6 +4,7 @@
   @test is_domain_type(elem_type(R))
   @test !is_exact_type(elem_type(R))
   ConformanceTests.test_Ring_interface(R)
+  test_divexact_by_zero(R)
   #ConformanceTests.test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
 end
 

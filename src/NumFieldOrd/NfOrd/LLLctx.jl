@@ -65,8 +65,8 @@ function minkowski_gram_mat_scaled(L::NfLat, p::Int)
   end
   K = nf(L)
   if isdefined(L, :minkowski_gram_scaled) && L.minkowski_gram_scaled[1] >= p
-    A = deepcopy(L.minkowski_gram_mat_scaled[2])
-    shift!(A, p - L.minkowski_gram_mat_scaled[1])
+    A = deepcopy(L.minkowski_gram_scaled[2])
+    shift!(A, p - L.minkowski_gram_scaled[1])
   else
     c = minkowski_matrix(L, p)
     B = basis(L)

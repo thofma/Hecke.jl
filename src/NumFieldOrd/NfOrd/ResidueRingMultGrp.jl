@@ -838,7 +838,7 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
   end
   inv=gcdx(m,ZZRingElem(powerp))[2]
 
-  function disclog(x::AbsSimpleNumFieldOrderElem)
+  function disclog(x::AbsSimpleNumFieldOrderElem, big_step_cache)
     t=mQ(x)^m
     if powerp<10
       w=1
@@ -849,11 +849,14 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
       end
       return ZZRingElem[w*inv]
     else
-      return ZZRingElem[_pohlig_hellman_prime_power(g,prime,s,t)*inv]
+      return ZZRingElem[_pohlig_hellman_prime_power(g, prime, s, t;
+                                                  big_step_cache = big_step_cache)*inv]
     end
   end
 
-  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ ZZRingElem(powerp) ], disclog)
+  # Reuse the baby-step giant-step cache across preimages.
+  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ ZZRingElem(powerp) ],
+                              Base.Fix2(disclog, Dict{typeof(g), ZZRingElem}()))
   return domain(map), map
 end
 

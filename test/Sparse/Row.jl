@@ -32,6 +32,12 @@
   @test_throws ErrorException sparse_row(ZZ, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
   @test_throws ErrorException sparse_row(ZZ, [2, 2], [ZZRingElem(1), ZZRingElem(2)])
 
+  # copying constructor
+  Q = sparse_row(QQ, [1, 3], [QQ(1), QQ(2)])
+  Qc = typeof(Q)(Q; copy = true)
+  @test Qc == Q
+  @test Qc.pos !== Q.pos
+
   G = @inferred sparse_row(R, 1, 1)
   @test base_ring(G) === R
   H = @inferred sparse_row(R, 1, 0)

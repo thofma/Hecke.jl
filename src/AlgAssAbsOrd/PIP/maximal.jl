@@ -79,6 +79,9 @@ function _is_principal_maximal_simple_component(a, M, side = :right)
     gentr = (AtoB\gen)::elem_type(A)
     @hassert :PIP 1 gentr * M == a
     return fl, gentr
+  elseif base_ring(A) isa QQField && dim(A) == 4 && is_split(A, inf) &&
+      !is_split(A)
+    return _is_principal_maximal_quaternion_indefinite(a, M, side)
   elseif base_ring(A) isa QQField && dim(A) == 4 && !is_split(A)
     return _is_principal_maximal_quaternion(a, M, side)
   elseif dim(ZA) == 4 && !isdefined(A, :isomorphic_full_matrix_algebra)
@@ -113,55 +116,13 @@ function _is_principal_maximal_quaternion_generic(a, M, side = :right)
   A = algebra(M)
   B, BtoA = _as_algebra_over_center(A)
   OB = _get_order_from_gens(B, elem_type(B)[BtoA\(elem_in_algebra(b)) for b in absolute_basis(M)])
-  f = standard_involution(B)
-  K = base_ring(B)
   @assert right_order(a) == M
   b = ideal_from_lattice_gens(B, OB, elem_type(B)[BtoA\(b) for b in absolute_basis(a)])
-  nr = normred(b)
-  nr = simplify(nr)
-  #@show nr
-  fl, c = is_principal_with_data(nr)
-  if !fl
-    return false, zero(A)
-  end
-  #@show c
-  fl, u, reps = _reps_for_totally_positive(c, K)
-  if !fl
-    return false, zero(A)
-  end
-
-  #@show u
-  #@show is_totally_positive(u * c)
-
-  Babs = absolute_basis(b)::Vector{elem_type(B)}
-  d = length(Babs)
-  G = zero_matrix(QQ, d, d)
-  #@show reps
-  for z in reps
-    for i in 1:d
-      for j in 1:d
-        G[i, j] = absolute_tr(inv(u * c * z) * trred(Babs[i] * f(Babs[j]))//2)
-      end
-    end
-    #@show G
-    #@show det(G)
-    #@show lll_gram(map_entries(x -> numerator(x), G))
-    #@show Hecke._eltseq(G)
-
-    min, v = _shortest_vectors_gram(Vector, G)
-
-    if min == degree(base_ring(B))
-      for w in v
-        xi = sum(elem_type(B)[w[i] * Babs[i] for i in 1:length(Babs)])::elem_type(B)
-        xii = BtoA(xi)
-        @assert xii in a
-        @assert xii * M == a
-        return true, xii
-      end
-    end
-  end
-  # TODO: Replace this by short_vectors_gram(M, nrr) once it works
-  return false, zero(A)
+  fl, xi = _is_principal_with_data_definite_quaternion(b, OB, side)
+  fl || return false, zero(A)
+  xii = BtoA(xi)
+  @hassert :PIP 1 xii * M == a
+  return true, xii
 end
 
 # check if there is a unit u such that c * u is totally positive
@@ -201,6 +162,9 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   !(base_ring(A) isa QQField) && error("Only implemented for rational quaterion algebras")
   a.isright = 1
   a.order = right_order(a)
+  if !is_split(A, inf)
+    return _is_principal_with_data_definite_quaternion(a, M, side)
+  end
   nrr = ZZ(normred(a))
   B = basis(a)
   G = zero_matrix(QQ, 4, 4)
@@ -226,6 +190,89 @@ function _is_principal_maximal_quaternion(a, M, side = :right)
   else
     error("Something wrong here")
   end
+end
+
+# A generator of the right ideal a of the maximal order M of an indefinite
+# quaternion algebra over QQ. Every such ideal is principal (Eichler's theorem,
+# Voight, Quaternion Algebras, Theorem 17.8.3), but the norm form is
+# indefinite, so a generator is not a short vector for it; this is
+# Kirschmer-Voight, SIAM J. Comput. 39 (2010), Algorithm 4.10. With the norm
+# form diagonalised as x^2 - a y^2 - b z^2 + ab w^2, the absolute reduced norm
+# Q = x^2 + |a| y^2 + |b| z^2 + |ab| w^2 is positive definite with
+# |nrd(x)| <= Q(x). While c = nrd(I) > 1, an element g of I with
+# 0 < |nrd(g)| < c^2 exists (a generator of I has |nrd| = c), and every g with
+# Q(g) < c^2 is one; then nrd(g) = cd with |d| < c, and
+# I' = d g^-1 I = conj(g) I / c is an integral right ideal of M of reduced
+# norm |d| with I = (g / d) I'. So the reduced norm falls at every step, and
+# at 1 the ideal is M.
+# As in the algorithm, g is the first vector of an LLL-reduced basis of I for
+# Q when |nrd| < c^2 there (Kirschmer-Voight, Lemma 4.11: |nrd| of that vector
+# is at most a constant times c). Since det Q on I is (c^2 D / 4)^2, D the
+# discriminant of M, the LLL bound fails this only when c^2 < D, and only then
+# are short vectors enumerated, from the bound c^2 - 1 < D. Their reduced
+# norms are read off the norm form on the reduced basis, without forming
+# elements of A.
+function _is_principal_maximal_quaternion_indefinite(a, M, side = :right)
+  @assert side == :right
+  A = algebra(M)
+  f = standard_involution(A)
+  B = basis(A)
+  G = matrix(QQ, 4, 4, [trred(B[i] * f(B[j]))//2 for i in 1:4, j in 1:4])
+  F, S = _gram_schmidt(G, identity)
+  Sinv = inv(S)
+  P = Sinv * diagonal_matrix([abs(F[i, i]) for i in 1:4]) * transpose(Sinv)
+  beta = one(A)
+  I = a
+  c = ZZ(normred(I, M))
+  while !isone(c)
+    BI = basis_matrix(I)
+    bas = basis(I)
+    L = lll(integer_lattice(; gram = BI * P * transpose(BI), check = false))
+    # the reduced basis of I, as rows of coordinates on the basis of A, and
+    # the norm form on it
+    R = basis_matrix(L) * BI
+    GR = R * G * transpose(R)
+    w = ZZRingElem[1, 0, 0, 0]
+    if abs(GR[1, 1]) >= c^2
+      # nrd(v) = v GR v^t < c^2 in absolute value, as v GRz v^t < c^2 dR,
+      # accumulated in place: there may be many vectors
+      GRz, dR = integral_split(GR, ZZ)
+      Gv = [GRz[i, j] for i in 1:4, j in 1:4]
+      bd = c^2 * dR
+      s = zero(ZZ)
+      t = zero(ZZ)
+      found = false
+      lb = zero(ZZ)
+      ub = c^2 - 1
+      while !found
+        for (v, _) in short_vectors_iterator(L, lb, ub; check = false)
+          zero!(s)
+          for i in 1:4, j in 1:4
+            mul!(t, v[i], v[j])
+            addmul!(s, Gv[i, j], t)
+          end
+          if cmpabs(s, bd) < 0
+            w = v
+            found = true
+            break
+          end
+        end
+        lb = ub
+        ub = 2 * ub
+      end
+    end
+    g = A(collect(matrix(QQ, 1, 4, w) * R)[1, :])
+    d = divexact(ZZ(normred(g)), c)
+    beta = QQ(1, d) * beta * g
+    N = zero_matrix(QQ, 4, 4)
+    for i in 1:4
+      elem_to_mat_row!(N, i, QQ(1, c) * f(g) * bas[i])
+    end
+    I = ideal(A, M, N; side = :right)
+    c = abs(d)
+  end
+  @hassert :PIP 1 beta * M == a
+  return true, beta
 end
 
 function _is_principal_maximal_full_matrix_algebra(a, M, side = :right)

@@ -5,6 +5,7 @@
   @test is_domain_type(elem_type(R))
   @test !is_exact_type(elem_type(R))
   ConformanceTests.test_Ring_interface(R)
+  test_divexact_by_zero(R)
   #ConformanceTests.test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
 
   # QadicField
@@ -13,6 +14,7 @@
   @test is_domain_type(elem_type(R))
   @test !is_exact_type(elem_type(R))
   ConformanceTests.test_Ring_interface(R)
+  test_divexact_by_zero(R)
   #ConformanceTests.test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
 
   # LocalField
@@ -24,5 +26,21 @@
   @test is_domain_type(elem_type(R))
   @test !is_exact_type(elem_type(R))
   ConformanceTests.test_Ring_interface(R)
+  test_divexact_by_zero(R)
   #ConformanceTests.test_EuclideanRing_interface(R) # doesn't do anything for a non-exact ring
+end
+
+@testset "Content of matrices" begin
+  # the content is a power of the uniformizer, also in ramified extensions
+  K = padic_field(3, precision = 10)
+  Kx, x = polynomial_ring(K, "x")
+  E, = eisenstein_extension(x^2 - 3, "a")
+  Q9, = qadic_field(3, 2, precision = 10)
+  for F in [K, E, Q9]
+    R = valuation_ring(F)
+    a = R(uniformizer(F))
+    @test content(matrix(R, 2, 2, [a^2, a^3, 0, a^5])) == a^2
+    @test isone(content(matrix(R, 2, 2, [a^4, a^3 + 1, 0, a])))
+    @test iszero(content(zero_matrix(R, 2, 2)))
+  end
 end

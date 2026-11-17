@@ -194,12 +194,12 @@ function gram_matrix(J::JorDec, i::Int)
     winew = _witt_hasse(hanew, r, _d, p)
     # this is the new witt invariant
     z = _quadratic_unimodular_lattice_dyadic(p, r, _w, _d, _a, winew)
-    @assert begin L = quadratic_lattice(nf(order(p)), gram = z); witt_invariant(L, p) == winew end
+    @hassert :Lattice 1 begin L = quadratic_lattice(nf(order(p)), gram = z); witt_invariant(L, p) == winew end
 
     @assert valuation(det(z), p) == 0
     zz = pi^s * z
     if wi < 2
-      @assert begin L = quadratic_lattice(nf(order(p)), gram = zz); witt_invariant(L, p) == wi end
+      @hassert :Lattice 1 begin L = quadratic_lattice(nf(order(p)), gram = zz); witt_invariant(L, p) == wi end
     end
     return zz
   else
@@ -270,6 +270,7 @@ function genus(J::JorDec)
   new_normgens = Vector{eltype(normgens)}(undef, r)
   new_weights = Vector{Int}(undef, r)
   e = ramification_index(p)
+  diags = [diagonal(gram_matrix(J, j)) for j in 1:r]
   for i in 1:r
     # find the minimal norm
     # L^(s_i) = \sum p^(max(0, s_i - s_j)) L_j
@@ -289,10 +290,8 @@ function genus(J::JorDec)
     D = elem_type(K)[]
     for j in 1:r
       # TODO: We could determine just the diagonal, that would be easier.
-      # Also, there is some redundancy here, the z is actually independent of i
-      z = gram_matrix(J, j)
-      for l in 1:nrows(z)
-        push!(D, pi^(max(0, 2 * (sca[i] - sca[j]))) * z[l, l])
+      for d in diags[j]
+        push!(D, pi^(max(0, 2 * (sca[i] - sca[j]))) * d)
       end
     end
 
@@ -316,7 +315,7 @@ function genus(J::JorDec)
 end
 
 function direct_sum(J1::JorDec{S, T, U}, J2::JorDec{S, T, U}) where {S, T, U}
-  @req J1.p === J2.p "Jordan decompositions must be over same prime"
+  @req J1.p == J2.p "Jordan decompositions must be over same prime"
   if !(J1.is_dyadic)
     i1 = 1
     i2 = 1
@@ -1056,7 +1055,7 @@ end
 ################################################################################
 
 function direct_sum(G1::QuadLocalGenus, G2::QuadLocalGenus)
-  @req prime(G1) === prime(G2) "Local genera must have the same prime ideal"
+  @req prime(G1) == prime(G2) "Local genera must have the same prime ideal"
   if !G1.is_dyadic
     p = prime(G1)
     if uniformizer(G1) != uniformizer(G2)
@@ -1948,7 +1947,7 @@ function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T,
       @assert !is_dyadic(p)
       fl = is_local_square(G1.d, p)
       dcl = fl ? 1 : -1
-      g1 = genus(QuadLat, p, [(0, rank(G1), dcl)])
+      g1 = genus(QuadLat, p, elem_in_nf(uniformizer(p)), [G1.rank], [0], [dcl])
     end
 
     if p in P2
@@ -1958,7 +1957,7 @@ function direct_sum(G1::QuadGenus{S, T, U}, G2::QuadGenus{S, T, U}) where {S, T,
       @assert !is_dyadic(p)
       fl = is_local_square(G2.d, p)
       dcl = fl ? 1 : -1
-      g2 = genus(QuadLat, p, [(0, rank(G2), dcl)])
+      g2 = genus(QuadLat, p, elem_in_nf(uniformizer(p)), [G2.rank], [0], [dcl])
     end
     g3 = direct_sum(g1, g2)
     push!(LGS, g3)

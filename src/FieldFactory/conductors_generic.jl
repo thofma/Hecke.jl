@@ -15,11 +15,15 @@ function tame_conductors_degree_2(O::AbsSimpleNumFieldOrder, bound::ZZRingElem; 
 
   extra_list = Tuple{Int, ZZRingElem}[(1,ZZRingElem(1))]
   for q in ram_primes
+    if !isempty(unramified_outside) && !(q in unramified_outside)
+      continue
+    end
     tr = prime_decomposition_type(O, Int(q))
     e = tr[1][2]
     nq = ZZRingElem(q)^(divexact(d,e))
+    # Norm contributions need not increase with q.
     if nq > bound
-      break
+      continue
     end
     l=length(extra_list)
     for i = 1:l
@@ -43,6 +47,91 @@ function tame_conductors_degree_2(O::AbsSimpleNumFieldOrder, bound::ZZRingElem; 
   end
   return final_list
 
+end
+
+struct TameConductorsDegree2Iterator
+  squarefree::SquarefreeIterator
+  degree::Int
+  bound::ZZRingElem
+  ramified_primes::Vector{Int}
+  ramified_norms::Vector{ZZRingElem}
+end
+
+@doc raw"""
+    tame_conductors_degree_2_iterator(O::AbsSimpleNumFieldOrder, bound::IntegerUnion;
+                                     unramified_outside = ZZRingElem[])
+
+Return an iterator over tame conductor candidates `(m, norm(radical(m*O)))`
+of norm at most `bound` for abelian extensions with Galois group of exponent 2.
+Assume that `O` is maximal and `nf(O)` is normal. A nonempty `unramified_outside`
+restricts the prime divisors of `m`.
+"""
+function tame_conductors_degree_2_iterator(O::AbsSimpleNumFieldOrder, bound::IntegerUnion; unramified_outside::AbstractVector{<:IntegerUnion} = ZZRingElem[])
+  return _tame_conductors_degree_2_iterator(O, ZZRingElem(bound),
+                                           ZZRingElem[p for p in unramified_outside])
+end
+
+function _tame_conductors_degree_2_iterator(O::AbsSimpleNumFieldOrder, bound::ZZRingElem, unramified_outside::Vector{ZZRingElem})
+  @req bound >= 0 "The bound must be nonnegative"
+  d = degree(O)
+  ram_primes = sort!(filter!(!=(2), ramified_primes(O)))
+  squarefree = squarefree_up_to_iterator(Int(iroot(bound, d));
+                                         coprime_to = vcat(ram_primes, 2),
+                                         prime_base = unramified_outside)
+
+  primes = Int[]
+  norms = ZZRingElem[]
+  for q in ram_primes
+    if !isempty(unramified_outside) && !(q in unramified_outside)
+      continue
+    end
+    e = prime_decomposition_type(O, Int(q))[1][2]
+    nq = ZZ(q)^divexact(d, e)
+    if nq <= bound
+      push!(primes, Int(q))
+      push!(norms, nq)
+    end
+  end
+  return TameConductorsDegree2Iterator(squarefree, d, bound, primes, norms)
+end
+
+Base.IteratorSize(::Type{TameConductorsDegree2Iterator}) = Base.SizeUnknown()
+Base.eltype(::Type{TameConductorsDegree2Iterator}) = Tuple{Int, ZZRingElem}
+
+function Base.iterate(it::TameConductorsDegree2Iterator)
+  r = iterate(it.squarefree)
+  r === nothing && return nothing
+  m, squarefree_state = r
+  n = ZZ(m)^it.degree
+  stack = Tuple{Int, Int, ZZRingElem}[(1, m, n)]
+  return (m, n), (squarefree_state, stack)
+end
+
+function Base.iterate(it::TameConductorsDegree2Iterator, state)
+  squarefree_state, stack = state
+
+  # Traverse the ramified-prime products, pruning by the norm bound.
+  while !isempty(stack)
+    i, m, n = pop!(stack)
+    while i <= length(it.ramified_primes)
+      nn = n*it.ramified_norms[i]
+      if nn <= it.bound
+        push!(stack, (i + 1, m, n))
+        mm = Base.checked_mul(m, it.ramified_primes[i])
+        push!(stack, (i + 1, mm, nn))
+        return (mm, nn), (squarefree_state, stack)
+      end
+      i += 1
+    end
+  end
+
+  # Start the next squarefree part.
+  r = iterate(it.squarefree, squarefree_state)
+  r === nothing && return nothing
+  m, squarefree_state = r
+  n = ZZ(m)^it.degree
+  push!(stack, (1, m, n))
+  return (m, n), (squarefree_state, stack)
 end
 
 function squarefree_for_conductors(O::AbsSimpleNumFieldOrder, n::Int, deg::Int; coprime_to::Vector{ZZRingElem}=ZZRingElem[], prime_base::Vector{ZZRingElem} = ZZRingElem[])
@@ -237,12 +326,8 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
   bound_tame = iroot(bound, divexact(n, expo))
   list = conductors_tame(O, expo, bound_tame, unramified_outside = unramified_outside)
 
-  if tame
-    reverse!(list)
-    return Tuple{Int, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}[(x[1], Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()) for x in list]
-  end
   #
-  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
+  # Now include conductor factors at primes dividing the degree.
   #
   wild_list = Tuple{Int, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}[(1, Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1))]
   for _q in wild_ram
@@ -254,6 +339,25 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
     FqPolyRepFieldElem = divexact(d, lp[1][2]*length(lp))
     l = length(wild_list)
     sq = q^(divexact(d,lp[1][2])) #norm of the squarefree part of the integer q
+    # Primes dividing n can still ramify tamely: Sircana's PhD thesis,
+    # Lemma 1.35. The weight follows the discussion before Lemma 1.36.
+    # https://kluedo.ub.rptu.de/files/6407/Dissertation_Sircana.pdf
+    nisc = gcd(q^FqPolyRepFieldElem - 1, ZZRingElem(expo))
+    if nisc != 1
+      fnisc = minimum(prime_divisors(nisc))
+      nq = sq^((fnisc-1)*divexact(n, fnisc))
+      for s = 1:l
+        nn = nq*wild_list[s][3]
+        if nn > bound
+          continue
+        end
+        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
+      end
+    end
+    # Only conductor exponents >= 2 require the wild bounds below.
+    if tame
+      continue
+    end
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the
@@ -286,19 +390,6 @@ function conductors(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingElem
     end
     bound_max_exp = min(ram_groups_bound, bound_max_exp)
 
-    #The prime may be also tamely ramified!
-    nisc = gcd(q^(FqPolyRepFieldElem)-1, ZZRingElem(expo))
-    if nisc != 1
-      fnisc=minimum(prime_divisors(nisc))
-      nq=sq^((fnisc-1)*(divexact(n, fnisc)))
-      for s=1:l
-        nn=nq*wild_list[s][3]
-        if nn>bound
-          continue
-        end
-        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
-      end
-    end
     for i=2:bound_max_exp
       d1=Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
       for j=1:length(lp)
@@ -484,11 +575,8 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
 
   single, multiple = conductors_tameQQ(O, a, bound, unramified_outside = unramified_outside)
 
-  if tame
-    return multiple
-  end
   #
-  # now, we have to multiply the obtained conductors by proper powers of wildly ramified ideals.
+  # Now include conductor factors at primes dividing the degree.
   #
   wild_list=Tuple{Int, Int, ZZRingElem}[(1, 1, 1)]
   for q in wild_ram
@@ -496,6 +584,23 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
       continue
     end
     l = length(wild_list)
+    # Include tame exponent-one choices at q | n as well (Sircana,
+    # Lemma 1.35 and the discussion before Lemma 1.36, cited above).
+    nisc = gcd(q-1, n)
+    if nisc != 1
+      fnisc = minimum(prime_divisors(nisc))
+      nq = ZZRingElem(q)^((fnisc-1)*divexact(n, fnisc))
+      for s = 1:l
+        nn = nq*wild_list[s][3]
+        if nn > bound
+          continue
+        end
+        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
+      end
+    end
+    if tame
+      continue
+    end
     #=
       we have to use the conductor discriminant formula to understand the maximal possible exponent of q.
       Let ap be the exponent of p in the relative discriminant, let m be the conductor and h_(m,C) the cardinality of the
@@ -511,7 +616,6 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
 
     #I don't need to give a bound for a_p on the big extension but only on the maximum extension of q-power order
     #This is the only thing that matters for the exponent of the conductor
-    nisc = gcd(q-1,n)
     nbound = q^v + v * q^v - 1
     boundsubext = iroot(bound, Int(divexact(n, q^v)))
     obound = flog(boundsubext, q)
@@ -522,17 +626,6 @@ function conductorsQQ(O::AbsSimpleNumFieldOrder, a::Vector{Int}, bound::ZZRingEl
       bound_max_exp = min(bound_max_exp, valuation(expo, q)+2)
     else
       bound_max_exp = min(bound_max_exp, valuation(expo, q)+1)
-    end
-    if nisc != 1
-      fnisc=minimum(prime_divisors(nisc))
-      nq=ZZRingElem(q)^((fnisc-1)*(divexact(n, fnisc)))
-      for s=1:l
-        nn=nq*wild_list[s][3]
-        if nn>bound
-          continue
-        end
-        push!(wild_list, (q*wild_list[s][1], wild_list[s][2], nn))
-      end
     end
     t=(q-1)*divexact(n,q)
     for i=2:bound_max_exp
@@ -586,56 +679,65 @@ end
 
 function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, absolute_bound::ZZRingElem; only_tame::Bool = false)
   #I am assuming that gtype is in "SNF"
+  # References below: C. Sircana, On the construction of number fields
+  # with solvable Galois group (PhD thesis).
+  # https://kluedo.ub.rptu.de/files/6407/Dissertation_Sircana.pdf
+  # Lemma 1.16 (p. 5): conductor exponent one means tame ramification.
+  # This includes primes above divisors of the group order.
   conds_tame = conductors_generic_tame(OK, gtype, absolute_bound)
   if only_tame
-    return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[(x[1], Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()) for x in conds_tame]
+    return Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}[x[1] for x in conds_tame]
   end
   wild = prime_divisors(gtype[end])
   n = prod(gtype)
+  # Relative discriminant norm bound: proof of Lemma 1.34 (p. 19).
   bound = div(absolute_bound, abs(discriminant(OK))^n)
   wild_primes = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, UnitRange{Int}}}()
   @vprintln :AbExt 1 "Computing wild conductors ... "
+  # Conductor exponent 1 is tame and was enumerated above.
+  # The bounds below apply to wild ramification: conductor exponents >= 2.
   for p in wild
     lp = prime_decomposition(OK, p)
     for (P, v) in lp
-      starting_power = 2
-      ending_power = 2
       nP = norm(P)
       if nP > bound
         continue
       end
-      gn = gcd(nP-1, gtype[end])
-      if !isone(gn)
-        starting_power = 1
-      end
       vp = valuation(gtype[end], p)
-      # First, we compute the bound coming from the bound on the discriminant
-      boundsubext = iroot(bound, Int(divexact(n, p^vp))) #The bound on the norm of the discriminant on the subextension
-                                                        # of order q^v
-      #Bound coming from the bound on the discriminant
+      # Lemma 1.37 (p. 20) reduces to cyclic p-power subextensions.
+      # A degree-p^vp quotient F/K attains this wild conductor:
+      # maximal-order characters generate the p-primary character group.
+      # Lemma 1.37 gives N(disc(F/K))^(n/p^vp) <= bound.
+      boundsubext = iroot(bound, Int(divexact(n, p^vp)))
+      # Lemma 1.39 (p. 21) bounds the local valuation by this logarithm.
       obound = flog(boundsubext, nP)
 
-      #Bound coming from the analysis on the different in a local extension
+      # Proposition 1.40 (p. 21): for m=p^vp and ramification index e,
+      # v_P(disc(F/K)) <= m/e*(e-1+e*v*vp) <= m-1+v*vp*m.
+      # Here v=v_P(p); total ramification is not required.
       nbound = p^vp + v * vp * p^vp - 1
 
       bound_max_ap = min(nbound, obound)  #bound on ap
+      # Lemma 1.38 (p. 20): phi(p^vp)*r <= v_P(disc(F/K)),
+      # where r is the conductor exponent at P.
       ending_power = Int(div(bound_max_ap, (p-1)*p^(vp-1)))
-      if ending_power >= starting_power
-        push!(wild_primes, (P, starting_power:ending_power))
+      # This wild bound must not restrict tame exponent-one choices.
+      if ending_power >= 2
+        push!(wild_primes, (P, 2:ending_power))
       end
     end
   end
   #create now a sublist with just the wild ramified primes.
   conds_wild = Vector{Tuple{Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}, ZZRingElem}}()
+  # Include extensions with no wild ramification.
   push!(conds_wild, (Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}(), ZZRingElem(1)))
   # For each p in wild_primes, p[2] describes the possible exponent
   # range. Of course, not every prime needs to appear, so we add
   # 0 to the list of possible exponents.
   it = cartesian_product_iterator(Array{Int}[push!(collect(x[2]), 0) for x in wild_primes], inplace = true)
   for I in it
-    if all(x->x<2, I)
-      # Exclude exponents (0, 0, ..., 0)
-      # Note that all exponents are >= 2 by if they are nonzero
+    # The empty wild part was inserted above.
+    if all(iszero, I)
       continue
     end
     D = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
@@ -648,6 +750,8 @@ function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, abso
       nP = norm(P, copy = false)
       p = minimum(P, copy = false)
       vp = minimum([valuation(gtype[i], p) for i = 1:length(gtype)])
+      # Theorem 1.17 (p. 5) gives the wild lower bound I[j]*n*(p-1)/p.
+      # For vp >= 1, the weight used here is a weaker lower bound.
       nD *= nP^((p^vp-p^(vp-1))*I[j])
       if nD > bound
         break
@@ -666,6 +770,12 @@ function conductors_generic(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int}, abso
   for i in 1:length(conds_wild)
     for j in 1:length(conds_tame)
       if conds_wild[i][2]*conds_tame[j][2] <= bound
+        # Local bounds multiply over distinct primes, as in Lemma 1.34.
+        # A tame entry must not overwrite a wild power of the same prime.
+        # Distinct prime ideals above the same rational prime may still mix.
+        if any(P -> haskey(conds_wild[i][1], P), keys(conds_tame[j][1]))
+          continue
+        end
         push!(conds, merge(conds_wild[i][1], conds_tame[j][1]))
       end
     end
@@ -683,14 +793,21 @@ function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int},
   wild = prime_divisors(n)
   pmin = Int(minimum(wild))
   bound = div(absolute_bound, abs(discriminant(OK))^n)
+  prime_bound = iroot(bound, pmin-1)
+  @req fits(Int, prime_bound) "Discriminant bound too large: prime ideal norm bound must fit in Int"
   @vprintln :AbExt 1 "Tame conductors: Computing prime ideals ... "
-  lp = prime_ideals_up_to(OK, Int(iroot(bound, pmin-1)))
+  # Compare the tame norm bound in Sircana's thesis, Lemma 1.36 (p. 20).
+  # The discriminant weight used below is at least pmin-1.
+  # Thus N(P)^(pmin-1) <= bound is necessary.
+  lp = prime_ideals_up_to(OK, Int(prime_bound))
   @vprintln :AbExt 1 "Tame conductors: found $(length(lp)) "
-  filter!(x -> !(minimum(x, copy = false) in wild), lp)
   lf = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}()
   dummy = Int[]
   for P in lp
     nP = norm(P)
+    # Refine the tame gcd condition of Lemma 1.35 using the group exponent:
+    # the ramification index divides both N(P)-1 and gtype[end].
+    # This still applies when p divides the field degree.
     gn = gcd(nP-1, gtype[end])
     if isone(gn)
       continue
@@ -698,6 +815,9 @@ function conductors_generic_tame(OK::AbsSimpleNumFieldOrder, gtype::Vector{Int},
     fgn = factor(gn)
     k = minimum(prime_divisors(gn))
     kp, cpk = ppio(gtype[end], Int(k))
+    # Section 1.4.1, before Lemma 1.36: tame ramification of index t
+    # gives discriminant exponent n*(1-1/t).
+    # Since t >= k, the weaker weight n*(k-1)/kp is a lower bound too.
     dP = nP^(div(n, gtype[end])*(k-1)*cpk)
     if dP > bound
       continue

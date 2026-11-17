@@ -96,7 +96,8 @@ function rational_reconstruction2(A::Generic.Mat{AbsSimpleNumFieldElem}, M::ZZRi
       else
         n, dn = algebraic_reconstruction(a, M)
         d*=dn
-        if any(i->!small_coeff(d, sM, i), 1:a_len)
+        dcur = d
+        if any(i->!small_coeff(dcur, sM, i), 1:a_len)
           println("early $i $j abort")
           return false, B
         end

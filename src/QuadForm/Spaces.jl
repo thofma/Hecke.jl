@@ -40,7 +40,7 @@ function image(f::AbstractSpaceMor, L::AbstractLat)
   if is_injective(f)
     B = pseudo_matrix(L)
     fB = matrix(B)*f.matrix
-    PB = pseudo_matrix(fB, B.coeffs)
+    PB = pseudo_matrix(base_ring(B), fB, B.coeffs)
     return lattice(W, PB)
   else
     error("not implemented")
@@ -52,8 +52,8 @@ function image(f::AbstractSpaceMor, L::ZZLat)
   @req V === ambient_space(L) "L not in domain"
   W = codomain(f)
   B = basis_matrix(L)*f.matrix
-  isbasis = is_injective(f)
-  return lattice(W, B; isbasis=isbasis, check=false)
+  is_basis = is_injective(f)
+  return lattice(W, B; is_basis=is_basis, check=false)
 end
 
 function preimage(f::AbstractSpaceMor, L::ZZLat)
@@ -641,7 +641,7 @@ function restrict_scalars(V::AbstractSpace, K::QQField,
       for j in 1:n
         for bj in 1:length(B)
           w[j] = B[bj]
-          G[r, c] = trace(alpha * inner_product(V, v, w), QQ)
+          G[r, c] = absolute_tr(alpha * inner_product(V, v, w))
           w[j] = zero(E)
           c = c + 1
         end
@@ -732,7 +732,7 @@ function _biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
 end
 
 @doc raw"""
-    direct_sum(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+    direct_sum(x::T, y::T...) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
     direct_sum(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
@@ -755,10 +755,10 @@ function direct_sum(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
   return V, inj
 end
 
-direct_sum(x::Vararg{AbstractSpace}; cached::Bool=true) = direct_sum(collect(x); cached)
+direct_sum(x::AbstractSpace, y::AbstractSpace...; cached::Bool=true) = direct_sum(collect((x, y...)); cached)
 
 @doc raw"""
-    direct_product(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
+    direct_product(x::T, y::T...) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
     direct_product(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
@@ -781,10 +781,10 @@ function direct_product(x::Vector{T};cached::Bool=true) where T <: AbstractSpace
   return V, proj
 end
 
-direct_product(x::Vararg{AbstractSpace}; cached::Bool=true) = direct_product(collect(x); cached)
+direct_product(x::AbstractSpace, y::AbstractSpace...; cached::Bool=true) = direct_product(collect((x, y...)); cached)
 
 @doc raw"""
-    biproduct(x::Vararg{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
+    biproduct(x::T, y::T...) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
     biproduct(x::Vector{T}) where T <: AbstractSpace -> T, Vector{AbstractSpaceMor}, Vector{AbstractSpaceMor}
 
 Given a collection of quadratic or hermitian spaces $V_1, \ldots, V_n$,
@@ -806,7 +806,7 @@ function biproduct(x::Vector{T}; cached::Bool=true) where T <: AbstractSpace
   return _biproduct(x; cached)
 end
 
-biproduct(x::Vararg{AbstractSpace}; cached::Bool=true) = biproduct(collect(x); cached)
+biproduct(x::AbstractSpace, y::AbstractSpace...; cached::Bool=true) = biproduct(collect((x, y...)); cached)
 
 ################################################################################
 #

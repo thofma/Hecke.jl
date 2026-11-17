@@ -5,6 +5,15 @@
 ################################################################################
 
 function roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
+  @req !iszero(f) "Polynomial must be nonzero"
+  @req all(c -> iszero(c) || valuation(c) >= 0, coefficients(f)) "Root finding requires integral coefficients"
+  @req valuation(leading_coefficient(f)) == valuation(_content(f)) "Root finding requires a unit leading coefficient after removing content"
+  return _integral_roots(f)
+end
+
+# Recursive residue-class searches only need integral roots of the transformed
+# polynomial; its other roots belong to residue classes already considered.
+function _integral_roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
   K = base_ring(f)
   e = absolute_ramification_index(K)
   k, mk = residue_field(K)
@@ -18,10 +27,13 @@ function roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldEl
       if isone(degree(g))
         push!(rt, -constant_coefficient(g)//leading_coefficient(g))
       else
+        # An apparent repeated factor at finite precision can instead consist
+        # of nearby distinct factors. Do not infer root multiplicities from it.
+        @req isone(gcd(g, derivative(g))) "Insufficient precision to determine squarefreeness"
         #TODO: We don't need a full slope factorization.
         lS = slope_factorization(g)
         for (h, mh) in lS
-          @assert degree(h) > 0
+          @req degree(h) > 0 "Insufficient precision for slope factorization"
           if isone(degree(h))
             r = -constant_coefficient(h)//leading_coefficient(h)
             for j = 1:mh
@@ -39,6 +51,8 @@ function roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldEl
   end
   #the roots need to be refined.
   #rt = refine_roots(f, rt)
+  @req all(r -> precision(r) > 0 && iszero(f(r)), rt) "Insufficient precision to verify roots"
+  @req all(rt[i] != rt[j] for i in eachindex(rt) for j in 1:i-1) "Insufficient precision to distinguish roots"
   return rt
 end
 
@@ -69,19 +83,19 @@ function refine_roots1(f::Generic.Poly{T}, rt::Vector{T}) where T <: Union{Padic
   rtnew = setprecision(base_ring(f), precision(f)) do
     der = derivative(f)
     @assert precision(der) >= target_prec
-    rtnew = [setprecision(x, target_prec) for x = rt]
-    wvect = [(der(rtnew[i])) for i = 1:length(rt)]
+    rts = [setprecision(x, target_prec) for x = rt]
+    wvect = [(der(rts[i])) for i = 1:length(rt)]
     prec_loss = Int(absolute_ramification_index(parent(rt[1]))*maximum(valuation, wvect))
     wvect = map(inv, wvect)
     for i in 1:length(chain)
-      for j = 1:length(rtnew)
-        rtnew[j] = rtnew[j] - wvect[j]*f(rtnew[j])
+      for j = 1:length(rts)
+        rts[j] = rts[j] - wvect[j]*f(rts[j])
         if i < length(chain)
-          wvect[j] = wvect[j]*(2-wvect[j]*der(rtnew[j]))
+          wvect[j] = wvect[j]*(2-wvect[j]*der(rts[j]))
         end
       end
     end
-    return [setprecision(x, target_prec - prec_loss) for x= rtnew]
+    return [setprecision(x, target_prec - prec_loss) for x= rts]
   end
   return rtnew
 end
@@ -101,8 +115,10 @@ function _roots(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldE
   r = setprecision(preimage(mk, rts[1]), precision(f))
   pi = uniformizer(K)
   g = f(pi*x+r)
+  @req !iszero(g) "Insufficient precision to determine roots"
   g = divexact(g, _content(g))
-  rtg = roots(g)
+  @req precision(g) > 0 "Insufficient precision to determine roots"
+  rtg = _integral_roots(g)
   rts = elem_type(K)[setprecision(r, precision(y)+1) + pi*y for y in rtg]
   return rts
 end

@@ -78,11 +78,11 @@ function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64,
       @assert all(i -> isreal(rts[i]), 1:r)
       _rts = view(rts, (r+1):length(rts))
       # Sort the complex one from oo to -oo
-      sort!(_rts, by = x -> imag(x), rev = true)
+      sort!(_rts, by = imag, rev = true)
       s = div(length(rts) - r, 2)
       _rts = view(rts, (r+1):(r + s))
       # Sort the first s complex ones from 0 to oo
-      sort!(_rts, by = x -> imag(x), rev = false)
+      sort!(_rts, by = imag, rev = false)
     end
 
     compl_rts = Vector{AcbFieldElem}()
@@ -98,7 +98,7 @@ function _roots_squarefree(f::PolyRingElem{<: NumFieldElem}, _P; prec::Int = 64,
     @assert r + 2*s == degree(f)
   else
     if sort
-      sort!(rts, by = x -> imag(x),  rev = false)
+      sort!(rts, by = imag,  rev = false)
     end
     real_rts = ArbFieldElem[]
     compl_rts = AcbFieldElem[]

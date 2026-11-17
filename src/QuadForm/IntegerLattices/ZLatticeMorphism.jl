@@ -8,7 +8,7 @@ function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector; doauto=tr
   M = matrix(ZZ, first.(sv))
   # TODO: avoid the rational_span?
   V = rational_span(L)
-  S = lattice(V, M; isbasis = true, check = false)
+  S = lattice(V, M; is_basis = true, check = false)
   s = rank(S)
   T = orthogonal_submodule(lattice(V), S)
   gensOS = ZZMatrix[]
@@ -103,8 +103,10 @@ function __assert_has_automorphisms(
   end
 
 
-  # scale integral and positive definite and with trivial basis matrix
-  d = sign(gram_matrix(L)[1,1])*denominator(gram_matrix(L))
+  # rescale to scale 1 and positive definite, with trivial basis matrix; the
+  # roots, and so the reduced automorphism group, are those of this rescaling
+  # (see reduced_automorphism_group_order)
+  d = sign(gram_matrix(L)[1,1])*scale(L)
   if !isone(d)
     _L = rescale(L, 1//d; cached=false)
   else
@@ -131,9 +133,11 @@ function __assert_has_automorphisms(
     compress = false
   end
   vector_set = []
-  # Split off norm 1 vectors
-  if use_norm_one && (sv = short_vectors(L, 0, Int(1)); length(sv) > 0)
-    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(L, sv)
+  # Split off norm 1 vectors, which needs an integral lattice: the one with
+  # Gram matrix GL, in the basis of L
+  if use_norm_one && (LGL = integer_lattice(; gram = GL);
+                      sv = short_vectors(LGL, 0, Int(1)); length(sv) > 0)
+    S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(LGL, sv)
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
                                use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
                                compress, use_target_enum, allow_short_vectors_direct)
@@ -170,7 +174,12 @@ function __assert_has_automorphisms(
 
   if maximum(abs.(gram_matrix(_L)))>ZZ(2)^62
     # temporary fix TODO to it in _short_vectors_with_condition
+    # The Weyl route needs the target enumeration, and the projections
+    # enumerate with Int: proceed as for big lattices above.
+    use_weyl = false
+    use_projections = false
     use_target_enum = false
+    compress = false
   end
   if use_weyl && use_projections && use_target_enum
     res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
@@ -195,10 +204,11 @@ function __assert_has_automorphisms(
   faithful = true
   if compress && length(res) > 1 # nothing to compress if there is only a single
     res, vector_set = _compress_gram_matrices!(res, vector_set)
-    res2, vector_set2 = copy(res), [(v,copy(n)) for (v,n) in vector_set] # backup to confirm computation
-    @assert length(res2) == 2
-    res, vector_set, faithful = _compress_two_matrices_try_faithful_and_small!(res, vector_set)
-    @vprintln :Lattice 1 "Compression to one matrix successful: $faithful"
+    if length(res) == 2
+      res2, vector_set2 = copy(res), [(v,copy(n)) for (v,n) in vector_set] # backup to confirm computation
+      res, vector_set, faithful = _compress_two_matrices_try_faithful_and_small!(res, vector_set)
+      @vprintln :Lattice 1 "Compression to one matrix successful: $faithful"
+    end
   end
 
   if get_assertion_level(:Lattice) > 1
@@ -369,7 +379,10 @@ function _compress_two_matrices_try_faithful_and_small!(res, vector_set)
     _lambda = next_prime(8 * ZZ(1) * maximum(abs, res[i0]) + 1, false)
     faithful = false
     Gnew = _lambda * res[i1] + res[i0]
-    @assert _fits_small_init([Gnew], vector_set)
+    if !_fits_small_init([Gnew], vector_set)
+      # The fallback can also exceed the bounds for machine arithmetic.
+      return res, vector_set, true
+    end
   end
   keep_separated = false
   if fits(Int, _lambda) && all(x -> fits(Int, x), Gnew)
@@ -441,6 +454,7 @@ end
 # Given gram matrices G1,...,Gn, we construct
 # - G1, a_2G_2 + ... + a_nG_n with a_i small, positive, and random
 # - adjust the vector_set accordingly
+# Return the inputs unchanged if the compression bound cannot be guaranteed.
 function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector)
   # determine the bound for the size of the gram matrix
   arangebit = 3
@@ -461,13 +475,10 @@ function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector)
   # Gnbits <= bitbound - vector_nbits - nrows_nbits - 1 - 3 - nbits(r)
   gramnbitsbound = bitbound - vectors_nbits - nrows_nbits - 1 - arangebit - nbits(length(res) - 1)
   I = collect(2:length(res))
-  II = filter(i -> maximum(nbits, res[i]) <= gramnbitsbound, I)
-  @assert length(I) == length(II)
-  #if maximum(nbits, res[1]) <= gramnbitsbound && length(II) < length(I)
-  #  #error("Some Gram matrices are too large. Interesting case?!")
-  #  @vprintln :Lattice 1  "Removed Gram matrices with entries too large"
-  #end
-  I = II
+  if any(i -> maximum(nbits, res[i]) > gramnbitsbound, I)
+    # Keep all constraints and norms when compression could exceed the bound.
+    return res, vector_set
+  end
 
   if length(I) == 0
     return res, vector_set
@@ -491,10 +502,10 @@ function _compress_gram_matrices!(res::Vector{ZZMatrix}, vector_set::Vector)
     resize!(n, 2)
     n[2] = d
   end
-  Gcompressed = sum(a[i]*res_to_compress[i] for i in 1:l)
-  res = [res[1], Gcompressed]
-  @assert _fits_small_init(res, vector_set)
-  return res, vector_set
+  Gcompressed = sum(a .* res_to_compress)
+  res_new = [res[1], Gcompressed]
+  @assert _fits_small_init(res_new, vector_set)
+  return res_new, vector_set
 end
 
 # documented in ../Lattices.jl
@@ -548,6 +559,13 @@ function automorphism_group_order(
   return L.automorphism_group_order
 end
 
+# The reduced automorphism group of a definite lattice L, for now: let W be the
+# Weyl group, generated by the reflections in the vectors of norm 1 and 2 of
+# the positive definite rescaling of L of scale 1. Then O(L) = W x| Aut(L, rho)
+# for a Weyl vector rho, and the reduced group is Aut(L, rho), of order
+# |O(L)| / |W|. This may change, for example with roots of other norms (root
+# lattices of types B and C), so the interface is not stable: do not export
+# this function.
 function reduced_automorphism_group_order(
   L::ZZLat;
   kwargs...,
@@ -555,13 +573,24 @@ function reduced_automorphism_group_order(
   if isdefined(L, :reduced_automorphism_group_order)
     return L.reduced_automorphism_group_order
   end
-  if isdefined(L, :automorphism_group_order)
-    wg_order = _weyl_group_order(root_lattice_recognition(L)[1])
-    L.reduced_automorphism_group_order = divexact(L.automorphism_group_order, wg_order)
-  end
   @req is_definite(L) "The lattice must be definite"
-  # overwrite use_weyl keyword, to compute the reduced information
-  assert_has_automorphisms(L; kwargs..., use_weyl = true)
+  if !isdefined(L, :automorphism_group_order)
+    # overwrite use_weyl keyword, to compute the reduced information
+    assert_has_automorphisms(L; kwargs..., use_weyl = true)
+  end
+  if !isdefined(L, :reduced_automorphism_group_order)
+    # Not set by the Weyl route (order computed before, norm one vectors split
+    # off, or entries too large): divide by the order of W, with the roots of
+    # the same rescaling as in __assert_has_automorphisms.
+    root_types = Tuple{Symbol, Int}[]
+    if rank(L) > 0
+      G = gram_matrix(L)
+      GL = change_base_ring(ZZ, inv(sign(G[1, 1]) * scale(L)) * G)
+      root_types = root_lattice_recognition(integer_lattice(; gram=GL))[1]
+    end
+    L.reduced_automorphism_group_order = divexact(L.automorphism_group_order,
+                                                  _weyl_group_order(root_types))
+  end
   return L.reduced_automorphism_group_order
 end
 

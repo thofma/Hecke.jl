@@ -51,11 +51,13 @@
     @test Hecke.has_stably_free_cancellation(O)
     ls = Hecke.right_class_set(O)
     @test length(ls) == r
+    @test Hecke.right_class_set(O) === ls
     AA = quaternion_algebra(K, a, b)
     bOO = AA.(bas)
     OO = order(AA, bOO)
     ls = Hecke.right_class_set(OO)
     @test length(ls) == r
+    @test Hecke.right_class_set(OO) === ls
   end
 
   let # Eichler invariants
@@ -513,5 +515,337 @@
     O = order(A, push!(100 .* basis(A), one(A)))
     @test !Hecke.has_stably_free_cancellation(O)
     @test !Hecke.has_locally_free_cancellation(O)
+  end
+
+  @testset "is_eichler" begin
+    # Eichler means maximal or residually split at every prime (Voight,
+    # Lemma 24.3.6); Z + I, for a right ideal I of prime norm l of a maximal
+    # order, is the Eichler order of level l
+    level(O, l) = order(algebra(O), vcat([one(algebra(O))],
+      basis(first(Hecke.maximal_integral_ideals(O, l; side = :right)))))
+    for (a, b, l) in [(-1, -3, 2), (-1, 3, 5)]
+      O = maximal_order(quaternion_algebra(QQ, a, b))
+      @test is_eichler(O)
+      @test is_eichler(level(O, l))
+    end
+
+    # the standard Eichler orders of level N in M_2(QQ) = (1, 1)
+    A = quaternion_algebra(QQ, 1, 1)
+    _, i, j, ij = basis(A)
+    h = QQ(1, 2)
+    for N in [1, 2, 12]
+      O = order(A, [h * (1 + i), h * (1 - i), h * (j + ij), h * N * (j - ij)];
+                is_basis = true)
+      @test is_eichler(O)
+    end
+
+    # the Lipschitz order is not maximal at the ramified 2, and Z + 3M, for
+    # the Hurwitz order M, is residually ramified at the split 3
+    A = quaternion_algebra(QQ, -1, -1)
+    e, i, j, k = basis(A)
+    @test !is_eichler(order(A, basis(A); is_basis = true))
+    M = [e, i, j, QQ(1, 2) * (e + i + j + k)]
+    @test !is_eichler(order(A, vcat([e], [3 * b for b in M])))
+
+    K, = quadratic_field(5)
+    @test is_eichler(maximal_order(quaternion_algebra(K, -1, -1)))
+
+    A = matrix_algebra(QQ, 3)
+    @test_throws ArgumentError is_eichler(maximal_order(A))
+  end
+
+  @testset "eichler_level" begin
+    # the standard Eichler order of level N, the matrices (a b; Nc d) with
+    # a, b, c, d in Z, has level N (Voight, Quaternion Algebras, 23.4.19); here
+    # in M_2(QQ) = (1, 1) and, with N O_K, over K = Q(sqrt(5)), where 2 is
+    # inert, 5 ramified and 11 split
+    function standard(A, N)
+      e, i, j, k = basis(A)
+      h = QQ(1, 2)
+      return order(A, [h * (e + i), h * (e - i), h * (j + k), h * N * (j - k)])
+    end
+    A = quaternion_algebra(QQ, 1, 1)
+    for N in [1, 2, 12, 30]
+      @test eichler_level(standard(A, N)) == N
+    end
+    K, = quadratic_field(5)
+    A = quaternion_algebra(K, 1, 1)
+    R = maximal_order(K)
+    for N in [1, 2, 11, 20]
+      @test eichler_level(standard(A, N)) == N * R
+    end
+
+    # Z + I, for a right ideal I of prime norm l of a maximal order, has level
+    # l: the discriminant of the algebra, 3, 6 or 2, is not part of it
+    for (a, b, l) in [(-1, -3, 2), (-1, 3, 5), (-1, -1, 3)]
+      O = maximal_order(quaternion_algebra(QQ, a, b))
+      @test eichler_level(O) == 1
+      I = first(Hecke.maximal_integral_ideals(O, l; side = :right))
+      E = order(algebra(O), vcat([one(algebra(O))], basis(I)))
+      @test eichler_level(E) == l
+    end
+
+    # the same over K: (sqrt(5), -3) ramifies at the prime above 5, and
+    # O_K + I, for I of prime norm P, has reduced discriminant (sqrt(5)) P
+    # and level P
+    A = quaternion_algebra(K, gen(K), K(-3))
+    O = maximal_order(A)
+    @test eichler_level(O) == 1 * R
+    for q in [2, 11]
+      P = prime_decomposition(R, q)[1][1]
+      I = first(Hecke.maximal_integral_ideals(O, P; side = :right))
+      one_row = pseudo_matrix(matrix(K, 1, 4, coefficients(one(A))), [1 * R])
+      M = pseudo_hnf(vcat(basis_pmatrix(I), one_row), :lowerleft)
+      @test eichler_level(order(A, sub(M, 2:5, 1:4))) == P
+    end
+
+    # not Eichler: the Lipschitz orders over Q and K, and Z + 3M for the
+    # Hurwitz order M
+    A = quaternion_algebra(QQ, -1, -1)
+    e, i, j, k = basis(A)
+    @test_throws ArgumentError eichler_level(order(A, basis(A); is_basis = true))
+    M = [e, i, j, QQ(1, 2) * (e + i + j + k)]
+    E = order(A, vcat([e], [3 * b for b in M]))
+    @test_throws ArgumentError eichler_level(E)
+    A = quaternion_algebra(K, -1, -1)
+    @test_throws ArgumentError eichler_level(order(A, basis(A)))
+  end
+
+  # Z + nM for an order M
+  plus_multiple(M, n) = order(algebra(M), vcat([one(algebra(M))],
+                              [n * elem_in_algebra(b) for b in basis(M)]))
+  function plus_multiple(M::Hecke.AlgAssRelOrd, P)
+    A = algebra(M)
+    R = base_ring(M)
+    one_row = pseudo_matrix(matrix(base_ring(A), 1, 4, coefficients(one(A))),
+                            [1 * R])
+    N = pseudo_hnf(vcat(P * basis_pmatrix(M), one_row), :lowerleft)
+    return order(A, sub(N, 2:5, 1:4))
+  end
+
+  @testset "right_class_set" begin
+    # A class set is right if its ideals are pairwise inequivalent right
+    # ideals of O and the masses of their left orders add up to mass(O)
+    function is_class_set(O, C)
+      m = sum(QQ(1, length(Hecke.unit_group_modulo_scalars(left_order(I))))
+              for I in C)
+      return m == mass(O) && all(I -> right_order(I) == O, C) &&
+        all(!Hecke._right_ideals_equivalent(C[a], C[b])
+            for a in eachindex(C) for b in (a + 1):length(C))
+    end
+
+    # B_p: the class number (p - 1)/12 + (1 - (-4/p))/4 + (1 - (-3/p))/3
+    # (Voight, Quaternion Algebras, Theorem 30.1.5 and Exercise 30.6); about
+    # p = 2000 the old enumeration ran out of memory
+    for p in [97, 2003, 10007]
+      O = maximal_order(quaternion_algebra_ramified_at(QQ, p))
+      C = right_class_set(O)
+      h = (p - 1)//12 + (1 - jacobi_symbol(-4, p))//4 +
+          (1 - jacobi_symbol(-3, p))//3
+      @test length(C) == h
+      @test all(I -> right_order(I) == O && all(x -> x in O, basis(I)), C)
+    end
+    O = maximal_order(quaternion_algebra_ramified_at(QQ, 97))
+    @test is_class_set(O, right_class_set(O))
+
+    # the types of B_p with a single class are those whose curve is defined
+    # over F_p, of which there are h(-4p)/2, h(-p) or 2h(-p) for p = 1 mod 4,
+    # 7 mod 8 or 3 mod 8 (Delfs-Galbraith, arXiv:1310.7789, (1)); the walk
+    # relies on this count
+    for p in [97, 647, 1019]
+      O = maximal_order(quaternion_algebra_ramified_at(QQ, p))
+      C = right_class_set(O)
+      keys = [Hecke._gross_gram_key(left_order(I)) for I in C]
+      per_type = [count(==(k), keys) for k in unique(keys)]
+      h = class_number(maximal_order(quadratic_field(-p)[1]))
+      n = mod(p, 4) == 1 ? div(h, 2) : (mod(p, 8) == 7 ? h : 2 * h)
+      @test count(==(1), per_type) == n
+      @test all(in((1, 2)), per_type)
+    end
+
+    # the same order, constructed twice, gives the same ideals
+    A = quaternion_algebra(QQ, -2, -5)
+    C1 = right_class_set(maximal_order(A))
+    O = order(A, elem_in_algebra.(basis(maximal_order(A))))
+    @test basis_matrix.(right_class_set(O)) == basis_matrix.(C1)
+
+    # orders that are not maximal: discriminant 30, an Eichler order of level
+    # 2, the Lipschitz order, Z + 3M in B_2 (where the reduced norms of the
+    # classes run over both square classes modulo 3) and Z + 4M in B_3 (where
+    # the walk at the first neighbour prime does not reach every class)
+    A = quaternion_algebra(QQ, -3, -10)
+    @test is_class_set(maximal_order(A), right_class_set(maximal_order(A)))
+    M = maximal_order(quaternion_algebra_ramified_at(QQ, 97))
+    I = first(Hecke.maximal_integral_ideals(M, 2; side = :right))
+    E = order(algebra(M), vcat([one(algebra(M))], basis(I)))
+    @test is_eichler(E) && is_class_set(E, right_class_set(E))
+    A = quaternion_algebra(QQ, -1, -1)
+    L = order(A, basis(A); is_basis = true)
+    @test is_class_set(L, right_class_set(L))
+    O = plus_multiple(maximal_order(A), 3)
+    C = right_class_set(O)
+    @test is_class_set(O, C)
+    @test Set(jacobi_symbol(numerator(normred(I)), ZZ(3)) for I in C) ==
+          Set([1, -1])
+    O = plus_multiple(maximal_order(quaternion_algebra_ramified_at(QQ, 3)), 4)
+    primes = Hecke._neighbour_primes(O)
+    @test length(primes) == 2
+    C = right_class_set(O)
+    @test is_class_set(O, C)
+    @test any(I -> is_divisible_by(numerator(normred(I)), primes[2]), C)
+
+    # totally definite over Q(sqrt(5)), where (-1, -1) has one class, and over
+    # Q(sqrt(10)), of narrow class number 2; R + P M for P over 3 and R + 2M,
+    # whose neighbour primes must generate a ray class group; the same ideals
+    # for the order constructed twice
+    K, = quadratic_field(5)
+    M = maximal_order(quaternion_algebra(K, -1, -1))
+    @test length(right_class_set(M)) == 1
+    P = only(first.(prime_decomposition(base_ring(M), 2)))
+    O = plus_multiple(M, P)
+    G, mG = ray_class_group(P^3, real_places(K); GRH = false)
+    gs = [mG \ Q for Q in Hecke._neighbour_primes(O)]
+    @test order(sub(G, gs)[1]) == order(G)
+    @test is_class_set(O, right_class_set(O))
+    K, = quadratic_field(10)
+    M = maximal_order(quaternion_algebra(K, -1, -1))
+    @test is_class_set(M, right_class_set(M))
+    P = first(first.(prime_decomposition(base_ring(M), 3)))
+    O = plus_multiple(M, P)
+    @test is_class_set(O, right_class_set(O))
+    @test right_class_set(order(algebra(O), basis_pmatrix(O))) ==
+          right_class_set(O)
+
+    # indefinite: the reduced norm is a bijection onto Cl_{G(O)} R (Voight,
+    # Quaternion Algebras, Theorem 28.5.5), which is trivial for a maximal
+    # order over QQ, of order 2 for Z + 5M in (-1, 3), where the norms of the
+    # units at 5 are squares, and the class group of R for a maximal order
+    # split at every real place, with the same ideals on every call
+    A = quaternion_algebra(QQ, -1, 3)
+    M = maximal_order(A)
+    @test length(right_class_set(M)) == 1
+    O = plus_multiple(M, 5)
+    C = right_class_set(O)
+    @test length(C) == 2 && all(I -> right_order(I) == O, C)
+    @test Set(jacobi_symbol(numerator(normred(I)), ZZ(5)) for I in C) ==
+          Set([1, -1])
+    K, = quadratic_field(10)
+    M = maximal_order(quaternion_algebra(K, -1, 3))
+    C = right_class_set(M)
+    @test length(C) == order(class_group(base_ring(M))[1])
+    @test all(I -> right_order(I) == M, C)
+    @test all(_ -> Hecke._right_class_set(M) == C, 1:3)
+
+    # Cl_{G(O)} R is the locally free class group (Voight, Quaternion
+    # Algebras, Theorem 28.10.1), for orders not Eichler at 5 and at 2 over
+    # QQ, and at a prime above 2 of norm 2, 4 and 32 over a number field
+    locally_free(O) = elementary_divisors(locally_free_class_group(O))
+    indefinite(O) = elementary_divisors(Hecke._indefinite_class_group(O)[1])
+    M = maximal_order(quaternion_algebra(QQ, -1, 3))
+    for n in [5, 8]
+      O = plus_multiple(M, n)
+      @test indefinite(O) == locally_free(O) == [2]
+    end
+    Qx, x = QQ[:x]
+    for (f, n, h) in [(x^2 - 10, 2, [2]), (x^2 - 5, 2, Int[]),
+                      (x^5 - x^2 - 1, 1, Int[])]
+      K, = number_field(f)
+      M = maximal_order(quaternion_algebra(K, -1, 3))
+      P = only(first.(prime_decomposition(base_ring(M), 2)))
+      O = plus_multiple(M, P^n)
+      @test indefinite(O) == locally_free(O) == h
+      @test length(right_class_set(O)) == prod(h; init = 1)
+    end
+  end
+
+  @testset "type_set" begin
+    # B_p: the types are the supersingular j-invariants up to conjugation,
+    # (h + n)/2 of them for h classes, n of which are alone in their type
+    # (Delfs-Galbraith, arXiv:1310.7789, (1))
+    for p in [97, 647, 1019]
+      A = quaternion_algebra_ramified_at(QQ, p)
+      O = maximal_order(A)
+      h = length(right_class_set(O))
+      d = class_number(maximal_order(quadratic_field(-p)[1]))
+      n = mod(p, 4) == 1 ? div(d, 2) : (mod(p, 8) == 7 ? d : 2 * d)
+      @test type_number(O) == div(h + n, 2)
+      @test type_set(O) === type_set(O)
+      @test length(Hecke.representatives_of_maximal_orders(A)) ==
+            type_number(O)
+    end
+
+    # orders that are not maximal: Eichler orders of level 2 in B_23 and
+    # B_97, Z + 3M in B_2 and Z + 4M in B_3, with as many types as comparing
+    # the left orders of the classes pairwise gives (a long test, as its
+    # first call over QQ compiles isometry testing for a minute or more)
+    for (p, n) in [(23, 4), (97, 9)]
+      M = maximal_order(quaternion_algebra_ramified_at(QQ, p))
+      I = first(Hecke.maximal_integral_ideals(M, 2; side = :right))
+      E = order(algebra(M), vcat([one(algebra(M))], basis(I)))
+      @test type_number(E) == n
+      @test_throws ArgumentError Hecke.representatives_of_maximal_orders(E)
+    end
+    for (p, n) in [(2, 3), (3, 4)]
+      O = plus_multiple(maximal_order(quaternion_algebra_ramified_at(QQ, p)), n)
+      @test type_number(O) == 1
+    end
+    @long_test begin
+      for (p, n) in [(23, 4), (97, 9)]
+        A = quaternion_algebra_ramified_at(QQ, p)
+        M = maximal_order(A)
+        I = first(Hecke.maximal_integral_ideals(M, 2; side = :right))
+        E = order(A, vcat([one(A)], basis(I)))
+        types = typeof(E)[]
+        for J in right_class_set(E)
+          L = left_order(J)
+          any(S -> Hecke._is_isomorphic(L, S), types) || push!(types, L)
+        end
+        @test length(types) == n
+      end
+    end
+
+    # a StructureConstantAlgebra over QQ and over Q(sqrt(10)): maximal orders
+    # of that algebra, as many as for the QuaternionAlgebra; over QQ with
+    # centre Q(sqrt(5)), not implemented
+    K, = quadratic_field(10)
+    B = quaternion_algebra(K, -1, -1)
+    for (Q, n) in [(quaternion_algebra_ramified_at(QQ, 97), 5), (B, 4)]
+      A, = StructureConstantAlgebra(Q)
+      R = Hecke.representatives_of_maximal_orders(A)
+      @test length(R) == n && all(L -> algebra(L) === A && is_maximal(L), R)
+      @test type_number(maximal_order(Q)) == n
+    end
+    B5, = restrict_scalars(quaternion_algebra(quadratic_field(5)[1], -1, -1), QQ)
+    A, = StructureConstantAlgebra(B5)
+    @test_throws ArgumentError Hecke.representatives_of_maximal_orders(A)
+
+    # indefinite: the reduced norm is a bijection onto Cl_{G_N(O)} R (Voight,
+    # Quaternion Algebras, Corollary 28.5.10): one type over QQ; over
+    # Q(sqrt(10)), of class number 2, two for M_2(R) (ibid., 28.5.11), one
+    # for (-1, 3), which ramifies at the primes over 3, and one for the
+    # Eichler order of level P over 3 in M_2(R), as these primes are not
+    # principal; as many as the representatives_of_maximal_orders of a
+    # StructureConstantAlgebra
+    M = maximal_order(quaternion_algebra(QQ, -1, 3))
+    @test type_set(M) == [M]
+    @test_throws ArgumentError type_set(plus_multiple(M, 5))
+    for (a, b, n) in [(1, 1, 2), (-1, 3, 1)]
+      B = quaternion_algebra(K, a, b)
+      @test type_number(maximal_order(B)) == n
+      @test length(Hecke.representatives_of_maximal_orders(B)) == n
+      A, = StructureConstantAlgebra(B)
+      @test length(Hecke.representatives_of_maximal_orders(A)) == n
+    end
+    M = maximal_order(quaternion_algebra(K, 1, 1))
+    R = base_ring(M)
+    P = first(first.(prime_decomposition(R, 3)))
+    @test !is_principal(P)
+    I = first(Hecke.maximal_integral_ideals(M, P; side = :right))
+    one_row = pseudo_matrix(matrix(K, 1, 4, coefficients(one(algebra(M)))),
+                            [1 * R])
+    N = pseudo_hnf(vcat(basis_pmatrix(I), one_row), :lowerleft)
+    E = order(algebra(M), sub(N, 2:5, 1:4))
+    @test eichler_level(E) == P
+    @test length(right_class_set(E)) == 2 && type_number(E) == 1
   end
 end

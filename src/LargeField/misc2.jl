@@ -1,7 +1,7 @@
 
 function basis_rels(b::Vector{AbsSimpleNumFieldElem}, c; bd::ZZRingElem = ZZRingElem(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::ZZRingElem = ZZRingElem(0) )
-  a = b[1].parent()
-  t = b[1].parent()
+  a = parent(b[1])()
+  t = parent(b[1])()
   nb = length(b)
   one = ZZRingElem(1)
   for i=1:no_rel
@@ -22,12 +22,12 @@ function basis_rels(b::Vector{AbsSimpleNumFieldElem}, c; bd::ZZRingElem = ZZRing
         g = gcd(no_id, numerator(n))
         if g==1 || gcd(div(numerator(n), g), g) == 1
           if class_group_add_relation(c, a, n, one)
-            a = b[1].parent()
+            a = parent(b[1])()
           end
         end
       else
         if class_group_add_relation(c, a, n, one)
-          a = b[1].parent()
+          a = parent(b[1])()
         end
       end
     end
@@ -35,8 +35,8 @@ function basis_rels(b::Vector{AbsSimpleNumFieldElem}, c; bd::ZZRingElem = ZZRing
 end
 
 function basis_rels_2(b::Vector{AbsSimpleNumFieldElem}, bd::ZZRingElem = ZZRingElem(10^35), no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 4, no_id::ZZRingElem = ZZRingElem(0), smooth = 0 )
-  a = b[1].parent()
-  t = b[1].parent()
+  a = parent(b[1])()
+  t = parent(b[1])()
   nb = length(b)
   one = ZZRingElem(1)
   rels = Array{Hecke.AbsSimpleNumFieldElem}(no_rel)
@@ -86,8 +86,8 @@ function basis_rels_2(b::Vector{AbsSimpleNumFieldElem}, bd::ZZRingElem = ZZRingE
 end
 
 function basis_rels_3(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, no_id::ZZRingElem = ZZRingElem(1), smooth = 0 )
-  a = b[1].parent()
-  t = b[1].parent()
+  a = parent(b[1])()
+  t = parent(b[1])()
   nb = length(b)
   rels = Dict{ZZRingElem, AbsSimpleNumFieldElem}()
   i = 1
@@ -128,7 +128,7 @@ function local_norm!(n::ZZRingElem, ap::Vector{fqPolyRepFieldElem}, me::Hecke.mo
   nn = UInt(1)
   np = UInt(1)
   for j=1:length(ap)
-    ccall((:fq_nmod_norm, libflint), Nothing, (Ref{ZZRingElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), n, ap[j], ap[j].parent)
+    ccall((:fq_nmod_norm, libflint), Nothing, (Ref{ZZRingElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), n, ap[j], parent(ap[j]))
     nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, UInt(n), me.up, me.upinv)
   end
   set!(n, nn)
@@ -144,10 +144,10 @@ function local_norm(a::AbsSimpleNumFieldElem, me::Hecke.modular_env)
 end
 
 function basis_rels_4(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
-  a = b[1].parent()
-  t = b[1].parent()
+  a = parent(b[1])()
+  t = parent(b[1])()
 
-  K = b[1].parent
+  K = parent(b[1])
 
   n = degree(K)
 
@@ -263,10 +263,10 @@ function local_norm!(n::ZZRingElem, ap::fpMatrix, me::Hecke.modular_env)
 end
 
 function basis_rels_5(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel::Int = 10000, no_coeff::Int = 5, smooth = 0 )
-  a = b[1].parent()
-  t = b[1].parent()
+  a = parent(b[1])()
+  t = parent(b[1])()
 
-  K = b[1].parent
+  K = parent(b[1])
 
   n = degree(K)
 
@@ -423,8 +423,8 @@ end
 
 
 function rels_stat(b::Vector{Hecke.AbsSimpleNumFieldElem}; no_b = 250, no_rel::Int = 10000, no_coeff::Int = 4, fixed = 0, smooth=0 )
-  a = b[1].parent()
-  t = b[1].parent()
+  a = parent(b[1])()
+  t = parent(b[1])()
   nb = length(b)
   one = ZZRingElem(1)
 
@@ -461,7 +461,7 @@ function rels_stat(b::Vector{Hecke.AbsSimpleNumFieldElem}; no_b = 250, no_rel::I
     if smooth != 0 && is_smooth(smooth, numerator(n))[1]
       stat[-2] += 1
       push!(all_g, a)
-      a =   a = b[1].parent()
+      a =   a = parent(b[1])()
     end
   end
   return stat, all_g

@@ -57,9 +57,9 @@ function hnf_modular(M::MatElem{T}, d::T, is_prime::Bool = false, shape::Symbol 
   # make sure to pin the type of H: the result of both branches has typeof(M)
   #   but compiler cannot infer it
   H::typeof(M) = if is_prime
-    _, mR = residue_field(parent(d), d)
-    r, h = rref(map_entries(mR, M))
-    map_entries(x->preimage(mR, x), h[1:r, :])
+    _, mF = residue_field(parent(d), d)
+    r, h = rref(map_entries(mF, M))
+    map_entries(x->preimage(mF, x), h[1:r, :])
   else
     _, mR = residue_ring(parent(d), d)
     map_entries(x->preimage(mR, x), hnf(map_entries(mR, M)))
@@ -80,7 +80,7 @@ end
 
 function Hecke.basis(F::Generic.AbsSimpleFunctionField)
   a = gen(F)
-  bas = [a^0, a]
+  bas = [one(F)]
   while length(bas) < degree(F)
     push!(bas, bas[end]*a)
   end
@@ -90,7 +90,7 @@ end
 function Hecke.residue_field(R::PolyRing{T}, p::PolyRingElem{T}) where {T <: NumFieldElem}
   @assert parent(p) === R
   K, _ = number_field(p)
-  return K, MapFromFunc(R, K, x -> K(x), y -> R(y))
+  return K, map_from_func(R, K, K, R)
 end
 
 function (F::Generic.AbsSimpleFunctionField{T, U})(p::PolyRingElem{<:Generic.RationalFunctionFieldElem{T, U}}) where {T <: FieldElem, U <: PolyRingElem{T}}
@@ -159,7 +159,10 @@ function Hecke.integral_split(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingEl
 end
 Hecke.denominator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[2]
 Hecke.numerator(a::QQFieldElem, R::LocalizedEuclideanRing{ZZRingElem}) = integral_split(a, R)[1]
-(::QQField)(a::LocalizedEuclideanRingElem{ZZRingElem}) = data(a)
+
+# LocalizedEuclideanRingElem in AbstractAlgebra.jl has data typed as FieldElem
+#   and data(a) returns abstract type.
+(::QQField)(a::LocalizedEuclideanRingElem{ZZRingElem}) = data(a)::QQFieldElem
 
 function Hecke.factor(a::LocalizedEuclideanRingElem{ZZRingElem})
   c = canonical_unit(a)
@@ -174,7 +177,7 @@ function Hecke.residue_field(R::LocalizedEuclideanRing{ZZRingElem}, p::Localized
   pp = numerator(data(p))
   @assert is_prime(pp) && isone(denominator(p))
   F = GF(pp)
-  return F, MapFromFunc(R, F, x->F(data(x)), y->R(lift(ZZ, y)))
+  return F, map_from_func(R, F, x->F(data(x)), y->R(lift(ZZ, y)))
 end
 
 Hecke.is_domain_type(::Type{LocalizedEuclideanRingElem{ZZRingElem}}) = true
@@ -278,6 +281,8 @@ function Hecke.integral_split(M::QQMatrix, S::ZZRing)
   Hecke._fmpq_mat_to_fmpz_mat_den!(z, d, M)
   return z, d
 end
+
+Hecke.integral_split(x::Int, S::ZZRing) = ZZ(x), one(ZZ)
 
 function Hecke.integral_split(M::MatElem{<:AbstractAlgebra.FieldElem}, S::Generic.Ring)
   m = zero_matrix(S, nrows(M), ncols(M))

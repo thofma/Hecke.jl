@@ -670,7 +670,7 @@ end
 #TODO: check the universal properties here!!!
 
 @doc raw"""
-    direct_sum(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
+    direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
 
 Return the direct sum $D$ of the (finitely many) abelian groups $G_i$, together
 with the injections $G_i \to D$.
@@ -685,13 +685,13 @@ injections, one should call `biproduct(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function direct_sum(G::FinGenAbGroup...; task::Symbol = :sum, kwargs...)
+function direct_sum(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :sum, kwargs...)
   @assert task in [:sum, :prod, :both, :none]
-  return _direct_product(:sum, G...; task = task, kwargs...)
+  return _direct_product(:sum, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""
-    direct_product(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
+    direct_product(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}
 
 Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
 with the projections $D \to G_i$.
@@ -706,13 +706,13 @@ injections, one should call `biproduct(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function direct_product(G::FinGenAbGroup...; task::Symbol = :prod, kwargs...)
+function direct_product(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :prod, kwargs...)
   @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:prod, G...; task = task, kwargs...)
+  return _direct_product(:prod, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""
-    biproduct(G::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}, Vector{FinGenAbGroupHom}
+    biproduct(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}, Vector{FinGenAbGroupHom}
 
 Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
 with the projections $D \to G_i$ and the injections $G_i \to D$.
@@ -727,9 +727,9 @@ one should call `direct_product(G...)`.
 Otherwise, one could also call `canonical_injections(D)` or `canonical_projections(D)`
 later on.
 """
-function biproduct(G::FinGenAbGroup...; task::Symbol = :both, kwargs...)
+function biproduct(G::FinGenAbGroup, H::FinGenAbGroup...; task::Symbol = :both, kwargs...)
   @assert task in [:prod, :sum, :both, :none]
-  return _direct_product(:prod, G...; task = task, kwargs...)
+  return _direct_product(:prod, G, H...; task = task, kwargs...)
 end
 
 @doc raw"""
@@ -823,7 +823,7 @@ function canonical_injection(G::FinGenAbGroup, i::Int)
   D = get_attribute(G, :direct_product)
   D === nothing && error("1st argument must be a direct product")
   s = sum([ngens(D[j]) for j = 1:i-1], init = 0)
-  h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])])
+  h = hom(D[i], G, [G[s+j] for j = 1:ngens(D[i])]; check = false)
   return h
 end
 
@@ -851,7 +851,7 @@ function canonical_projection(G::FinGenAbGroup, i::Int)
   H = D[i]
   h = hom(G, H, vcat( [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = 1:i-1]...,
                          gens(H),
-                      [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = i+1:length(D)]...))
+                      [FinGenAbGroupElem[H[0] for j = 1:ngens(D[h])] for h = i+1:length(D)]...); check = false)
   return h
 end
 
@@ -910,8 +910,8 @@ function hom_direct_sum(G::FinGenAbGroup, H::FinGenAbGroup, V::Vector{<:Map{FinG
   if dG === nothing || dH === nothing
     error("both groups need to be direct products")
   end
-  @assert length(V) == length(dG) == length(dH)
 
+  @assert length(V) == length(dG) == length(dH)
   @assert all(i -> domain(V[i]) == dG[i] && codomain(V[i]) == dH[i], 1:length(V))
   h = hom(G, H, cat([matrix(V[i]) for i=1:length(V)]..., dims=(1,2)), check = !true)
   return h
@@ -1026,7 +1026,7 @@ function tensor_product(G::FinGenAbGroup...; task::Symbol = :map)
     return reverse(g[p[1]])
   end
 
-  return T, MapFromFunc(TupleParent(Tuple([g[0] for g = G])), T, pure, inv_pure)
+  return T, map_from_func(TupleParent(Tuple([g[0] for g = G])), T, pure, inv_pure)
 end
 
 ⊗(G::FinGenAbGroup...) = tensor_product(G..., task = :none)
@@ -1795,18 +1795,18 @@ function find_isomorphism(G, op, A::GrpAb)
 end
 
 function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
-	id = id_hom(domain(G[1]))
-	S = small_generating_set(G)
+  id = id_hom(domain(G[1]))
+  S = small_generating_set(G)
   p = 2
-  R = GF(p, cached = false)
+  R = Native.GF(p, cached = false)
   K = domain(G[1])
   Rx = polynomial_ring(R, "x", cached = false)[1]
-  while iszero(discriminant(Rx(K.pol)))
+  while iszero(discriminant(change_base_ring(base_ring(Rx), K.pol; parent = Rx)))
     p = next_prime(p)
-		R = GF(p, cached = false)
-	  Rx = polynomial_ring(R, "x", cached = false)[1]
-	end
-  list = fpPolyRingElem[Rx(x.prim_img) for x in S]
+    R = Native.GF(p, cached = false)
+    Rx = polynomial_ring(R, "x", cached = false)[1]
+  end
+  list = fpPolyRingElem[Rx(image_primitive_element(x)) for x in S]
   push!(list, gen(Rx))
   n = length(G)
   elem_to_index = Dict{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Int}()
@@ -1818,7 +1818,7 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
   for i in 1:length(S)
     v = zeros(Int, length(S))
     v[i] = 1
-    words[Rx(S[i].prim_img)] = v
+    words[Rx(image_primitive_element(S[i]))] = v
   end
 
   words[list[end]] = zeros(Int, length(S))
@@ -1833,8 +1833,8 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
     for g in list
       for i in 1:length(S)
         s = S[i]
- 				sRx = Rx(s.prim_img)
-        m = compose_mod(g, sRx, Rx(K.pol))
+        sRx = Rx(image_primitive_element(s))
+        m = compose_mod(g, sRx, change_base_ring(base_ring(Rx), K.pol; parent = Rx))
 
         if m in list
           w = words[sRx] .+ words[g] .- words[m]
@@ -1863,17 +1863,18 @@ function find_isomorphism_with_abelian_group(G::Vector{<:NumFieldHom{AbsSimpleNu
   GtoAsnf = Dict{eltype(G), FinGenAbGroupElem}()
   AsnftoG = Dict{FinGenAbGroupElem, eltype(G)}()
   for g in G
-    w = words[Rx(g.prim_img)]
+    w = words[Rx(image_primitive_element(g))]
     GtoAsnf[g] = sum(w[i] * (mAsnf \ A[i]) for i in 1:length(S))
   end
   for a in Asnf
     el = gen(Rx)
     v = Int[mAsnf(a).coeff[1, i] for i in 1:length(S)]
     for i in 1:length(S)
-      el = compose_mod(el, pow(Rx(S[i].prim_img), (x, y) -> Hecke.compose_mod(x, y, Rx(K.pol)), v[i], gen(Rx)), Rx(K.pol))
+      el = compose_mod(el, pow(Rx(image_primitive_element(S[i])), (x, y) -> Hecke.compose_mod(x, y, change_base_ring(base_ring(Rx), K.pol; parent = Rx)), v[i], gen(Rx)), change_base_ring(base_ring(Rx), K.pol; parent = Rx))
     end
-		ind = findfirst(x -> Rx(x.prim_img) == el, G)
-		@assert ind !== nothing
+    img = el
+    ind = findfirst(x -> Rx(image_primitive_element(x)) == img, G)
+    @assert ind !== nothing
     AsnftoG[a] = G[ind]
   end
 
@@ -2213,8 +2214,8 @@ function saturate(U::FinGenAbGroup, G::FinGenAbGroup)
   for (p, k) = lf
     for i=k:-1:1
       h = hom(G, G, [p^i*g for g = gens(G)])
-      i, mi = image(h)
-      s = intersect(i, U)
+      im, mi = image(h)
+      s = intersect(im, U)
       fl, mp = is_subgroup(s, G)
       q, mq = quo(s, h(U)[1])
       if order(q) != 1
@@ -2242,9 +2243,9 @@ function has_complement(m::FinGenAbGroupHom, to_lattice::Bool = true)
   G = codomain(m)
   if !isfinite(G)
     U = domain(m)
-    q, mq = quo(G, U, false)
-    q, _mq = snf(q)
-    mq = mq*inv(_mq)
+    q0, mq0 = quo(G, U, false)
+    q, _mq = snf(q0)
+    mq = mq0*inv(_mq)
     Cgens = [preimage(mq, g) for g = gens(q)]
     C, mC = sub(G, Cgens, false)
     _, sumUC = sub(G, append!(m.(gens(U)), Cgens), false)
@@ -2287,6 +2288,7 @@ function has_complement(m::FinGenAbGroupHom, to_lattice::Bool = true)
     push!(gens_complement, igSH - m1(el_sub))
   end
   res, mres = sub(G, gens_complement, false)
+  @assert is_trivial(intersect(m, mres, false)[1])
   @assert order(res)*order(s) == order(G)
   return true, mres
 end

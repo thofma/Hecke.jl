@@ -54,43 +54,56 @@ function make(Hecke::Module; strict=false,
     DocMeta.setdocmeta!(Hecke, :DocTestSetup, Hecke.doctestsetup(); recursive=true)
     DocMeta.setdocmeta!(Hecke.Nemo, :DocTestSetup, :(using Hecke.Nemo); recursive=true)
 
+    pages = []
     if format == :html
-      makedocs(
-        modules=[Hecke, Hecke.Nemo],
-        authors="Claus Fieker and Tommy Hofmann",
-        repo=gh_hecke,
-        sitename="Hecke.jl",
-        checkdocs=:none,
-        format=Documenter.HTML(
-          repolink="https://github.com/thofma/Hecke.jl",
-          prettyurls=!local_build,
-          collapselevel=1),
-        warnonly=warnonly,
-        plugins=[bib],
-        doctest=doctest,
-        remotes=remotes,
-      )
+      doc_format = Documenter.HTML(
+        repolink="https://github.com/thofma/Hecke.jl",
+        prettyurls=!local_build,
+        collapselevel=1)
     elseif format == :vitepress
-      makedocs(
-        modules=[Hecke, Hecke.Nemo],
-        authors="Claus Fieker and Tommy Hofmann",
-        repo=gh_hecke,
-        sitename="Hecke.jl",
-        checkdocs=:none,
-        remotes=remotes,
-        format=DocumenterVitepress.MarkdownVitepress(
-          repo="github.com/thofma/Hecke.jl",
-          devurl="dev",
-          devbranch="master",
-          deploy_url="https://docs.hecke.thofma.com",
-          #build_vitepress = !local_build,
-        ),
-        warnonly=warnonly,
-        plugins=[bib],
-        doctest=doctest,
+      doc_format = DocumenterVitepress.MarkdownVitepress(
+        repo="github.com/thofma/Hecke.jl",
+        devurl="dev",
+        devbranch="master",
+        deploy_url="https://docs.hecke.thofma.com",
+        #build_vitepress = !local_build,
       )
+    elseif format == :pdf
+      doc_format = Documenter.LaTeX()
+      pages = pdf_pages("src")
+    else
+      error("unknown format: $format")
     end
+
+    makedocs(
+      modules=[Hecke, Hecke.Nemo],
+      authors="Claus Fieker and Tommy Hofmann",
+      repo=gh_hecke,
+      sitename="Hecke.jl",
+      checkdocs=:none,
+      remotes=remotes,
+      format=doc_format,
+      pages=pages,
+      warnonly=warnonly,
+      plugins=[bib],
+      doctest=doctest,
+    )
   end
+end
+
+# The LaTeX writer renders only the pages listed in `pages`, so list all pages
+# in `src`, each index.md first in its directory. The bibliography has no
+# heading of its own and goes last.
+function pdf_pages(src::String)
+  bib_page = joinpath("manual", "references.md")
+  pages = String[]
+  for (dir, _, files) in walkdir(src), file in files
+    endswith(file, ".md") || continue
+    page = relpath(joinpath(dir, file), src)
+    page == bib_page || push!(pages, page)
+  end
+  sort!(pages; by=p -> (dirname(p), basename(p) != "index.md", p))
+  return ["Hecke.jl" => [pages; "References" => bib_page]]
 end
 
 function editmeta(content)
@@ -136,7 +149,8 @@ nothing
   return content
 end
 
-function build_all_tutorials(Hecke::Module, local_build::Bool=false)
+function build_all_tutorials(Hecke::Module, local_build::Bool=false;
+  pdf::Bool=false)
   # get the base_str
   relpath = local_build ? "" : "/"
   res = []
@@ -152,7 +166,9 @@ function build_all_tutorials(Hecke::Module, local_build::Bool=false)
         name = String(name)
         mdlink = repourl * "docs/src/tutorials/" * name
         ipylink = repourl * "docs/src/tutorials/" * name * ".ipynb"
-        mdfile = basename(Literate.markdown(s; codefence=codefence = "````@repl bla" => "````", preprocess=edit_header, postprocess=remove_using_hecke, repo_root_url=repourl * "dev/tutorials/build/" * name * "", name=name, credit=false))
+        # LaTeX cannot include the remote badge images of the header
+        header = pdf ? clear_header : edit_header
+        mdfile = basename(Literate.markdown(s; codefence=codefence = "````@repl bla" => "````", preprocess=header, postprocess=remove_using_hecke, repo_root_url=repourl * "dev/tutorials/build/" * name * "", name=name, credit=false))
         @info mdfile
         notebookfile = basename(Literate.notebook(s, preprocess=clear_header, outdir, credit=false))
         scriptfile = basename(Literate.script(s, preprocess=clear_header, outdir, credit=false))

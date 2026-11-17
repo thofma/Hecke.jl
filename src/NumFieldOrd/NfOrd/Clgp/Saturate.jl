@@ -36,11 +36,12 @@ function mod_p(R::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, Q::
       y *= x
     end
   end
+  gen_x = x
   ma = Vector{Int}(undef, length(R))
   for i in 1:length(R)
     imgd = image(mF1, R[i], D[i], cached, pp)^e
     ma[i] = get!(dl, imgd) do
-      Hecke.baby_step_giant_step(x, pp, imgd, dl) % p
+      Hecke.baby_step_giant_step(gen_x, pp, imgd, dl) % p
     end
   end
   return matrix(T, 1, length(R), ma)
@@ -454,7 +455,8 @@ function saturate!(d::Hecke.ClassGrpCtx, U::Hecke.UnitGrpCtx, n::Int, stable::Fl
         end
       end
 
-      decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((c.FB.ideals[k], v) for (k, v) = fac_a)
+      ideals = c.FB.ideals
+      decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}((ideals[k], v) for (k, v) = fac_a)
 
       @vprintln :Saturate 1 "Testing if element is an n-th power"
       @vtime :Saturate 1 fl, x = is_power(a, n, decom = decom, easy = easy_root)

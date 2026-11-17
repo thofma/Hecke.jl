@@ -13,12 +13,28 @@
     M2 = matrix(QG, [ 1 0; 1 1])
     A = matrix_algebra(QQ, QG, [ M1, M2 ])
     @test dim(A) == 4
+
+    # Supplied bases over an algebra coefficient ring.
+    B = [matrix(QG, 1, 1, [2*b]) for b in basis(QG)]
+    A = matrix_algebra(QQ, QG, B; is_basis = true)
+    @test dim(A) == 2
+    @test matrix.(basis(A)) == B
+    @test coefficients(A(B[1] + 2*B[2])) == QQ.([1, 2])
+    @test A(B[2])*A(B[2]) == 4*one(A)
   end
 
   @testset "multiplication table" begin
-    M = matrix_algebra(QQ, [matrix(QQ, 1, 1, [4])]; isbasis=true)
+    M = matrix_algebra(QQ, [matrix(QQ, 1, 1, [4])]; is_basis=true)
     @test Hecke._matrix_in_algebra(matrix(QQ, 1, 1, [1]), M) == [QQ(1, 4)]
     @test multiplication_table(M) == fill(QQ(4), 1, 1, 1)
+
+    # coefficient ring != base ring, small enough to avoid the naive product
+    K, a = quadratic_field(2)
+    A = matrix_algebra(QQ, K, [diagonal_matrix(K, [a, K(1), K(1), K(1)])])
+    B = matrix.(basis(A))
+    mt = multiplication_table(A)
+    @test all(B[i] * B[j] == sum(mt[i, j, k] * B[k] for k in 1:dim(A))
+              for i in 1:dim(A), j in 1:dim(A))
   end
 
   @testset "Radical" begin

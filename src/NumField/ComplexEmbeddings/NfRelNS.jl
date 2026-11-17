@@ -223,7 +223,8 @@ function restrict(e::NumFieldEmb, f::NumFieldHom{<: RelNonSimpleNumField, <: Any
   # This is the natural map K -> L
   KtoL = hom(K, L)
   res_base_field = restrict(e, KtoL * f)
-  cn = [ all(overlaps.(ee.data, e.(f.(gens(L))))) && ee.base_field_emb === res_base_field for ee in emb]
+  imgs = e.(f.(gens(L)))
+  cn = [ ee.base_field_emb === res_base_field && all(overlaps.(ee.data, imgs)) for ee in emb]
   @assert count(cn) == 1
   i = findfirst(cn)
   return emb[i]

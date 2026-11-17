@@ -17,6 +17,17 @@
   @test z6^2 == res[2]
 end
 
+@testset "Serialization" begin
+  Qx, x = QQ["x"]
+  K, a = number_field(x^3 + 2, "a")
+  A = [K(1), a, a^2//3 - 5, K(0)]
+  mktemp() do path, io
+    close(io)
+    Hecke.write(path, A)
+    @test Hecke.read(path, K, AbsSimpleNumFieldElem) == A
+  end
+end
+
 @testset "Splitting Field" begin
 
   Qx, x = polynomial_ring(QQ, "x")
@@ -78,7 +89,7 @@ end
  Qx, x = polynomial_ring(QQ, "x")
  f = x^12 + 4*x^10 + 11*x^8 + 4*x^6 - 41*x^4 - 8*x^2 + 37
  K, a = number_field(f)
- @test length(factor(K, f).fac) == 4
+ @test length(factor(K, f)) == 4
 end
 
 @testset "automorphisms" begin

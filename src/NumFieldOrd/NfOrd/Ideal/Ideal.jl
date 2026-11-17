@@ -215,7 +215,12 @@ that $M$ is already in lower left HNF.
 """
 function ideal(O::AbsNumFieldOrder, M::ZZMatrix; check::Bool = false, M_in_hnf::Bool = false)
   x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
+  k = something(findfirst(i -> !is_zero_row(x, i), 1:nrows(x)), nrows(x) + 1)
+  if k != 1
+    x = sub(x, k:nrows(x), 1:ncols(x))
+  end
   I = AbsNumFieldOrderIdeal(O, x)
+  I.iszero = isempty(x) ? 1 : 2
   # The compiler stopped liking this recursion??
   # if check
   #   J = ideal(O, basis(I))
@@ -226,8 +231,13 @@ end
 
 function _ideal(O::AbsNumFieldOrder, M::ZZMatrix, M_in_hnf::Bool = false)
   x = !M_in_hnf ? _hnf(M, :lowerleft) : M #sub-optimal, but == relies on the basis being thus
+  k = something(findfirst(i -> !is_zero_row(x, i), 1:nrows(x)), nrows(x) + 1)
+  if k != 1
+    x = sub(x, k:nrows(x), 1:ncols(x))
+  end
   #_trace_call(;print = true)
   I = AbsNumFieldOrderIdeal(O, x)
+  I.iszero = isempty(x) ? 1 : 2
   return I
 end
 
@@ -270,7 +280,6 @@ function ideal_from_z_gens(O::AbsSimpleNumFieldOrder, b::Vector{AbsSimpleNumFiel
     @assert parent(b[i]) === O
   end
   d = degree(O)
-  @assert length(b) >= d
 
   M = zero_matrix(ZZ, length(b), d)
   for i = 1:length(b)
@@ -278,6 +287,9 @@ function ideal_from_z_gens(O::AbsSimpleNumFieldOrder, b::Vector{AbsSimpleNumFiel
     for j = 1:d
       M[i, j] = el[j]
     end
+  end
+  if isempty(b)
+    return ideal(O, M; check, M_in_hnf=true)
   end
   M = _hnf(M, :lowerleft)
   if d < length(b)
@@ -424,6 +436,8 @@ function assure_has_basis_matrix(A::AbsNumFieldOrderIdeal)
     return nothing
   end
 
+  OK = OK::AbsSimpleNumFieldOrder
+
   if !is_simple(nf(OK)) && isdefined(A, :is_prime) && A.is_prime == 1 &&
          A.norm == A.minimum && !is_index_divisor(OK, A.minimum)
     # A is a prime ideal of degree 1
@@ -563,6 +577,11 @@ function assure_has_minimum(A::AbsNumFieldOrderIdeal)
     return nothing
   end
 
+  if A.iszero == 1
+    A.minimum = zero(ZZ)
+    return nothing
+  end
+
   if degree(order(A)) == 1
     if has_2_elem(A)
       # I want A.gen_two.elem_in_nf as an element of Q,
@@ -660,6 +679,11 @@ end
 
 function assure_has_norm(A::AbsNumFieldOrderIdeal)
   if has_norm(A)
+    return nothing
+  end
+
+  if A.iszero == 1
+    A.norm = zero(ZZ)
     return nothing
   end
 
@@ -778,6 +802,11 @@ function ==(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
   if x === y
     return true
   end
+  if x.iszero == 1 && y.iszero == 1
+    return true
+  elseif x.iszero != 0 && y.iszero != 0 && x.iszero != y.iszero
+    return false
+  end
   if has_2_elem(x) && has_2_elem(y)
     if x.gen_one == y.gen_one && x.gen_two == y.gen_two
       return true
@@ -810,7 +839,7 @@ function ==(x::AbsNumFieldOrderIdeal, y::AbsNumFieldOrderIdeal)
       return false
     end
     OK = order(x)
-    if contains_equation_order(OK) && !is_index_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
+    if is_simple(OK) && contains_equation_order(OK) && !is_index_divisor(OK, px) && has_2_elem(x) && has_2_elem(y)
       f = defining_polynomial(number_field(OK))
       if px <= typemax(Int)
         return _test(Int(px), elem_in_nf(x.gen_two), elem_in_nf(y.gen_two), f)
@@ -873,8 +902,8 @@ function containment_by_matrices(x::AbsNumFieldOrderElem, y::AbsNumFieldOrderIde
   return iszero(v)
 end
 
-function in(x::AbsSimpleNumFieldElem, y::AbsNumFieldOrderIdeal)
-  parent(x) !== nf(order(y)) && error("Number field of element and ideal must be equal")
+function in(x::NumFieldElem, y::AbsNumFieldOrderIdeal)
+  @req parent(x) === nf(order(y)) "Number field of element and ideal must be equal"
   return in(order(y)(x),y)
 end
 
@@ -996,7 +1025,8 @@ end
 
 
 function _minmod(a::ZZRingElem, b::AbsNumFieldOrderElem)
-  return mod(denominator(inv(b.elem_in_nf), parent(b)), a)
+  # The minimum divides both the integer generator and the inverse denominator.
+  return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
 end
 
 function _minmod_easy(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
@@ -1464,12 +1494,16 @@ end
 
 function is_power(I::AbsSimpleNumFieldOrderFractionalIdeal)
   num, den = integral_split(I)
-  e, r = is_perfect_power_with_data(num)
+  e, r = is_power(num)
   if e == 1
     return e, I
   end
-  f, s = is_perfect_power_with_data(den)
+  f, s = is_power(den)
   g = gcd(e, f)
+  if iszero(g)
+    # I is the unit ideal
+    return 0, I
+  end
   return g, r^div(e, g)//s^div(f, g)
 end
 
@@ -2534,7 +2568,7 @@ euler_phi_inv(n::Integer, zk::AbsNumFieldOrder) = [ numerator(evaluate(x)) for x
 ################################################################################
 
 function _squarefree_ideals_with_bounded_norm(O::AbsNumFieldOrder, lp::Vector{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}}, bound::ZZRingElem)
-  #@assert issorted(lp, by = x -> norm(x))
+  #@assert issorted(lp, by = norm)
   lf = Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}}()
   for P in lp
     push!(lf, (P, norm(P)))

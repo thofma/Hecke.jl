@@ -148,7 +148,7 @@ function cyclotomic_extension(k::AbsSimpleNumField, n::Int; cached::Bool = true,
         ZKa.disc = discriminant(f)^degree(k)*discriminant(Zk)^degree(fk)
         ZKa.index = root(divexact(numerator(discriminant(Ka)), ZKa.disc), 2)
         ZKa.gen_index = QQFieldElem(ZKa.index)
-        for (p,v) = factor(gcd(discriminant(Zk), ZZRingElem(n))).fac
+        for (p,v) in factor(gcd(discriminant(Zk), ZZRingElem(n)))
           ZKa = pmaximal_overorder(ZKa, p)
         end
         ZKa.is_maximal = 1
@@ -181,7 +181,7 @@ function cyclotomic_extension(k::AbsSimpleNumField, n::Int; cached::Bool = true,
 
   if gcd(degree(fk), degree(k)) != 1
     lf = factor(fk)
-    fk = first(keys(lf.fac))
+    fk = first(lf)[1]
   end
 
   Kr, Kr_gen = number_field(fk, "z_$n", cached = false, check = false)

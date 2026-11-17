@@ -239,12 +239,23 @@ end
 #
 ################################################################################
 
+# A satisfies the Eichler condition if no simple component of A is a totally
+# definite quaternion algebra over its centre (J. Voight, Quaternion Algebras,
+# GTM 288). This depends only on A as a ring, so over a relative number field
+# we may restrict scalars to QQ, for which _is_eichler_csa is implemented.
 function is_eichler(A::AbstractAssociativeAlgebra)
+  if base_ring(A) isa NumField && !(base_ring(A) isa AbsSimpleNumField)
+    A, = restrict_scalars(A, QQ)
+  end
   if is_simple(A) && is_central(A)
     return _is_eichler_csa(A)
   end
   d = decompose(A)
   for (B, _) in d
+    # Over a number field K, the center would be a relative extension of K
+    if base_ring(B) isa AbsSimpleNumField
+      B, = restrict_scalars(B, QQ)
+    end
     BC, = _as_algebra_over_center(B)
     if !_is_eichler_csa(BC)
       return false

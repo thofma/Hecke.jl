@@ -28,10 +28,10 @@ ZZGenus
 genus(::ZZLat)
 ```
 
-### From a gram matrix
+### From a Gram matrix
 
 ```@docs
-genus(A::MatElem)
+genus_from_gram(A::MatElem)
 ```
 
 ### Enumeration of genus symbols
@@ -104,7 +104,7 @@ ZZLocalGenus
 
 ```@docs
 genus(::ZZLat, ::IntegerUnion)
-genus(::QQMatrix, ::IntegerUnion)
+genus_from_gram(::QQMatrix, ::IntegerUnion)
 ```
 
 ### Attributes

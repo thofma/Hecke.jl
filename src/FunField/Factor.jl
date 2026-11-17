@@ -92,7 +92,10 @@ function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   return la
 end
 
-function is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+function Hecke.is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+  degree(f) <= 0 && return false
+  # Units in the coefficient field must not become extra polynomial factors.
+  f = divexact(f, leading_coefficient(f))
   return is_absolutely_irreducible(to_mpoly(f))
 end
 
@@ -213,7 +216,7 @@ function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSi
 
   fN = factor(N)
   # We are reconstructing the monic polynomial g and the gcds below are monic.
-  D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) = fN.fac))
+  D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) in fN))
   return D
 end
 
@@ -222,7 +225,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   f = divexact(f, gcd(f, derivative(f)))
 
   lf = factor(f)
-  lf = [x for x = keys(lf.fac) if degree(x) > 1]
+  lf = [x for (x, _) in lf if degree(x) > 1]
   if length(lf) == 0
     return base_ring(f)
   end
@@ -255,7 +258,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
     end
 
     fN = factor(N)
-    lf = [x for x = keys(fN.fac) if degree(x) > degree(G)]
+    lf = [x for (x, _) in fN if degree(x) > degree(G)]
       #the gcd of x with deg(x) == deg(G) will yield a linear
       #factor, hence does not contribute further
     if length(lf) == 0
@@ -269,10 +272,10 @@ end
     swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
     swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
 
-Compute the minimal polynomial of $\sum \pm \sqrt{t+v_i}$ evaluated at $x$.
+Compute the minimal polynomial of $\sum \pm \sqrt{-(t+v_i)}$ evaluated at $x$.
 $t$ is the generator of the base field of the parent of $x$.
 
-In the second variant, the polynomial has roots $\sum\pm\sqrt{t+i}$ for
+In the second variant, the polynomial has roots $\sum\pm\sqrt{-(t+i)}$ for
   $i=1,\ldots,n$.
 """
 function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
@@ -281,8 +284,9 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunc
   S = base_ring(x)
   T = gen(S)
   X = gen(parent(x))
-  l = [(X^2 + T + i) for i = V]
-  l = [ vcat([2*one(S)], polynomial_to_power_sums(x, 2^n)) for x = l]
+  l0 = [(X^2 + T + i) for i = V]
+  nps = 2^n
+  l = [ vcat([2*one(S)], polynomial_to_power_sums(x, nps)) for x = l0]
   while n > 1
     i = 1
     while 2*i <= n
@@ -305,7 +309,7 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunc
 end
 
 function Hecke.swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
-  return swinnerton_dyer(x, collect(1:n))
+  return swinnerton_dyer(collect(1:n), x)
 end
 
 end

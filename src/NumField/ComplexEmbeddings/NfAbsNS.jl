@@ -123,7 +123,8 @@ function restrict(e::NumFieldEmb, f::NumFieldHom{<: AbsNonSimpleNumField, <: Any
   @req number_field(e) === codomain(f) "Number fields do not match"
   L = domain(f)
   emb = complex_embeddings(L)
-  cn = Bool[ all(overlaps.(ee.roots, e.(f.(gens(L))))) for ee in emb]
+  imgs = e.(f.(gens(L)))
+  cn = Bool[ all(overlaps.(ee.roots, imgs)) for ee in emb]
   @assert count(cn) == 1
   i = findfirst(cn)
   return emb[i]
@@ -197,7 +198,7 @@ function _find_nearest_complex_embedding(K::AbsNonSimpleNumField, x)
     push!(t, gen_diffs)
   end
 
-  _, i = findmin(map(y -> sum(y), t))
+  _, i = findmin(map(sum, t))
 
   check_overlaps = y -> isempty(filter(x -> !overlaps(x...), y))
   for j in 1:length(t)

@@ -1,4 +1,4 @@
-density(f::PolyRingElem) = length(findall(x->!iszero(x), coefficients(f)))/length(f)
+density(f::PolyRingElem) = length(findall(!iszero, coefficients(f)))/length(f)
 
 #move elsewhere? Not used in here
 function Hecke.representation_matrix(a::ResElem{<:PolyRingElem})

@@ -98,6 +98,21 @@
     # indefinite
     @test is_reduced(binary_quadratic_form(1, 9, 4)) == false
     @test is_reduced(binary_quadratic_form(1, 5, -1)) == true
+    # square discriminant: the boundary abs(sqrt(D) - 2*abs(a)) == b is attained
+    @test is_reduced(binary_quadratic_form(0, 3, 2)) == false
+    @test is_reduced(binary_quadratic_form(0, 2, 3)) == false
+    @test is_reduced(binary_quadratic_form(3, 3, 0)) == false
+    @test is_reduced(binary_quadratic_form(0, 4, 5)) == false
+    @test is_reduced(binary_quadratic_form(2, 3, 0)) == true
+    @test is_reduced(binary_quadratic_form(1, 3, 0)) == true
+    @test is_reduced(binary_quadratic_form(0, 3, 0)) == true
+    # reduction of a primitive reducible form lands on a reduced form
+    for (a, b, c) in [(15, -7, 0), (15, 7, 0), (2, 5, 3), (1, 4, 3), (6, 5, 1),
+                      (4, 8, 3), (3, 7, 2), (5, 9, 4)]
+      f = binary_quadratic_form(a, b, c)
+      is_square(discriminant(f)) && is_primitive(f) || continue
+      @test is_reduced(Hecke.reduction(f))
+    end
     #@test reduce(binary_quadratic_form(195751, 37615, 1807)) == binary_quadratic_form(1, 1, 1)
     #@test reduce(binary_quadratic_form(33, 11, 5)) == binary_quadratic_form(5, -1, 27)
     #@test reduce(binary_quadratic_form(15, 0, 15)) == binary_quadratic_form(15, 0, 15)
@@ -145,6 +160,44 @@
     @test can_solve_with_solution(binary_quadratic_form(1,1,6), 3) == (false, (0, 0))
     @test !can_solve(binary_quadratic_form(1,1,6), 5)
     @test can_solve_with_solution(binary_quadratic_form(1,1,6), 6) == (true, (0, 1))
+
+    # solutions with y == 0
+    f = binary_quadratic_form(1, 0, 5)
+    @test f(2, 0) == 4
+    @test can_solve(f, 4)
+    @test can_solve_with_solution(f, 4) == (true, (2, 0))
+    @test can_solve_with_solution(binary_quadratic_form(1, 0, 7), 9) == (true, (3, 0))
+
+    # a definite form represents nothing of the opposite sign
+    @test !can_solve(binary_quadratic_form(1, 0, 1), -1)
+    @test can_solve_with_solution(binary_quadratic_form(1, 0, 1), -1) == (false, (0, 0))
+    @test !can_solve(binary_quadratic_form(-1, 0, -1), 1)
+
+    # negative definite forms
+    @test can_solve(binary_quadratic_form(-1, 0, -1), -5)
+    let (fl, (x, y)) = can_solve_with_solution(binary_quadratic_form(-1, 0, -1), -5)
+      @test fl && binary_quadratic_form(-1, 0, -1)(x, y) == -5
+    end
+
+    # every form represents 0
+    @test can_solve_with_solution(binary_quadratic_form(1, 0, 1), 0) == (true, (0, 0))
+
+    # no overflow for large targets
+    @test can_solve_with_solution(binary_quadratic_form(1, 0, 1), ZZ(10)^30 + 1) ==
+          (true, (ZZ(10)^15, ZZ(1)))
+
+    # exhaustive check against a naive search
+    for a in -4:4, b in -4:4, c in -4:4
+      b^2 - 4*a*c < 0 || continue
+      f = binary_quadratic_form(a, b, c)
+      for n in -12:12
+        fl, (x, y) = can_solve_with_solution(f, n)
+        naive = any(f(ZZ(u), ZZ(v)) == n for u in -30:30, v in -30:30)
+        @test fl == naive
+        @test fl == can_solve(f, n)
+        fl && @test f(x, y) == n
+      end
+    end
   end
 
   @testset "PrimeForm" begin
@@ -152,6 +205,43 @@
     @test discriminant(f) == 17 && f[1] == 1237
     f = prime_form(ZZ(12), ZZ(743))
     @test discriminant(f) == 12 && f[1] == 743
+    # a form [p, b, c] of discriminant d exists if and only if
+    # b^2 = d mod 4p has a solution; p = 2 included
+    for d in [-200:-3; 5:200], p in ZZ.(collect(PrimesSet(2, 59)))
+      is_discriminant(ZZ(d)) && !is_square(d) || continue
+      sols = count(b -> mod(b^2 - d, 4 * p) == 0, 0:(2 * p - 1))
+      @test Hecke._number_of_primeforms(ZZ(d), p) == sols
+      if sols == 0
+        @test_throws ErrorException prime_form(ZZ(d), p)
+      else
+        f = prime_form(ZZ(d), p)
+        @test discriminant(f) == d && f[1] == p
+      end
+    end
+    @test prime_form(ZZ(-7), ZZ(2)) ==
+          binary_quadratic_form(ZZ(2), ZZ(1), ZZ(1))
+    # 5 is not a square modulo 8
+    @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(5), ZZ(2))
+    # every d, discriminant or not: the helpers count and find the b with
+    # b^2 = d mod 4p, or throw
+    for d in -200:200, p in ZZ.(collect(PrimesSet(2, 59)))
+      sols = count(b -> mod(b^2 - d, 4 * p) == 0, 0:(2 * p - 1))
+      @test Hecke._number_of_primeforms(ZZ(d), p) == sols
+      if sols == 0
+        @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(d), p)
+      else
+        @test mod(Hecke._sqrtmod4P(ZZ(d), p)^2 - d, 4 * p) == 0
+      end
+    end
+    # d = 2 and d = 7 are not discriminants: no b at p = 2
+    @test Hecke._number_of_primeforms(ZZ(2), ZZ(2)) == 0
+    @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(2), ZZ(2))
+    @test Hecke._number_of_primeforms(ZZ(7), ZZ(2)) == 0
+    @test_throws ArgumentError Hecke._sqrtmod4P(ZZ(7), ZZ(2))
+    # p must be prime
+    for p in [1, 4, 6, -2, 0]
+      @test_throws ArgumentError prime_form(ZZ(-7), ZZ(p))
+    end
   end
 
   @testset "Equivalent" begin

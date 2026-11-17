@@ -70,7 +70,12 @@ function conjugates(x::NumFieldElem, C::AcbField)
 end
 
 function conjugates(x::QQFieldElem, abs_tol::Int = 32)
-  return [ComplexField(abs_tol)(x)]
+  prec = abs_tol
+  while true
+    z = AcbField(prec, cached = false)(x)
+    radiuslttwopower(z, -abs_tol) && return [z]
+    prec *= 2
+  end
 end
 
 # This is for quick and dirty computations

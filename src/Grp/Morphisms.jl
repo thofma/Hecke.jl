@@ -66,12 +66,13 @@ codomain(f::MultTableGroupHom) = f.codomain
 
 id_hom(G::MultTableGroup) = MultTableGroupHom(G, G, collect(G))
 
-image(GtoH::MultTableGroupHom) = sub(GtoH.codomain, unique(GtoH.img))
+image(GtoH::MultTableGroupHom) = sub(GtoH.codomain, unique(GtoH.img); complete = true)
 
 function kernel(GtoH::MultTableGroupHom)
   G = GtoH.domain
   H = GtoH.codomain
-  return sub(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G))))
+  return sub(G, getindex.(Ref(G), findall(x-> GtoH(x) == id(H), collect(G)));
+             complete = true)
 end
 
 function is_surjective(GtoH::MultTableGroupHom)

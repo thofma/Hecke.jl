@@ -21,6 +21,13 @@ function random_elem(L::Union{QadicField, Hecke.LocalField})
    return sum( [r[i]*b[i] for i in 1:n])
 end
 
+function ConformanceTests.generate_element(L::Union{QadicField, LocalField})
+   return random_elem(L)
+end
+
+function ConformanceTests.equality(a::T, b::T) where {T <: Union{QadicFieldElem, LocalFieldElem}}
+  return a == b
+end
 
 ########### any_root computes a single root in the finite field extensions####
 
@@ -83,7 +90,8 @@ function Nemo.basis(K::FinField, k::FinField)
   b = basis(K)
   K = base_field(K)
   while absolute_degree(K) > absolute_degree(k)
-    b = [x*y for x = basis(K) for y = b]
+    bb = b
+    b = [x*y for x = basis(K) for y = bb]
     K = base_field(K)
   end
   if K != k
@@ -200,10 +208,11 @@ function _unit_group_gens_case1(K::Union{QadicField, Hecke.LocalField})
   return [ one+x*pi^l for x = b for l = F_K]
 end
 
-function coordinates(a::Union{QadicFieldElem, LocalFieldElem}, k)
+function coordinates(a::Union{QadicFieldElem, LocalFieldElem}, k::Field)
   c = [coeff(a, i) for i=0:degree(parent(a))-1]
   while absolute_degree(parent(c[1])) > absolute_degree(k)
-    c = reduce(vcat, [[coeff(x, i) for i=0:(degree(parent(c[1]))-1)] for x = c])
+    d = degree(parent(c[1]))
+    c = reduce(vcat, [[coeff(x, i) for i=0:d-1] for x = c])
   end
   if parent(c[1]) != k
     if isa(parent(c[1]), QadicField) && degree(parent(c[1])) ==1
@@ -261,15 +270,14 @@ function solve_1_units(a::Vector{T}, b::T) where T
     pk = ZZRingElem(p)
 
     val_offset = e .* map(valuation, absolute_basis(K))
-    cur_b = setprecision(b, k+e)
-    cur_a = [setprecision(x, k+e) for x = a]
-    b = setprecision(b, k+e)
-    a = [setprecision(x, k+e) for x = a]
+    b_prec = setprecision(b, k+e)
+    a_prec = [setprecision(x, k+e) for x = a]
+    cur_b = b_prec
+    cur_a = a_prec
     pow_b = ZZRingElem(1)
 
     while l <= k
       last_val = e*valuation(cur_b-one)
-  #    @show expo_mult
       if false && e*valuation(cur_b-one) >= l - 10 #TODO::: understand the prececision
                                           #        loss
       #= bad input from
@@ -287,10 +295,11 @@ function solve_1_units(a::Vector{T}, b::T) where T
       end
       @assert e*valuation(cur_b-one) >= l
       @assert precision(cur_b) > k
-      @assert all(x->isone(x) || e*valuation(x-one) >= l, cur_a)
+      lvl = l # `l` is reassigned below and must not be captured
+      @assert all(x->isone(x) || e*valuation(x-one) >= lvl, cur_a)
 
       A = abelian_group([p^max(0, ceil(Int, (l-v)//e)) for v = val_offset])
-      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a])
+      h = hom(free_abelian_group(length(cur_a)), A, [A([lift(ZZ, x) for x =  absolute_coordinates(divexact(y-one, pi^l))]) for y = cur_a]; check = false)
       lhs = A([lift(ZZ, x) for x = absolute_coordinates(divexact(cur_b -one, pi^l))])
       fl, s = has_preimage_with_preimage(h, lhs)
       _k, _mk = kernel(h)
@@ -301,7 +310,9 @@ function solve_1_units(a::Vector{T}, b::T) where T
   #    @show s
       # to verify that this is a "legal" operation... the hom constructor
       # will verify that this is legal
-      # hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
+      if get_assertion_level(:qAdic) > 0
+        hom(domain(_mk), codomain(_mk), [_mk(x) for x = gens(domain(_mk))])
+      end
 
       if !fl
         pow_b *= p
@@ -316,12 +327,13 @@ function solve_1_units(a::Vector{T}, b::T) where T
 
       expo += s.coeff * expo_mult
       expo_mult = reduce(vcat, [_mk(x).coeff for x = gens(_k)])*expo_mult
-      cur_a = [prod(cur_a[i]^_mk(x)[i] for i=1:length(cur_a)) for x = gens(_k)]
+      ca = cur_a
+      cur_a = [prod(ca[i]^_mk(x)[i] for i=1:length(ca)) for x = gens(_k)]
   #    @show [e*valuation(x-1) for x = cur_a]
 
 
-      pa = prod(a[i]^expo[i] for i=1:length(a))
-      cur_b = divexact(b^pow_b, pa)
+      pa = prod(a_prec[i]^expo[i] for i=1:length(a_prec))
+      cur_b = divexact(b_prec^pow_b, pa)
       if iszero(cur_b-one) || e*valuation(cur_b-one) >= k
         break
       end
@@ -461,7 +473,7 @@ function absolute_frobenius_matrix(K::RelFinField, d::Int=1)
   return matrix([absolute_coordinates(x) for x = b])
 end
 
-absolute_representation_matrix(a::fqPolyRepField) = representation_matrix(a)
+absolute_representation_matrix(a::fqPolyRepFieldElem) = representation_matrix(a)
 absolute_representation_matrix(a::fpFieldElem) = matrix(parent(a), 1, 1, [a])
 
 function absolute_frobenius_matrix(a::FqField, d::Int = 1)
@@ -796,6 +808,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
   @assert valuation(u) == 0
   v = norm_equation(E, u)
   @assert valuation(v) == 0
+#  norm(v) == u || @show v, norm(v), u
   @assert norm(v) == u
   pi = v*setprecision(uniformizer(L), precision(L)+5)
   pi_inv = inv(pi)
@@ -1126,11 +1139,15 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
       end
       ex = vcat([-z+1], s)
       x = (prod(bas[i]^ex[i] for i=1:length(bas))*inv(a))
-        @assert isone(x) || iszero(x-1) || (#=@show valuation(x-1);=# e*valuation(x-1) >= precision(a))
+#      if !(isone(x) || iszero(x-1) || e*valuation(x-1) >= precision(a))
+#        @show valuation(x-1), e, precision(a)
+#        global last_one_unit = (K, a, bas)
+#      end
+      @assert isone(x) || iszero(x-1) || (#=@show valuation(x-1);=# e*valuation(x-1) >= precision(a))
       return G(ex)
     end
   end
-  return G, MapFromFunc(G, K, from_G, to_G)
+  return G, map_from_func(G, K, from_G, to_G)
 end
 
 function teichmuller(a::LocalFieldElem)
@@ -1183,7 +1200,7 @@ function unit_group(K::T) where T <: Union{QadicField, PadicField, LocalField}
     return inj[1](v*Z[1]) + inj[2](preimage(mu, r)) + inj[3](preimage(mU, x))
   end
 
-  return G, MapFromFunc(G, K, from_G, to_G)
+  return G, map_from_func(G, K, from_G, to_G)
 end
 
 #=
@@ -1207,7 +1224,7 @@ function unit_group(R::LocalFieldValuationRing)
     return inj[1](preimage(mu, r)) + inj[2](preimage(mU, x))
   end
 
-  return G, MapFromFunc(G, K, from_G, to_G)
+  return G, map_from_func(G, K, from_G, to_G)
 end
 
 =#
@@ -1376,7 +1393,7 @@ function Hecke.unit_group(K::PadicField; n_quo::Int = -1)
     end
     return A(ZZRingElem[v, f[1], lift(ZZ, log(y)/lg)])
   end
-  return A, MapFromFunc(A, K, x-> K(p)^x[1]*g^x[2]*gn^x[3], fl)
+  return A, map_from_func(A, K, x-> K(p)^x[1]*g^x[2]*gn^x[3], fl)
 end
 
 function unit_group2(K::PadicField; n_quo::Int = -1)
@@ -1396,7 +1413,7 @@ function unit_group2(K::PadicField; n_quo::Int = -1)
       return A(ZZRingElem[v, 0, lift(ZZ, log(y)/lg)])
     end
   end
-  return A, MapFromFunc(A, K, x-> K(p)^x[1]*(-1)^x[2]*gn^x[3], fl)
+  return A, map_from_func(A, K, x-> K(p)^x[1]*(-1)^x[2]*gn^x[3], fl)
 end
 
 @doc raw"""
@@ -1532,11 +1549,11 @@ function norm_ctx(mc::Map{AbsSimpleNumField, <:Hecke.LocalField}, mC::Map{AbsSim
     push!(pow_pi, pow_pi[end]*pi_C)
   end
 
-  pow_rho = [one(base_field(C))]
-  while length(pow_rho) < fC/fc
-    push!(pow_rho, pow_rho[end]*rho_C)
+  pow_rho_base = [one(base_field(C))]
+  while length(pow_rho_base) < fC/fc
+    push!(pow_rho_base, pow_rho_base[end]*rho_C)
   end
-  pow_rho = map(C, pow_rho)
+  pow_rho = map(C, pow_rho_base)
 
   b_k = absolute_basis(c)
   b_kK = [mC(mkK(preimage(mc, x))) for x = b_k]
@@ -1551,13 +1568,12 @@ function norm_ctx(mc::Map{AbsSimpleNumField, <:Hecke.LocalField}, mC::Map{AbsSim
     e = divexact(eC, ec)
     f = divexact(fC, fc)
     n = length(b_k)
-    img = S*matrix(hcat([absolute_coordinates(x*t) for t = pow_pi]...))
-    m = matrix(C, length(pow_pi), length(pow_pi), [sum(img[(i-1)*f*n+j, k]*b_K[j] for j=1:f*n) for i=1:e for k=1:e])
+    img_pi = S*matrix(hcat([absolute_coordinates(x*t) for t = pow_pi]...))
+    m = matrix(C, length(pow_pi), length(pow_pi), [sum(img_pi[(i-1)*f*n+j, k]*b_K[j] for j=1:f*n) for i=1:e for k=1:e])
     d = det(m)
-    img = S*matrix(hcat([absolute_coordinates(d*t) for t = pow_rho]...))
-    m = matrix(c, length(pow_rho), length(pow_rho), [sum(img[j+(i-1)*n, k]*b_k[j] for j=1:n) for i=1:f for k=1:f])
+    img_rho = S*matrix(hcat([absolute_coordinates(d*t) for t = pow_rho]...))
+    m = matrix(c, length(pow_rho), length(pow_rho), [sum(img_rho[j+(i-1)*n, k]*b_k[j] for j=1:n) for i=1:f for k=1:f])
     return det(m)
   end
   return norm
 end
-

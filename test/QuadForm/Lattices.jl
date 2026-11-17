@@ -173,6 +173,32 @@
   @test is_isometric_with_isometry(L, L)[1]
 end
 
+@testset "Rank-zero automorphisms and isometries" begin
+  # Rank-zero quadratic and hermitian lattices have trivial automorphisms.
+  _, x = polynomial_ring(QQ, "x")
+  K, _ = number_field(x^2 - 2, "a")
+  _, t = polynomial_ring(K, "t")
+  E, _ = number_field(t^2 + 1, "b")
+  for (F, constructor) in ((K, quadratic_lattice), (E, hermitian_lattice))
+    Z = constructor(F, []; gram = identity_matrix(F, 2))
+    @test automorphism_group_order(Z) == 1
+    @test automorphism_group_generators(Z; ambient_representation = true) ==
+          [identity_matrix(F, 2)]
+    @test automorphism_group_generators(Z; ambient_representation = false) ==
+          [identity_matrix(F, 0)]
+    @test is_isometric(Z, Z)
+    @test is_isometric_with_isometry(Z, Z) == (true, zero_matrix(F, 0, 0))
+    N = constructor(F; gram = diagonal_matrix(F, [1, -1]))
+    for (L, M) in ((Z, N), (N, Z))
+      @test !is_isometric(L, M)
+      @test is_isometric_with_isometry(L, M) == (false, zero_matrix(F, 0, 0))
+    end
+  end
+
+  Z = quadratic_lattice(E, []; gram = identity_matrix(E, 2))
+  @test is_isometric(Z, Z)
+end
+
 @testset "Misc" begin
   Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a")
@@ -208,6 +234,24 @@ end
   @test ambient_space(Lres) === Vres
   @test all(v -> VrestoV(VrestoV\v) == v, gens(L))
 
+  # restriction of scalars from QQ to QQ rescales the form by alpha
+  V = quadratic_space(QQ, QQ[2 1; 1 2])
+  Vres, VrestoV = restrict_scalars(V, QQ)
+  @test gram_matrix(Vres) == gram_matrix(V)
+  @test codomain(VrestoV) === V
+  Vres, = restrict_scalars(V, QQ, QQ(3))
+  @test gram_matrix(Vres) == 3 * gram_matrix(V)
+
+  # restriction of scalars of a ZZ-lattice to QQ keeps its basis
+  L = lattice(V, QQ[1 1; 1//2 0])
+  Lres = restrict_scalars(L, QQ)
+  @test basis_matrix(Lres) == basis_matrix(L)
+  @test gram_matrix(Lres) == gram_matrix(L)
+  Lres, VrestoV = restrict_scalars_with_map(L, QQ, QQ(3))
+  @test gram_matrix(Lres) == 3 * gram_matrix(L)
+  @test restrict_scalars(L, VrestoV) == Lres
+  L = integer_lattice(gram = ZZ[2 1; 1 2])
+  @test gram_matrix(restrict_scalars(L, QQ)) == gram_matrix(L)
 
   Qx, x = polynomial_ring(QQ, "x")
   f = x - 1

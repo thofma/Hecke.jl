@@ -116,7 +116,7 @@ function norm_div(a::AbsSimpleNumFieldElem, d::ZZRingElem, nb::Int)
    de = denominator(a)
    ccall((:nf_elem_norm_div, libflint), Nothing,
          (Ref{QQFieldElem}, Ref{AbsSimpleNumFieldElem}, Ref{AbsSimpleNumField}, Ref{ZZRingElem}, UInt),
-         z, (a*de), a.parent, (d*de^n), UInt(nb))
+         z, (a*de), parent(a), (d*de^n), UInt(nb))
    return z
 end
 
@@ -326,10 +326,7 @@ function factor(f::PolyRingElem{AbsSimpleNumFieldElem}; algo::Symbol=:default)
   iszero(f) && error("poly is zero")
 
   if degree(f) == 0
-    r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}()
-    r.unit = Kx(leading_coefficient(f))
-    return r
+    return Fac(Kx(leading_coefficient(f)), Dict{typeof(f), Int}())
   end
   sqf = factor_squarefree(f)
   fac = Dict{typeof(f), Int}()
@@ -349,11 +346,8 @@ function factor(f::PolyRingElem{AbsSimpleNumFieldElem}; algo::Symbol=:default)
       fac[g] = v
     end
   end
-  r = Fac{typeof(f)}()
-  r.fac = fac
   #The unit is just the leading coefficient of f
-  r.unit = Kx(leading_coefficient(f))
-  return r
+  return Fac(Kx(leading_coefficient(f)), fac)
 end
 
   #assumes that f is a squarefree polynomial
@@ -779,9 +773,21 @@ end
 
 is_square(a::AbsSimpleNumFieldElem) = is_power(a, 2)[1]
 
-is_square_with_sqrt(a::NumFieldElem) = is_power(a, 2)
+is_square_with_sqrt(a::AbsSimpleNumFieldElem) = is_power(a, 2)
 
-sqrt(a::AbsSimpleNumFieldElem) = root(a, 2)
+function is_square_with_sqrt(a::NumFieldElem)
+  Ka, mKa = absolute_simple_field(parent(a))
+  fl, s = is_power(preimage(mKa, a), 2)
+  return fl, mKa(s)
+end
+
+is_square(a::NumFieldElem) = is_square_with_sqrt(a)[1]
+
+function sqrt(a::NumFieldElem; check::Bool = true)
+  fl, s = is_square_with_sqrt(a)
+  @req fl "$a is not a square"
+  return s
+end
 
 function root(a::AbsSimpleNumFieldElem, n::Int)
   fl, rt = is_power(a, n)

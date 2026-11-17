@@ -237,6 +237,17 @@ function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
     return n
   end
 
+  function _weight(v::MatElem{FqFieldElem}, n::ZZRingElem, t::ZZRingElem,
+                   jmax::Int)
+    n = zero!(n)
+    for i = 1:nrows(v)
+      for c in absolute_coordinates(v[i, 1])
+        n = add!(n, n, lift(ZZ, c))
+      end
+    end
+    return n
+  end
+
   function _weight(v::MatElem{T}, n::ZZRingElem, t::ZZRingElem, jmax::Int) where { T <: Union{ fpFieldElem, EuclideanRingResidueFieldElem{ZZRingElem} } }
     n = zero!(n)
     for i = 1:nrows(v)

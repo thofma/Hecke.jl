@@ -14,11 +14,16 @@ end
 Return the differential df.
 """
 function differential(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
+  df = derivation(f)
+  return FunFldDiff(df)
+end
+
+function derivation(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
   F = parent(f)
   @req _is_separable(F) "Currently assumes separable extension"
   y = gen(F)
 
-  # our polynomials are polynomial in y with coefficients polynomials in x
+  # Our polynomials are polynomial in y with coefficients polynomials in x
   # note that denominators are polynomials in x!
   # d(f) = [df/dx - (df/dy * dp/dx) / dp/dy] dx, where p is defining polynomial
   #
@@ -26,7 +31,7 @@ function differential(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
   # dp/dx = (dg/dx * h - g * dh/dx)/h^2, and dp/dy = dg/dy / h
   # since we are in F, g(x,y) = 0 and we obtain (dp/dx) / (dp/dy) = (dg/dx) / (dg/dy)
 
-  # we want to stay in F, this is simple helper to go from k[x][y] to F
+  # We want to stay in F, this is a simple helper to go from k[x][y] to F
   function toF(p::Generic.Poly{<:PolyRingElem})
     return evaluate(map_coefficients(F, p), y)
   end
@@ -36,14 +41,14 @@ function differential(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
   fnum          = toF(fnum_poly)
   dfnum_dx      = toF(map_coefficients(derivative, fnum_poly))
 
-  # denominator is already in k[x] (toF is not needed, do the direct coercion)
+  # Denominator is already in k[x] (toF is not needed, do the direct coercion)
   fden          = F(fden_poly)
   dfden_dx      = F(derivative(fden_poly))
 
   df_dx = (dfnum_dx * fden - fnum * dfden_dx) // fden^2
 
   df = df_dx
-  # if f has no y dependence, the whole second term vanishes: compute only if needed
+  # If f has no y dependence, the whole second term vanishes: compute only if needed
   if !is_zero(dfnum_dy_poly)
     dfnum_dy  = toF(dfnum_dy_poly)
 
@@ -54,8 +59,17 @@ function differential(f::T) where {T <: Generic.AbsSimpleFunctionFieldElem}
 
     df -= (dfnum_dy // fden) * df_dx_dy
   end
+  return df
+end
 
-  return FunFldDiff(df)
+function derivation(f::T, n::Int) where {T <: Generic.AbsSimpleFunctionFieldElem}
+  @req n >= 0 "n needs to be non-negative."
+  i = 0
+  while n > i
+    f = derivation(f)
+    i += 1
+  end
+return f
 end
 
 ################################################################################

@@ -1515,28 +1515,28 @@ kronecker_symbol(x::ZZRingElem, p::Int) = kronecker_symbol(x,ZZ(p))
 
 function _sqrt(d::Union{zzModRingElem,ZZModRingElem})
   R = parent(d)
-  b, v, p = is_prime_power_with_data(R.n)
+  b, v, p = is_prime_power_with_data(modulus(R))
   @assert b
   return _sqrt(d, p, Int(v))
 end
 
 function _sqrt(d::Union{zzModRingElem,ZZModRingElem}, p)
   R = parent(d)
-  v, p = is_perfect_power_with_data(R.n)
-  return _sqrt(d, Int(p), Int(v))
+  v, p = is_perfect_power_with_data(modulus(R))
+  return _sqrt(d, p, Int(v))
 end
 
-function _sqrt(d::ZZModRingElem, p::Int, prec::Int)
+function _sqrt(d::ZZModRingElem, p::IntegerUnion, prec::Int)
   R = parent(d)
   dZ = lift(d)
   rt = Nemo.sqrtmod_pk(dZ, p, prec)
   return ZZModRingElem(rt, R)
 end
 
-function _sqrt(d::zzModRingElem, p::Int, prec::Int)
+function _sqrt(d::zzModRingElem, p::IntegerUnion, prec::Int)
   R = parent(d)
   dZ = Int(lift(d))
-  rt = Nemo._sqrtmod_pk_small(dZ, p, prec)
+  rt = Nemo._sqrtmod_pk_small(dZ, Int(p), prec)
   return zzModRingElem(rt, R)
 end
 

@@ -30,7 +30,7 @@
 #  R = codomain(M)
 #  parent(a) == R || error("mixed rings in preimage")
 #  g = gens(domain(M))
-#  im_gen = map(x->M(x), g) ## possibly should be cached and stored
+#  im_gen = map(M, g) ## possibly should be cached and stored
 #  ## need to write the elements in a matrix, solve the eqn for a
 #  Mt = zero_matrix(base_ring(base_ring(R)), degree(R.modulus), degree(R.modulus))
 #  for i=1:degree(R.modulus)

@@ -1,5 +1,33 @@
 @testset "RelSimpleNumField" begin
-  let
+  @testset "conformance" begin
+    Qx, x = QQ["x"]
+    f = x^2 + 12x - 92
+    K, a = number_field(f, "a")
+    Ky, y = K["y"]
+
+    L, b = number_field(y^2 + y + 1, "b")
+
+    ConformanceTests.test_Field_interface_recursive(L)
+  end
+
+  @testset "is_square" begin
+    Qx, x = QQ[:x]
+    K, a = number_field(x^2 - 3, :a)
+    Kt, t = K[:t]
+    L, b = number_field(t^2 - 2, :b)
+    for z in [b, a*b + 1, L(a)]
+      @test is_square(z^2)
+      fl, s = is_square_with_sqrt(z^2)
+      @test fl && s^2 == z^2
+    end
+    @test is_square(L(3))
+    @test sqrt(L(3))^2 == L(3)
+    @test_throws ArgumentError sqrt(b)
+    @test !is_square(b)
+    @test !is_square(L(-1))
+  end
+
+  @testset "lift" begin
     K, a = Hecke.rationals_as_number_field()
     Kt, t = K["t"]
     L, b = number_field(t - 1, "b")
@@ -9,6 +37,18 @@
     @test_throws ArgumentError lift(Lt, b)
     @test M(lift(Lt, o^2 + 1)) == o^2 + 1
     @test_throws ArgumentError lift(Kt, o)
+  end
+
+  @testset "absolute field over rationals" begin
+    # conversion of an extension of rationals_as_number_field()
+    K, a = Hecke.rationals_as_number_field()
+    Kt, t = K["t"]
+    L, b = number_field(t^3 - 2//3*t + 5, "b")
+    M, c = number_field(AbsSimpleNumField, L)
+    @test M isa AbsSimpleNumField
+    Qx = parent(defining_polynomial(M))
+    @test defining_polynomial(M) == gen(Qx)^3 - 2//3*gen(Qx) + 5
+    @test c == gen(M)
   end
 
   @testset "Arithmetic" begin
@@ -28,6 +68,27 @@
     @test L(0)^0 == one(L)
     @test L(0)^1 == zero(L)
     @test_throws ArgumentError L(0)^(-1)
+
+    # inverses in a quadratic extension with non-monic defining polynomial
+    M, c = number_field(3*y^2 + a*y + 1, "c")
+    for z in [c, a*c + 1, c - a, M(a)]
+      @test isone(z * inv(z))
+    end
+    @test_throws ErrorException inv(zero(M))
+  end
+
+  @testset "Hashing" begin
+    Qx, x = QQ["x"]
+    K, a = number_field(x^2 - 2, "a")
+    Ky, y = K["y"]
+    L, b = number_field(y^2 - a, "b")
+    Lz, z = L["z"]
+    M, c = number_field(z^2 - b, "c")
+
+    d = deepcopy(c)
+    @test isequal(c, d)
+    @test hash(c) == hash(d)
+    @test length(Set([c, d])) == 1
   end
 
   @testset "is_subfield" begin

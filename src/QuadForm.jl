@@ -6,6 +6,9 @@ include("QuadForm/Herm/Types.jl")
 # Binary quadratic forms
 include("QuadForm/QuadBin.jl")
 
+# Eisenstein reduction of definite ternary forms
+include("QuadForm/TernaryQF.jl")
+
 # Misc things that need to be sorted
 include("QuadForm/Misc.jl")
 
@@ -61,6 +64,7 @@ include("QuadForm/IntegerLattices/ShortVectors.jl")
 include("QuadForm/LatticeIsometryBacktrack.jl")
 include("QuadForm/IntegerLattices/ShortVectorsTarget.jl")
 include("QuadForm/IntegerLattices/CloseVectors.jl")
+include("QuadForm/IntegerLattices/CharacteristicVectors.jl")
 
 # indefinite LLL
 include("QuadForm/IntegerLattices/indefiniteLLL.jl")

@@ -169,6 +169,8 @@ function AbsOrdQuoMap(O::S, Q::AbsOrdQuoRing{S, T}) where {S, T}
   return AbsOrdQuoMap{S, T, U}(O, Q)
 end
 
+kernel(f::AbsOrdQuoMap{S, T}) where {S, T} = ideal(codomain(f))::T
+
 const NfOrdQuoMap = AbsOrdQuoMap{AbsSimpleNumFieldOrder, AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsSimpleNumFieldOrderElem}
 
 function Mor(O::AbsSimpleNumFieldOrder, F::fqPolyRepField, y::fqPolyRepFieldElem)
@@ -329,7 +331,7 @@ function image(f::NfOrdToFqMor, x::AbsSimpleNumFieldOrderElem)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::QQPolyRingElem
     Nemo.fmpq_poly_to_gfp_fmpz_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
-    ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{Nemo.fmpz_mod_ctx_struct}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, f.tmp_gfp_fmpz_poly.parent.base_ring.ninv)
+    ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{Nemo.fmpz_mod_ctx_struct}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, base_ring(parent(f.tmp_gfp_fmpz_poly)).ninv)
     ccall((:fq_set, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}), u, f.tmp_gfp_fmpz_poly, F)
     ccall((:fq_reduce, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}), u, F)
     return u
@@ -624,7 +626,7 @@ function image(f::NfOrdToFqFieldMor, x::AbsSimpleNumFieldOrderElem)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::QQPolyRingElem
     Nemo.fmpq_poly_to_fq_default_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
-    ccall((:fq_default_poly_rem, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{Nemo.FqField}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, f.tmp_gfp_fmpz_poly.parent.base_ring)
+    ccall((:fq_default_poly_rem, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{Nemo.FqField}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, base_ring(parent(f.tmp_gfp_fmpz_poly)))
     res = F.forwardmap(f.tmp_gfp_fmpz_poly)::FqFieldElem
     @assert parent(res) === F
     return res
@@ -661,6 +663,11 @@ function preimage(f::NfOrdToFqFieldMor, x::FqFieldElem)
 end
 
 Mor(O::AbsSimpleNumFieldOrder, F::Nemo.FqField, h::FqPolyRingElem) = NfOrdToFqFieldMor(O, F, h)
+
+function kernel(f::Union{NfOrdToFqNmodMor, NfOrdToFqMor, NfOrdToGFMor, NfOrdToGFFmpzMor, NfOrdToFqFieldMor})
+  isdefined(f, :P) || throw(ArgumentError("Map was not constructed from a prime ideal"))
+  return f.P
+end
 
 ################################################################################
 #
@@ -756,13 +763,13 @@ mutable struct NfToFqFieldMor_easy <: Map{AbsSimpleNumField, FqField, HeckeMap, 
   header::MapHeader{AbsSimpleNumField, FqField}
   Fq::FqField
   s::FqFieldElem
-  t::FqPolyRingElem
+  t::FpPolyRingElem
   function NfToFqFieldMor_easy(a::Map, k::AbsSimpleNumField)
     r = new()
     r.Fq = codomain(a)
     r.header = MapHeader(k, r.Fq)
     r.s = r.Fq()
-    r.t = polynomial_ring(prime_field(r.Fq), cached = false)[1]()
+    r.t = polynomial_ring(Native.GF(characteristic(r.Fq), cached = false), cached = false)[1]()
     return r
   end
 end
@@ -785,7 +792,7 @@ function image(mF::NfToFqFieldMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSim
       if denominator(k) % characteristic(Fq) == 0
         throw(BadPrime(characteristic(Fq)))
       end
-      _nf_to_fq!(s, k, Fq)#, t)
+      _nf_to_fq!(s, k, Fq, t)
       if iszero(s)
         throw(BadPrime(1))
       end
@@ -806,7 +813,7 @@ function image(mF::NfToFqFieldMor_easy, a::AbsSimpleNumFieldElem, n_quo::Int = 0
   if denominator(a) % characteristic(Fq) == 0
     throw(BadPrime(characteristic(Fq)))
   end
-  _nf_to_fq!(q, a, Fq)#, mF.t)
+  _nf_to_fq!(q, a, Fq, mF.t)
   return q
 end
 
@@ -991,22 +998,21 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
     if (quo != 0 && vv != 0) || !iszero(v)
       if cached
         s = zero(Fq)
-        ccall((:fq_nmod_set, libflint), Nothing,
-          (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), s, D[i], Fq)
-        _reduce(s)
+        set!(s, D[i])
       else
         Nemo.nf_elem_to_gfp_poly!(t, k)
         #tt = deepcopy(t)
         if isassigned(D, i)
           y = D[i]
-          if y.mod_n == t.mod_n
-            y.parent = t.parent
+          if modulus(y) == modulus(t)
+            y.parent = parent(t)
             set!(y, t)
           else
+            # writes the FLINT `nmod_t` of `y` by hand, Nemo has no API for this
             y.mod_n = t.mod_n
             y.mod_ninv = t.mod_ninv
             y.mod_norm = t.mod_norm
-            y.parent = t.parent
+            y.parent = parent(t)
             set!(y, t)
           end
         else
@@ -1014,9 +1020,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
           set!(D[i], t)
         end
         s = zero(Fq)
-        ccall((:fq_nmod_set, libflint), Nothing,
-          (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), s, D[i], Fq)
-        _reduce(s)
+        set!(s, D[i])
       end
       if iszero(s)
         throw(BadPrime(1))
@@ -1167,14 +1171,15 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
         #tt = deepcopy(t)
         if isassigned(D, i)
           y = D[i]
-          if y.mod_n == t.mod_n
-            y.parent = t.parent
+          if modulus(y) == modulus(t)
+            y.parent = parent(t)
             set!(y, t)
           else
+            # writes the FLINT `nmod_t` of `y` by hand, Nemo has no API for this
             y.mod_n = t.mod_n
             y.mod_ninv = t.mod_ninv
             y.mod_norm = t.mod_norm
-            y.parent = t.parent
+            y.parent = parent(t)
             set!(y, t)
           end
         else
@@ -1270,7 +1275,7 @@ function image(mF::NfToGFFmpzMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
       if denominator(k) % characteristic(Fq) == 0
         throw(BadPrime(characteristic(Fq)))
       end
-      s = _nf_to_gfp_fmpz_elem(k, t, p)
+      s = _nf_to_gfp_elem(k, t, p)
       if iszero(s)
         throw(BadPrime(1))
       end
@@ -1292,7 +1297,7 @@ function image(mF::NfToGFFmpzMor_easy, a::AbsSimpleNumFieldElem, n_quo::Int = 0)
   if denominator(a) % characteristic(Fq) == 0
     throw(BadPrime(characteristic(Fq)))
   end
-  return _nf_to_gfp_fmpz_elem(a, t, p)
+  return _nf_to_gfp_elem(a, t, p)
 end
 
 ################################################################################
@@ -1321,9 +1326,9 @@ end
 
 
 function mul_mod(x::UInt, y::ZZRingElem, R)
-  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), y, R.n)
+  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), y, modulus(R))
   r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
-             x, d, R.n, R.ninv)
+             x, d, modulus(R), R.ninv)
   return r
 end
 
@@ -1336,5 +1341,3 @@ end
 function fmpz_mod_ui(x::ZZRingElem, y::UInt)
   return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), x, y)
 end
-
-

@@ -385,6 +385,38 @@ function sparse_matrix(A::MatElem; keepzrows::Bool = true)
 end
 
 @doc raw"""
+    sparse_matrix(R::Ring, A::MatElem; keepzrows::Bool = true) -> SMat
+
+Constructs the sparse matrix over $R$ corresponding to the dense matrix $A$.
+If `keepzrows` is false, then the constructor will drop any row that is zero
+over $R$.
+"""
+function sparse_matrix(R::Ring, A::MatElem; keepzrows::Bool = true)
+  R === base_ring(A) && return sparse_matrix(A; keepzrows)
+  m = sparse_matrix(R)
+  m.c = ncols(A)
+  m.r = 0
+  for i in 1:nrows(A)
+    r = sparse_row(R)
+    for j in 1:ncols(A)
+      is_zero_entry(A, i, j) && continue
+      x = R(A[i, j])
+      # entries may vanish in R, e.g. for a residue ring
+      iszero(x) && continue
+      push!(r.values, x)
+      push!(r.pos, j)
+    end
+    if !keepzrows && isempty(r.pos)
+      continue
+    end
+    m.nnz += length(r.pos)
+    push!(m.rows, r)
+    m.r += 1
+  end
+  return m
+end
+
+@doc raw"""
     sparse_matrix(A::Matrix{T}) -> SMat{T}
 
 Constructs the sparse matrix corresponding to $A$.
@@ -425,7 +457,7 @@ end
 
 function (M::SMatSpace)(A::T; R::S = base_ring(A),
                                  keepzrows::Bool = true) where {T <: MatElem, S <: Ring}
-  return sparse_matrix(A, R, keepzrows)
+  return sparse_matrix(R, A; keepzrows)
 end
 
 function (M::SMatSpace)(A::Matrix{T}) where T <: MatElem
@@ -651,7 +683,7 @@ function *(A::SRow{T}, B::SMat{T}) where T
     if iszero(v)
       continue
     end
-    C = add_scaled_row(B[p], C, v)
+    C = add_scaled_row!(B[p], C, v)
   end
   return C
 end
@@ -796,7 +828,7 @@ end
 #
 ################################################################################
 
-function *(b::T, A::SMat{T}) where {T}
+function *(b::T, A::SMat{T}) where {T <: NCRingElement}
   if iszero(b)
     return sparse_matrix(base_ring(A), nrows(A), ncols(A))
   end
@@ -807,11 +839,11 @@ function *(b::T, A::SMat{T}) where {T}
   return B
 end
 
-function *(b, A::SMat)
+function *(b::NCRingElement, A::SMat)
   return base_ring(A)(b) * A
 end
 
-function *(A::SMat{T}, b::T) where {T}
+function *(A::SMat{T}, b::T) where {T <: NCRingElement}
   if iszero(b)
     return sparse_matrix(base_ring(A), nrows(A), ncols(A))
   end
@@ -822,7 +854,7 @@ function *(A::SMat{T}, b::T) where {T}
   return B
 end
 
-function *(A::SMat, b)
+function *(A::SMat, b::NCRingElement)
   return A * base_ring(A)(b)
 end
 
@@ -978,163 +1010,6 @@ function sub(A::SMat{T}, r::AbstractVector, c::AbstractVector) where T
 end
 
 #TODO: map to getindex with ranges and slices
-
-################################################################################
-#
-#  Valence
-#
-################################################################################
-
-@doc raw"""
-    valence_mc{T}(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{T}}()) -> T
-
-Uses a Monte-Carlo algorithm to compute the valence of $A$. The valence is the
-valence of the minimal polynomial $f$ of $transpose(A)*A$, thus the last non-zero
-coefficient, typically $f(0)$.
-
-The valence is computed modulo various primes until the computation stabilises
-for `extra_prime` many.
-
-`trans`, if given, is  a SLP (straight-line-program) in GL(n, Z). Then the
-valence of `trans` * $A$  is computed instead.
-"""
-function valence_mc(A::SMat{T}; extra_prime = 2, trans = Vector{SMatSLP_add_row{T}}()) where T
-  # we work in At * A (or A * At) where we choose the smaller of the 2
-  # matrices
-  if false && ncols(A) > nrows(A)
-    At = A
-    A = transpose(A)
-  else
-    At = transpose(A)
-  end
-  if maximum(abs, A) > 2^20
-    mm = mul_mod_big!
-    println("mul big case")
-  else
-    mm = mul_mod!
-    println("mul small case")
-  end
-  c1 = Array{Int}(undef, ncols(A))
-  c2 = Array{Int}(undef, nrows(A))
-
-  for i=1:ncols(A)
-    c1[i] = Int(rand(-10:10))
-  end
-
-  c = copy(c1) ## need the starting value for the other primes as well
-
-  p = next_prime(2^30)
-  k = GF(p)
-  d = 10
-  v = Vector{typeof(k(1))}()
-  push!(v, k(c1[1]))
-  while true
-    while length(v) <= d
-      mm(c2, A, c1, p)
-      if length(trans) >0
-        apply_t!(c2, trans)
-        apply!(c2, trans)
-      end
-      mm(c1, At, c2, p)
-      push!(v, k(c1[1]))
-    end
-    f = berlekamp_massey(v)
-    fl = true
-    if !fl || degree(f) > div(d, 2)-1
-      d += 10
-      continue
-    end
-    df = degree(f)
-    println("Poly degree is $df, dims $(nrows(A)) x $(ncols(A))")
-
-    V = ZZRingElem(leading_coefficient(f))
-    pp = ZZRingElem(p)
-
-    v = Array{typeof(k(1))}(undef, 2*degree(f)+1)
-    while true
-      p = next_prime(p)
-      println(p)
-      k = GF(p)
-      copy!(c1, c)
-      v[1] = k(c1[1])
-      for i=1:2*degree(f)
-        mm(c2, A, c1, p)
-        if length(trans) >0
-          apply_t!(c2, trans)
-          apply!(c2, trans)
-        end
-        mm(c1, At, c2, p)
-        v[i+1] = k(c1[1])
-      end
-      f = berlekamp_massey(v)
-      fl = true
-      if !fl || degree(f) > df
-        println("initial guess was wrong...")
-        d += 10
-        return -1
-      end
-
-      Vn = crt(V, pp, ZZRingElem(leading_coefficient(f)), ZZRingElem(p))
-      pp *= p
-      if 2*Vn > pp
-        Vn = Vn - pp
-      end
-      if Vn == V
-        extra_prime -= 1
-        if extra_prime == 0
-          return V
-        end
-      end
-      V = Vn
-    end
-  end
-end
-
-function valence_mc(A::SMat{T}, p::Int) where T
-  # we work in At * A (or A * At) where we choose the smaller of the 2
-  # matrices
-  if false && ncols(A) > nrows(A)
-    At = A
-    A = transpose(A)
-  else
-    At = transpose(A)
-  end
-  if maximum(abs, A) > 2^20
-    mm = mul_mod_big!
-    println("mul big case")
-  else
-    mm = mul_mod!
-    println("mul small case")
-  end
-  c1 = zeros{Int}(ncols(A))
-  c2 = zeros{Int}(nrows(A))
-
-  for i=1:ncols(A)
-    c1[i] = Int(rand(-10:10))
-  end
-
-  c = copy(c1) ## need the starting value for the other primes as well
-
-  k = GF(p)
-  d = 10
-  v = Vector{elem_type(k)}()
-  push!(v, k(c1[1]))
-  while true
-    while length(v) <= d
-      mm(c2, A, c1, p)
-      mm(c1, At, c2, p)
-      push!(v, k(c1[1]))
-    end
-    f = berlekamp_massey(v)
-    fl = true
-    if !fl || degree(f) > div(d, 2)-1
-      d += 10
-      continue
-    end
-    df = degree(f)
-    return f
-  end
-end
 
 ################################################################################
 #
@@ -1653,27 +1528,6 @@ end
 #  Conversion to julia types
 #
 ################################################################################
-
-@doc raw"""
-    sparse(A::SMat) -> SparseMatrixCSC
-
-The same matrix, but as a sparse matrix of julia type `SparseMatrixCSC`.
-"""
-function SparseArrays.sparse(A::SMat{T}) where T
-  I = zeros(Int, A.nnz)
-  J = zeros(Int, A.nnz)
-  V = Vector{T}(undef, A.nnz)
-  i = 1
-  for r = 1:nrows(A)
-    for j=1:length(A.rows[r].pos)
-      I[i] = r
-      J[i] = A.rows[r].pos[j]
-      V[i] = A.rows[r].values[j]
-      i += 1
-    end
-  end
-  return SparseArrays.sparse(I, J, V)
-end
 
 @doc raw"""
     Matrix(A::SMat{T}) -> Matrix{T}

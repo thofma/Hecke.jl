@@ -68,7 +68,8 @@ end
 
 function QQValuation(p_::IntegerUnion)
   p = ZZ(p_)
-  F = finite_field(p; cached = false)[1]
+  @req is_prime(p) "p must be a prime number"
+  F = finite_field(p, 1; cached = false, check = false)[1]
   return QQValuation(p, F)
 end
 
@@ -96,6 +97,7 @@ struct AbsSimpleNumFieldValuation <: DiscreteValuation{AbsSimpleNumFieldElem}
 end
 
 function AbsSimpleNumFieldValuation(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  @req is_prime(p) "Ideal must be prime"
   OK = order(p)
   F, mF = residue_field(OK, p)
   red = extend(mF, nf(OK))
@@ -145,7 +147,7 @@ function valuation(v::RationalFunctionFieldValuation, x_)
   return iszero(x) ? inf : valuation(numerator(x), v.f) - valuation(denominator(x), v.f)
 end
 
-function reduce(v::RationalFunctionFieldValuation, x_)
+function reduce(v::RationalFunctionFieldValuation, x_::RingElem)
   x = v.K(x_)
   return v.red_map(numerator(x)) // v.red_map(denominator(x))
 end
@@ -182,10 +184,13 @@ function valuation(v::RationalFunctionFieldDegreeValuation, x_)
   return iszero(x) ? inf : degree(denominator(x)) - degree(numerator(x))
 end
 
-function reduce(v::RationalFunctionFieldDegreeValuation, x_)
+function reduce(v::RationalFunctionFieldDegreeValuation, x_::RingElem)
   x = v.K(x_)
   Kl = domain(v.red_map)
   return v.red_map(Kl(x))
 end
+
+# more specific than Base.reduce(op, ::Number)
+reduce(v::Union{RationalFunctionFieldValuation, RationalFunctionFieldDegreeValuation}, x::Number) = reduce(v, v.K(x))
 
 lift(v::RationalFunctionFieldDegreeValuation, y) = v.K(v.red_map\y)

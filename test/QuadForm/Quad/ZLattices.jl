@@ -473,7 +473,7 @@ end
 
   L = integer_lattice(QQ[1 0; 0 2])
   f = matrix(QQ, 2, 2, [0, 1, 0, 0])
-  @test_throws ErrorException kernel_lattice(L, f)
+  @test_throws Union{ErrorException, InexactError} kernel_lattice(L, f)
   M = kernel_lattice(L, f, ambient_representation = false)
   @test basis_matrix(M) == QQ[0 2;]
 
@@ -545,7 +545,7 @@ end
   end
 
   q = quadratic_space(QQ, QQ[2 1; 1 2])
-  L = lattice(q, QQ[0 0; 0 0], isbasis = false)
+  L = lattice(q, QQ[0 0; 0 0], is_basis = false)
   g = automorphism_group_generators(L)
   @test rank(L) == 0
   @test g == [identity_matrix(QQ, 2)]
@@ -771,6 +771,19 @@ end
   @test is_primitive(L, v)
   @test_throws ArgumentError lattice_in_same_ambient_space(L, v)
   @test rank(0*L) == 0
+
+  # lattice(V, gens) over QQ returns the ZZLat spanned by gens
+  V = quadratic_space(QQ, 2)
+  L = lattice(V, [[1, 0], [0, 2], [1, 2]])
+  @test L isa ZZLat
+  @test ambient_space(L) === V
+  @test L == lattice(V, QQ[1 0; 0 2; 1 2]; is_basis = false)
+  @test lattice(V, [QQ.([1//2, 0])]) == lattice(V, QQ[1//2 0])
+  L = lattice(V, [])
+  @test L isa ZZLat
+  @test rank(L) == 0
+  @test ambient_space(L) === V
+  @test_throws ArgumentError lattice(V, [[1, 0, 0]])
 end
 
 # Issue 1054

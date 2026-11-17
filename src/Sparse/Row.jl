@@ -615,7 +615,7 @@ end
 #
 ################################################################################
 
-function *(b::T, A::SRow{T}) where T
+function *(b::T, A::SRow{T}) where {T <: NCRingElement}
   B = sparse_row(parent(b))
   sizehint!(B.pos, length(A))
   sizehint!(B.values, length(A))
@@ -632,14 +632,14 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
-function *(b, A::SRow)
+function *(b::NCRingElement, A::SRow)
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end
   return base_ring(A)(b)*A
 end
 
-function *(A::SRow{T}, b::T) where T
+function *(A::SRow{T}, b::T) where {T <: NCRingElement}
   B = sparse_row(parent(b))
   if iszero(b)
     return B
@@ -654,7 +654,7 @@ function *(A::SRow{T}, b::T) where T
   return B
 end
 
-function *(A::SRow, b)
+function *(A::SRow, b::NCRingElement)
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end
@@ -949,10 +949,8 @@ end
 
 
 # ignore temp variable
-addmul!(z::SRow{T}, x::SRow{T}, y, t) where T = addmul!(z, x, y)
-addmul!(z::SRow{T}, x, y::SRow{T}, t) where T = addmul!(z, x, y)
-submul!(z::SRow{T}, x::SRow{T}, y, t) where T = submul!(z, x, y)
-submul!(z::SRow{T}, x, y::SRow{T}, t) where T = submul!(z, x, y)
+addmul!(z::SRow, x, y, t) = addmul!(z, x, y)
+submul!(z::SRow, x, y, t) = submul!(z, x, y)
 
 
 ################################################################################

@@ -160,7 +160,7 @@ function _map(Q::QadicField, a::PadicFieldElem)
   v = valuation(a)
   if v >= 0
     q = Q(lift(ZZ, a))
-    return setprecision(q, a.N)
+    return setprecision(q, precision(a))
   else
     d = uniformizer(K)^-v
     n = a*d
@@ -251,7 +251,7 @@ end
 ################################################################################
 
 function divexact(a::LocalFieldValuationRingElem, b::LocalFieldValuationRingElem; check::Bool=true)
-  @assert !iszero(data(b))
+  iszero(b) && throw(DivideError())
   iszero(a) && return a
   valuation(data(a)) >= valuation(data(b)) || error("division not exact")
   return LocalFieldValuationRingElem(parent(a), data(a)//data(b))

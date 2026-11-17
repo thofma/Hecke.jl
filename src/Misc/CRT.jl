@@ -491,7 +491,7 @@ function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::ZZRingElem)
 end
 
 function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::UInt)
-  K = a.parent
+  K = parent(a)
   @assert n < degree(K) && n >=0
 
   ra = Ptr{ZZRingElem}(pointer_from_objref(a))
@@ -623,10 +623,10 @@ function modular_init(K::AbsSimpleNumField, p::ZZRingElem; lazy::Bool = false, d
       pols = [x-Fp(r) for r = _roots]
     else
       lp = factor(fp)
-      if any(!isequal(1), values(lp.fac))
+      if any(x -> !isone(x[2]), lp)
         throw(BadPrime(p))
       end
-      pols = collect(keys(lp.fac))
+      pols = [g for (g, _) in lp]
       if deg_limit > 0
         pols = pols[findall(x -> degree(x) <= deg_limit, pols)]
       end
@@ -909,7 +909,7 @@ Computes a polynomial over the number field.
 """
 function modular_lift(a::Vector{fqPolyRepPolyRingElem}, me::modular_env)
   res = me.Kx()
-  d = maximum([x.length for x = a])
+  d = maximum([length(x) for x = a])
   for i=0:d-1
     for j=1:me.ce.n
       ccall((:nmod_poly_set, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{fqPolyRepFieldElem}), me.rp[j], coeff(a[j], i))

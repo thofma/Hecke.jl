@@ -1949,16 +1949,24 @@ end
 Return all global genus symbols for hermitian lattices over the algebra `E`
 with rank `rank`, signatures given by `signatures`, scale bounded by
 `min_scale` and `max_scale` and determinant class equal to `determinant`.
+If `determinant` is not given, both `min_scale` and `max_scale` must be.
 """
 function hermitian_genera(
     E::Hecke.RelSimpleNumField,
     rank::Int,
     signatures::Dict{<: InfPlc, Int},
     determinant::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal,Nothing}=nothing;
-    min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal}=inv(_den(determinant)*order(determinant)),
-    max_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal}=_num(determinant),
+    min_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal, Nothing}=nothing,
+    max_scale::Union{Hecke.RelNumFieldOrderIdeal, Hecke.RelNumFieldOrderFractionalIdeal, Nothing}=nothing,
   )
   b = !(determinant isa Nothing)
+  @req b || (min_scale !== nothing && max_scale !== nothing) "min_scale and max_scale are required without determinant"
+  if min_scale === nothing
+    min_scale = inv(_den(determinant)*order(determinant))
+  end
+  if max_scale === nothing
+    max_scale = _num(determinant)
+  end
   @req rank >= 0 "Rank must be a non-negative integer"
   K = base_field(E)
   OE = maximal_order(E)
@@ -1977,7 +1985,7 @@ function hermitian_genera(
   union!(bd, support(norm(min_scale)))
   union!(bd, support(norm(max_scale)))
   b && union!(bd, support(norm(determinant)))
-  sort!(bd; by = (x -> minimum(x)))
+  sort!(bd; by = minimum)
   local_symbols = Vector{local_genus_herm_type(E)}[]
   res = genus_herm_type(E)[]
 

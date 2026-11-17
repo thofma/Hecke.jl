@@ -339,6 +339,10 @@ function try_init_small(
 
   r = length(C.G)
 
+  if !all(fits(Int, x) for G in (C.G, D.G) for g in G for x in g)
+    return false, Csmall
+  end
+
   Gsmall = Matrix{Int}[Matrix{Int}(g) for g in C.G]
 
   Gsmall_nbits = 0
@@ -727,21 +731,21 @@ function init_vector_sums(C::ZLatAutoCtx{S1, S2, S3}, depth::Int) where {S1, S2,
         end
       end
     end
-    B, T = lll_with_transform(M)
+    B0, T = lll_with_transform(M)
     # Compute the coefficients of the vector sums in the basis
     invT = inv(T)
 
     # Remove the zero rows from B and the corresponding rows / columns from T
     # and invT. The zero rows are on the top.
     k = 1
-    for r in 1:nrows(B)
-      !is_zero_row(B, r) && break
+    for r in 1:nrows(B0)
+      !is_zero_row(B0, r) && break
       k += 1
     end
 
     # We leave these matrices "big" (i.e. of type ZZMatrix) even if the short
     # vectors fit in Int
-    B = sub(B, k:nrows(B), 1:ncols(B))
+    B = sub(B0, k:nrows(B0), 1:ncols(B0))
     C.scpcomb[i].trans = sub(T, k:nrows(T), 1:ncols(T))
     C.scpcomb[i].coef = sub(invT, 1:nrows(invT), k:ncols(invT))
 
@@ -913,7 +917,7 @@ end
 #
 ################################################################################
 
-function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, max = ZZRingElem(-1))
+function compute_short_vectors(C::ZLatAutoCtx{Int, Matrix{Int}, Vector{Int}}, max::ZZRingElem = ZZRingElem(-1))
   #V = enumerate_using_gram(G, R(max))
 
   if max == -1
@@ -1481,7 +1485,11 @@ cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{Int}, Co::
 
 function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{S, T, U}, Co::ZLatAutoCtx{S, T, U}, overflows::Bool = false) where {S, T, U}
   dep = Ci.depth
-  use_vector_sums = (I > 1 && dep > 0)
+  # With overflows the entries are only known modulo a power of 2, so only
+  # equalities can be trusted. Since this reduction is not injective, the
+  # lookup of the scalar products for the vector sums can fail or find the
+  # wrong entry, so we leave them to the verification with ZZRingElem.
+  use_vector_sums = (I > 1 && dep > 0 && !overflows)
   dim = Hecke.dim(Ci)
   vec = Ci.tmp_vec1
   vec2 = Ci.tmp_vec2
@@ -1681,6 +1689,10 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       if nr < Ci.fp_diagonal[I]
         nr += 1
         candidates[nr] = j
+      elseif overflows
+        # vectors which are no candidates can pass the test with overflows,
+        # so enough candidates is all we can conclude
+        return true
       else
         # there are too many candidates
         return false
@@ -1692,6 +1704,8 @@ function _cand(candidates::Vector{Int}, I::Int, x::Vector{Int}, Ci::ZLatAutoCtx{
       if nr < Ci.fp_diagonal[I]
         nr += 1
         candidates[nr] = -j
+      elseif overflows
+        return true
       else
         # there are too many candidates
         return false

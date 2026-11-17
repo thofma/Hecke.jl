@@ -35,7 +35,7 @@ end
 # Compute the residue field data and store it in the prime P given the map m
 function compute_residue_field_data!(P::AbsNumFieldOrderIdeal, m)
   F = base_ring(codomain(m))
-  phi = MapFromFunc(ZZ, F, x -> F(x), y -> lift(ZZ, y))
+  phi = map_from_func(ZZ, F, F, y -> lift(ZZ, y))
   return compute_residue_field_data!(P, m, phi)
 end
 
@@ -47,9 +47,12 @@ end
 # Compute the residue field data given the prime P
 function compute_residue_field_data!(P)
   p = minimum(P)
-  if isa(p, IntegerUnion) && fits(Int, p)
+  if P isa AbsNumFieldOrderIdeal && isa(p, IntegerUnion) && fits(Int, p)
     smallp = Int(p)
     A, m = StructureConstantAlgebra(order(P), P, smallp)
+    compute_residue_field_data!(P, m)
+  elseif P isa AbsNumFieldOrderIdeal
+    A, m = StructureConstantAlgebra(order(P), P, p)
     compute_residue_field_data!(P, m)
   else
     _, phi = residue_field(base_ring(order(P)), p)
@@ -251,7 +254,7 @@ function ResidueFieldSmallDegree1(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrder
 end
 
 @doc raw"""
-    relative_residue_field(O::RelNumFieldOrder, P::RelNumFieldOrderIdeal) -> RelFinField, Map
+    relative_residue_field(O::RelNumFieldOrder, P::RelNumFieldOrderIdeal) -> FqField, Map
 
 Given a maximal order `O` in a relative number field $E/K$ and a prime ideal
 `P` of `O`, return the residue field $O/P$ seen as an extension of the (relative)
@@ -277,14 +280,7 @@ function relative_residue_field(O::RelNumFieldOrder{S, T, U}, P::RelNumFieldOrde
       set_attribute!(p, :rel_residue_field_map, projK)
     end
   end
-  FK = codomain(projK)
   projE = NfRelOrdToFqFieldRelMor{typeof(O)}(O, P, projK)
-  #if base_field(K) isa QQField
-  #  projE = NfRelOrdToRelFinFieldMor{typeof(O), FqFieldElem}(O, P, projK)
-  #else
-  #  projE = NfRelOrdToRelFinFieldMor{typeof(O), Hecke.RelFinFieldElem{typeof(FK), typeof(FK.defining_polynomial)}}(O, P, projK)
-  #end
   set_attribute!(P, :rel_residue_field_map, projE)
   return codomain(projE), projE
 end
-

@@ -72,28 +72,28 @@
   gram = QQ[1 0 0 1; 0 1 0 0; 0 0 1 0; 1 0 0 13//10]
   delta = 9//10
   L = integer_lattice(;gram = gram)
-  sv = @inferred short_vectors_iterator(L, delta, Int)
-  @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
-  sv = @inferred short_vectors_iterator(L, delta, ZZRingElem)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, Int)
+  @test (@inferred collect(sv)) == Tuple{Vector{Int}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, ZZRingElem)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
 
   L = integer_lattice(;gram = -gram)
-  sv = @inferred short_vectors_iterator(L, delta, Int)
-  @test collect(sv) == Tuple{Vector{Int64}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
-  sv = @inferred short_vectors_iterator(L, delta, ZZRingElem)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, Int)
+  @test (@inferred collect(sv)) == Tuple{Vector{Int}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
+  sv = short_vectors_iterator(L, delta, ZZRingElem)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[([1, 0, 0, -1], 3//10)]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 0))
-  sv = @inferred short_vectors(L, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
-  sv = @inferred short_vectors_iterator(L, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors(L, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors_iterator(L, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 0))
-  sv = @inferred short_vectors(L, 0, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
-  sv = @inferred short_vectors_iterator(L, 0, 1)
-  @test collect(sv) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors(L, 0, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  sv = short_vectors_iterator(L, 0, 1)
+  @test (@inferred collect(sv)) == Tuple{Vector{ZZRingElem}, QQFieldElem}[]
 
   L = integer_lattice(;gram = identity_matrix(ZZ, 2))
   sv = @inferred shortest_vectors(L)
@@ -106,6 +106,44 @@
     v = matrix(QQ, 1, 4, _v)
     @test (v*gram_matrix(L)*transpose(v))[1] == -n
   end
+end
+
+@testset "Basis of short vectors" begin
+  rng = Hecke.Random.Xoshiro(1)
+  L = integer_lattice(gram = ZZ[1 0; 0 2])
+  success, B = Hecke._reduce_allombert_chenevier(L, 2, 20; rng)
+  @test success
+  @test abs(det(B)) == 1
+  @test maximum(diagonal(B * gram_matrix(L) * transpose(B))) <= 2
+
+  # The vectors of norm at most 2 span only the first coordinate.
+  L = integer_lattice(gram = ZZ[2 0; 0 3])
+  success, _ = Hecke._reduce_allombert_chenevier(L, 2;
+                                                  rng = Hecke.Random.Xoshiro(1))
+  @test !success
+
+  G = ZZ[1 0 0; 0 1 0; 0 0 1]
+  success, B = Hecke._reduce_gram_matrix(G, 1, 100;
+                                         rng = Hecke.Random.Xoshiro(1))
+  @test success
+  @test abs(det(B)) == 1
+  @test B * G * transpose(B) == G
+
+  L = integer_lattice(gram = identity_matrix(ZZ, 0))
+  success, B = Hecke._reduce_allombert_chenevier(L, 0)
+  @test !success
+  @test size(B) == (0, 0)
+  L = integer_lattice(gram = identity_matrix(ZZ, 2))
+  success, B = Hecke._reduce_allombert_chenevier(L, 1, 0)
+  @test !success
+  @test size(B) == (2, 2)
+  @test_throws ArgumentError Hecke._reduce_allombert_chenevier(L, -1)
+  @test_throws ArgumentError Hecke._reduce_allombert_chenevier(L, 2, -1)
+  L = integer_lattice(gram = ZZ[0 1; 1 0])
+  @test_throws ArgumentError Hecke._reduce_allombert_chenevier(L, 2)
+  G = matrix(QQ, 1, 1, [1//2])
+  L = integer_lattice(gram = G)
+  @test_throws ArgumentError Hecke._reduce_allombert_chenevier(L, 2)
 end
 
 @testset "Short vectors affine" begin
@@ -325,4 +363,66 @@ end
     x = Hecke.__enumerate_gram(Hecke.FinckePohstInt, M, nothing, 4, ZZRingElem, identity, identity, ZZRingElem)
     @test length(x) == 8
   end
+end
+
+@testset "Theta series" begin
+  # Classical formulas (Conway-Sloane, Chapter 2, Section 2.3, and Chapter 4),
+  # the vectors counted by short_vectors, and the input checks
+  E8 = root_lattice(:E, 8)
+  t = theta_series(E8, 12)
+  @test precision(t) == 13
+  @test coeff(t, 0) == 1
+  @test all(1:12) do k
+    coeff(t, k) == (isodd(k) ? 0 : 240 * divisor_sigma(div(k, 2), 3))
+  end
+
+  # Jacobi's four-square theorem
+  Z4 = integer_lattice(gram = identity_matrix(QQ, 4))
+  t = theta_series(Z4, 20)
+  @test all(1:20) do k
+    coeff(t, k) == 8 * sum(d for d in divisors(k) if !is_divisible_by(d, 4))
+  end
+
+  # A2: the norm 2k is represented 6 * sum_{d | k} (d/3) times
+  A2 = root_lattice(:A, 2)
+  t = theta_series(A2, 20)
+  @test precision(t) == 21
+  @test [coeff(t, k) for k in 0:20] ==
+    [1, 0, 6, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0, 0, 12, 0, 0, 0, 6, 0, 0]
+  @test all(1:10) do k
+    coeff(t, 2 * k) == 6 * sum(jacobi_symbol(d, 3) for d in divisors(k))
+  end
+  @test parent(t) === parent(theta_series(Z4, 20))
+
+  # negative definite, and a badly reduced basis of Z^2
+  @test theta_series(rescale(A2, -1), 20) == t
+  Z2 = lattice(quadratic_space(QQ, 2), matrix(QQ, 2, 2, [1, 0, ZZ(10)^20, 1]))
+  I2 = integer_lattice(gram = identity_matrix(QQ, 2))
+  @test theta_series(Z2, 5) == theta_series(I2, 5)
+
+  # rank 0, precision 0, and integral norm with half-integral scale
+  Z0 = integer_lattice(gram = zero_matrix(QQ, 0, 0))
+  t = theta_series(Z0, 3)
+  @test precision(t) == 4 && [coeff(t, k) for k in 0:3] == [1, 0, 0, 0]
+  t = theta_series(A2, 0)
+  @test precision(t) == 1 && coeff(t, 0) == 1
+  t = theta_series(rescale(A2, 1//2), 3)
+  @test [coeff(t, k) for k in 0:3] == [1, 6, 0, 6]
+
+  # against short_vectors and kissing_number on lattices of the database
+  D = lattice_database()
+  for i in 1:60
+    L = lattice(D, i)
+    is_integral(norm(L)) || continue
+    n = Int(minimum(L)) + 3
+    t = theta_series(L, n)
+    sv = short_vectors(L, n)
+    @test all(k -> coeff(t, k) == 2 * count(v -> v[2] == k, sv), 1:n)
+    @test coeff(t, Int(minimum(L))) == kissing_number(L)
+    @test Hecke._theta_series(L, n) == [count(v -> v[2] == k, sv) for k in 1:n]
+  end
+
+  @test_throws ArgumentError theta_series(hyperbolic_plane_lattice(), 3)
+  @test_throws ArgumentError theta_series(rescale(A2, 1//4), 3)
+  @test_throws ArgumentError theta_series(A2, -1)
 end

@@ -29,5 +29,24 @@
     @test x != z
     @test hash(x) == hash(y)
   end
+
+  # module over an algebra given only by the action of generators
+  let
+    QG = group_algebra(QQ, abelian_group([2]))
+    ms = [matrix(QQ, [0 1; 1 0])]
+    V = Hecke.ModAlgAss{QQMatrix, typeof(QG)}(QG; action_of_gens = ms)
+    @test dim(V) == 2
+    @test Hecke.action_of_gens(V) == ms
+  end
+
+  # modules without nonzero homomorphisms are not isomorphic
+  let
+    V = Amodule([matrix(QQ, 1, 1, [1])])
+    W = Amodule([matrix(QQ, 1, 1, [-1])])
+    fl, h = is_isomorphic_with_isomorphism(V, W)
+    @test !fl
+    @test domain(h) === V && codomain(h) === W
+    @test matrix(h) == zero_matrix(QQ, 1, 1)
+  end
 end
 

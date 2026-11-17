@@ -264,6 +264,15 @@
     @test hasse_invariant(q, 2) == -1
     @test hasse_invariant(q, ideal(ZZ,3)) == -1
     @test hasse_invariant(q, ZZ(3)) == -1
+    # a prime above 2^63 must not be narrowed to Int
+    pbig = next_prime(ZZ(2)^63)
+    qbig = Hecke._quadratic_form_with_invariants(4, ZZ(1), [ZZ(2), pbig], 4)
+    rkb, kerb, detb, finb, negb = Hecke._quadratic_form_invariants(qbig)
+    @test rkb == 4
+    @test kerb == 0
+    @test is_square(detb)
+    @test finb[ZZ(2)] == -1 && finb[pbig] == -1
+    @test negb[1][2] == 4
     # small ranks should be covered by the tests of GenusRep
     K, a = rationals_as_number_field()
     OK = maximal_order(K)
@@ -392,6 +401,19 @@
       @test any(!iszero, v)
       @test iszero(inner_product(q, v, v))
     end
+
+    # dimension 5 over a totally real cubic field with signs to be fixed at
+    # several real places, and a definite space
+    Qx, x = QQ["x"]
+    K3, b = number_field(x^3 - 3*x - 1, "b", cached = false)
+    q = quadratic_space(K3, diagonal_matrix([b + 1, b^2 - 1, -b, b + 1, b^2 - 1]))
+    ok, v = is_isotropic_with_vector(q)
+    @test ok
+    @test any(!iszero, v)
+    @test iszero(inner_product(q, v, v))
+    q = quadratic_space(K3, diagonal_matrix([K3(1), b^2, b^2 + 1, K3(2), K3(3)]))
+    ok, v = is_isotropic_with_vector(q)
+    @test !ok
 
   #  too long even for a long test
   #   if long_test

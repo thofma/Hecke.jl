@@ -27,7 +27,8 @@ mutable struct Divisor{S <: Generic.AbsSimpleFunctionField, T1 <: PolyRing, T2 <
 
 end
 
-function trivial_divisor(F::Generic.AbsSimpleFunctionField)
+@attr Divisor{Generic.AbsSimpleFunctionField{T, U}, parent_type(U), KInftyRing{T, U}} function
+trivial_divisor(F::Generic.AbsSimpleFunctionField{T, U}) where {T, U}
   return divisor(one(F))
 end
 
@@ -37,9 +38,9 @@ end
 Return the divisor corresponding to the factorization of the ideal I (for the finite places) and ideal J (for the infinite places)
 """
 divisor(I::GenOrdFracIdl, J::GenOrdFracIdl) = Divisor(I, J)
-divisor(I::GenOrdIdl,     J::GenOrdIdl)     = Divisor(GenOrdFracIdl(I), GenOrdFracIdl(J))
-divisor(I::GenOrdFracIdl, J::GenOrdIdl)     = Divisor(I, GenOrdFracIdl(J))
-divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(GenOrdFracIdl(I), J)
+divisor(I::GenOrdIdl,     J::GenOrdIdl)     = Divisor(fractional_ideal(I), fractional_ideal(J))
+divisor(I::GenOrdFracIdl, J::GenOrdIdl)     = Divisor(I, fractional_ideal(J))
+divisor(I::GenOrdIdl,     J::GenOrdFracIdl) = Divisor(fractional_ideal(I), J)
 
 @doc raw"""
     divisor(I::GenOrdFracIdl) -> Divisor
@@ -58,7 +59,7 @@ function divisor(I::GenOrdFracIdl{<: Generic.AbsSimpleFunctionField, <: PolyRing
 end
 
 function divisor(I::GenOrdIdl)
-  return divisor(GenOrdFracIdl(I))
+  return divisor(fractional_ideal(I))
 end
 
 @doc raw"""
@@ -140,14 +141,6 @@ function function_field(O::GenOrd)
   return O.F
 end
 
-@doc raw"""
-    constant_field(K::AbsSimpleFunctionField) -> Field
-
-Return the field of constants of K.
-"""
-function constant_field(K::AbstractAlgebra.Generic.AbsSimpleFunctionField)
-  return base_ring(base_ring(K))
-end
 
 @doc raw"""
     finite_maximal_order(K::AbsSimpleFunctionField) -> GenOrd
@@ -297,7 +290,7 @@ end
 
 Return the multiplicity of D at the prime ideal p.
 """
-function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T1}) where {S, T1, T2}
+function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T1}) where {S, T1 <: PolyRing, T2 <: KInftyRing}
   @req is_prime(p) "p must be prime ideal"
 
   #Might not always want to compute support for a simple valuation
@@ -305,7 +298,7 @@ function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T1}) where {S, T1, T2}
   return get(D.finite_support, p, 0)
 end
 
-function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T2}) where {S, T1, T2}
+function valuation(D::Divisor{S, T1, T2}, p::GenOrdIdl{S, T2}) where {S, T1 <: PolyRing, T2 <: KInftyRing}
   @req is_prime(p) "p must be prime ideal"
 
   #Might not always want to compute support for a simple valuation
@@ -344,8 +337,8 @@ end
 
 # trivial helper to filter support
 function _filter_support(D::Divisor, pred)
-  s_fin = filter(t -> pred(t), D.finite_support)
-  s_inf = filter(t -> pred(t), D.infinite_support)
+  s_fin = filter(pred, D.finite_support)
+  s_inf = filter(pred, D.infinite_support)
 
   F = function_field(D)
   Ofin, Oinf = finite_maximal_order(F), infinite_maximal_order(F)
@@ -591,7 +584,8 @@ Return the genus of F.
   dDiff = d1 - d2
   @assert iseven(dDiff)
 
-  return 1 - degree(F) + divexact(dDiff, 2)
+  m = constant_field_degree(F)
+  return 1 + divexact(dDiff - 2*degree(F), 2*m)
 end
 
 ################################################################################
@@ -620,10 +614,9 @@ end
 #   F is the ambient function field
 
 # common setup for Riemann-Roch
-function _riemann_roch_common_setup(basis_fin, basis_inf)
-  # express basis_fin in terms of basis_inf
-  B_fin = matrix(map(coordinates, basis_fin))
-  B_inf = matrix(map(coordinates, basis_inf))
+# B_fin and B_inf are coordinate matrices (basis elements in the power basis)
+function _riemann_roch_common_setup(B_fin, B_inf)
+  # express B_fin in terms of B_inf
   M = solve(B_inf, B_fin; side = :left)
 
   # clear denominators
@@ -637,20 +630,20 @@ function _riemann_roch_space(J_fin, J_inf, F)
   x = gen(base_ring(F))
   n = degree(F)
 
-  basis_fin = basis(J_fin)
-  basis_inf = basis(J_inf)
-  dM, d_deg = _riemann_roch_common_setup(basis_fin, basis_inf)
+  B_fin = _coordinate_matrix(J_fin)
+  B_inf = _coordinate_matrix(J_inf)
+  dM, d_deg = _riemann_roch_common_setup(B_fin, B_inf)
 
   # weak Popov reduction of dM (no denominators)
-  T, U = weak_popov_with_transform(dM)
+  T, U = _weak_popov_with_transform!(dM)
 
-  # v_i in Hess paper
-  basis_gens = change_base_ring(F, U) * basis_fin
+  # v_i in Hess paper: rows have v_i coordinates in power basis
+  basis_gens = change_base_ring(base_ring(B_fin), U) * B_fin
 
   RR_basis = elem_type(F)[]
   for i in 1:n
     d_i = maximum(degree(T[i, k]) for k in 1:n)
-    g = basis_gens[i]
+    g = F(vec(collect(basis_gens[i, :])))
     for _ in 0:(d_deg - d_i)
       push!(RR_basis, g)
       g = x*g # this is x^j * basis_gens[i] for j = 0 .. d_deg - d_i
@@ -663,10 +656,10 @@ end
 function _riemann_roch_dim(J_fin, J_inf, F)
   n = degree(F)
 
-  dM, d_deg = _riemann_roch_common_setup(basis(J_fin), basis(J_inf))
+  dM, d_deg = _riemann_roch_common_setup(_coordinate_matrix(J_fin), _coordinate_matrix(J_inf))
 
   # we need only weak Popov form itself, without transform
-  T = weak_popov(dM)
+  T = _weak_popov!(dM)
 
   # same as above, but instead of constructing basis vectors we just count them
   dim = 0

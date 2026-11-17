@@ -204,6 +204,7 @@ export default defineConfig({
                 { text: 'Conjugacy of integer matrices', link: '/manual/misc/conjugacy'},
                 { text: 'Multisets', link: '/manual/misc/mset'},
                 { text: 'Pseudo-matrices', link: '/manual/misc/pmat'},
+                { text: 'Embedded modules', link: '/manual/misc/embedded_modules'},
               ]
             },
           ]

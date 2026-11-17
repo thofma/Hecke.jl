@@ -75,10 +75,16 @@ _identity_elem(G::Group) = one(G)
 ################################################################################
 
 @doc raw"""
-    group_algebra(K::Ring, G::Group; cached::Bool = true) -> GroupAlgebra
+    group_algebra(R::Ring, G::Group; sparse::Bool = ..., cached::Bool = true)
+      -> GroupAlgebra
 
 Return the group algebra of the group $G$ over the ring $R$. Shorthand syntax
 for this construction is `R[G]`.
+
+Set `sparse = true` to use a sparse representation, or `sparse = false` to use
+a dense representation. By default, a sparse representation is used if $G$
+is infinite or has order at least 1000; otherwise, a dense representation is
+used. A dense representation requires $G$ to be finite.
 
 # Examples
 
@@ -89,10 +95,10 @@ Group algebra
   over rational field
 ```
 """
-group_algebra(K::Ring, G; cached = true) =  _group_algebra(K, G; cached)
+group_algebra(R::Ring, G; sparse = _use_sparse_group_algebra(G), cached = true) =
+  _group_algebra(R, G; sparse, cached)
 
-# one additional level of indirection to hide the non-user facing options
-# `op` and `sparse`.
+# One additional level of indirection to hide the non-user facing option `op`.
 function _group_algebra(K::Ring, G; op = _op(G), sparse = _use_sparse_group_algebra(G), cached::Bool = true)
   A = GroupAlgebra(K, G; op = op , sparse = sparse, cached = cached)
   if !(K isa Field)
