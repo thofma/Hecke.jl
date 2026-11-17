@@ -31,6 +31,26 @@
     @test f(gen(k) * one(A)) == gen(k)^2 * one(B)
   end
 
+  # Test preimages under an inclusion, an isomorphism, and a quotient map.
+  @testset "Element preimages of algebra morphisms" begin
+    A = matrix_algebra(QQ, 2)
+    Z, iota = center(A)
+    @test preimage(iota, A(3)) == Z(3)
+    outside = A(QQ[0 1; 0 0])
+    @test !first(Hecke.has_preimage_with_preimage(iota, outside))
+    @test_throws ArgumentError preimage(iota, outside)
+
+    f = hom(A, A, basis(A))
+    inv(f)
+    @test preimage(f, A[2]) == A[2]
+
+    _, t = polynomial_ring(QQ, "t")
+    B = associative_algebra(t^2)
+    Q, q = quo(B, radical(B))
+    ok, b = Hecke.has_preimage_with_preimage(q, one(Q))
+    @test ok && q(b) == one(Q)
+  end
+
   @testset "Threaded morphisms" begin
     A = matrix_algebra(QQ, 1)
     f = Hecke.id_hom(A)
