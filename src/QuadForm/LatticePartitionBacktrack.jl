@@ -162,10 +162,9 @@
 module LatticePartitionBacktrack
 
 import ..Hecke: @req, @hassert, @vprintln, ZZ, QQ, ZZLat, ZZMatrix,
-                ZZRingElem, change_base_ring, content, divexact, fits,
-                gram_matrix, identity_matrix, is_definite,
-                lll_gram_with_transform, matrix, rank,
-                _short_vectors_gram_integral
+                ZZRingElem, change_base_ring, content, diagonal, divexact,
+                fits, gram_matrix, identity_matrix, is_definite,
+                lll_gram_with_transform, matrix, rank, __short_vectors
 
 ################################################################################
 #
@@ -197,14 +196,14 @@ number_of_vectors(S::ShortVectors) = size(S.vectors, 2)
 function ShortVectors(G::Matrix{Int})
   n = size(G, 1)
   bound = maximum(G[i, i] for i in 1:n)
-  list = _short_vectors_gram_integral(Vector, matrix(ZZ, G), bound, Int)
+  list = __short_vectors(matrix(ZZ, G), nothing, bound)
   nv = length(list)
   vectors = Matrix{Int}(undef, n, nv)
   norms = Vector{Int}(undef, nv)
   index = Dict{Vector{Int}, Int}()
   for (j, (v, norm)) in enumerate(list)
     vectors[:, j] = v
-    norms[j] = Int(norm)
+    norms[j] = norm
     index[v] = j
   end
 
@@ -600,6 +599,12 @@ function automorphism_group(L::ZZLat)
   G = change_base_ring(ZZ, sign(G[1, 1]) * denominator(G) * G)
   G = divexact(G, content(G))
   reduced, T = lll_gram_with_transform(G)
+  # The short vectors are enumerated up to the largest diagonal entry and
+  # their number prices every node of the search. LLL does not minimise that
+  # entry, so keep the given basis if it is at least as good.
+  if maximum(diagonal(G)) <= maximum(diagonal(reduced))
+    reduced, T = G, identity_matrix(ZZ, n)
+  end
   all(x -> fits(Int, x), reduced) || return nothing
 
   local chain

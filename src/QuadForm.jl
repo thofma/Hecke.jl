@@ -59,8 +59,8 @@ include("QuadForm/OrbitsMod2.jl")
 
 # Close and short vectors
 include("QuadForm/IntegerLattices/ShortVectors.jl")
-include("QuadForm/LatticePartitionBacktrack.jl")
 include("QuadForm/IntegerLattices/ShortVectorsTarget.jl")
+include("QuadForm/LatticePartitionBacktrack.jl")
 include("QuadForm/IntegerLattices/CloseVectors.jl")
 include("QuadForm/IntegerLattices/CharacteristicVectors.jl")
 
