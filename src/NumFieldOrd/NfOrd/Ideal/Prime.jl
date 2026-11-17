@@ -210,6 +210,11 @@ function prime_decomposition(O::AbsSimpleNumFieldOrder, p::IntegerUnion, degree_
   end
 
   if is_defining_polynomial_nice(nf(O))
+    if !contains_equation_order(O)
+      @assert O.is_maximal == 1 || p in O.primesofmaximality ||
+              !is_divisible_by(discriminant(O), p)
+      return prime_dec_gen(O, p, degree_limit, lower_limit)
+    end
     if cached || is_index_divisor(O, p)
       if haskey(O.index_div, ZZRingElem(p))
         lp = O.index_div[ZZRingElem(p)]::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}
@@ -251,7 +256,8 @@ function prime_dec_gen(O::AbsNumFieldOrder, p::Union{ZZRingElem, Int}, degree_li
   lp = Hecke._decomposition(O, Jp, Ip, ideal(O, 1), ZZRingElem(p))
   z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
-    if degree(Q) <= degree_limit && degree(Q) >= lower_limit
+    if (iszero(degree_limit) || degree(Q) <= degree_limit) &&
+       degree(Q) >= lower_limit
       push!(z, (Q, e))
     end
   end
@@ -445,7 +451,7 @@ Returns an array of tuples whose length is the number of primes lying over $p$ a
 gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
 """
 function prime_decomposition_type(O::AbsSimpleNumFieldOrder, p::T) where T <: IntegerUnion
-  if !is_defining_polynomial_nice(nf(O))
+  if !is_defining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
   end
   if (mod(discriminant(O), p)) != 0 && (mod(ZZRingElem(index(O)), p) != 0)
@@ -485,7 +491,7 @@ function _number_of_degree_one_primes(O::AbsSimpleNumFieldOrder,
   if typeof(p) != ZZRingElem && typeof(p) != Int
     return _number_of_degree_one_primes(O, ZZRingElem(p))
   end
-  if is_defining_polynomial_nice(nf(O)) &&
+  if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O) &&
       !iszero(mod(discriminant(O), p)) && !iszero(mod(ZZRingElem(index(O)), p))
     f = defining_polynomial(nf(O))
     Zf = numerator(f, Globals.Zx)
@@ -1581,20 +1587,35 @@ end
 # Return b in K with a \equiv b mod I and b_v >= 0 for v in pos_places
 # Cohen, Advanced Topics in Computational Number Theory, Algorithm 4.2.20
 function approximate(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, I::AbsNumFieldOrderIdeal, pos_places::Vector{<: InfPlc})
-  F2 = GF(2)
-  v = matrix(F2, length(pos_places), 1, [ is_positive(a, p) ? F2(0) : F2(1) for p in pos_places ])
-  if all(iszero, v[:, 1])
-    return a
+  return a*approximate_factor(a, I, pos_places, [is_positive(a, p) for p = pos_places])
+end
+
+function approximate_factor(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, I::AbsNumFieldOrderIdeal, pos_places::Vector{<: InfPlc}, vals::Vector{Bool})
+  @req length(pos_places) == length(vals) "Expected one sign per place"
+  if all(vals)
+    return one(parent(a))
+  end
+  @req !iszero(I) "A correction factor modulo the zero ideal must be one"
+  if !allunique(pos_places)
+    signs = unique(zip(pos_places, vals))
+    pos_places = first.(signs)
+    @req allunique(pos_places) "Conflicting signs for a repeated place"
+    vals = last.(signs)
   end
   bound = 5
   count = 1
   F2 = GF(2)
+  v = matrix(F2, length(pos_places), 1, [p ? F2(0) : F2(1) for p in vals])
   M = zero_matrix(F2, length(pos_places), length(pos_places))
   betas = Vector{elem_type(order(I))}()
   r = 0
   while r != length(pos_places)
     count += 1
     b = 1 + rand(I, bound)
+    if count > 2^length(pos_places)*bound
+      bound += 5
+    end
+    iszero(b) && continue
     N = deepcopy(M)
     for i = 1:length(pos_places)
       N[i, r + 1] = is_positive(b, pos_places[i]) ? F2(0) : F2(1)
@@ -1605,13 +1626,10 @@ function approximate(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldEl
       r = rr
       push!(betas, b)
     end
-    if count > 2^length(pos_places)*bound
-      bound += 5
-    end
   end
 
   w = inv(M)*v
-  b = a
+  b = one(parent(a))
   for i = 1:nrows(w)
     if !iszero(w[i, 1])
       b *= betas[i]

@@ -60,7 +60,7 @@ function _mod_exponents(a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, p:
   a1 = copy(a.fac)
   for i = a1.idxfloor:length(a1.vals)
     if a1.slots[i] == 0x01
-      new_e = Hecke.fmpz_mod_ui(a1.vals[i], pU)
+      new_e = mod(a1.vals[i], pU)
       if iszero(new_e)
         a1.slots[i] = 0x00
         a1.count -= 1

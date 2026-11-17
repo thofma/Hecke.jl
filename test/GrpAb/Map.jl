@@ -39,6 +39,18 @@
     @test_throws ArgumentError hom(G, H, gens(G), gens(H))
   end
 
+  @testset "Negative powers" begin
+    # Check inverse powers of a shear on both generators.
+    G = free_abelian_group(2)
+    x, y = gens(G)
+    f = hom(G, G, [x + y, y])
+    for n in (-1, -2, typemin(Int8), typemin(Int))
+      g = f^n
+      @test g(x) == x + ZZ(n)*y
+      @test g(y) == y
+    end
+  end
+
   @testset "Kernel" begin
     G = abelian_group([4, 4, 4])
     H = abelian_group([4, 4, 4])

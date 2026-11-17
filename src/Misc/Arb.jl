@@ -146,23 +146,3 @@ function lower_bound(x::ArbFieldElem, ::Type{ZZRingElem})
 
   return bound
 end
-
-################################################################################
-#
-#  Maximum
-#
-################################################################################
-
-function _max(a::ArbFieldElem, b::ArbFieldElem)
-  RR = parent(a)
-  c = RR()
-  ccall((:arb_max, libflint), Cvoid, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), c, a, b, precision(RR))
-  return c
-end
-
-function _min(a::ArbFieldElem, b::ArbFieldElem)
-  RR = parent(a)
-  c = RR()
-  ccall((:arb_min, libflint), Cvoid, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), c, a, b, precision(RR))
-  return c
-end

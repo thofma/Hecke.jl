@@ -804,20 +804,19 @@
       end
     end
 
-    # a StructureConstantAlgebra over QQ and over Q(sqrt(10)): maximal orders
-    # of that algebra, as many as for the QuaternionAlgebra; over QQ with
-    # centre Q(sqrt(5)), not implemented
+    # a StructureConstantAlgebra over QQ, over Q(sqrt(10)) and over QQ with
+    # center Q(sqrt(5)): maximal orders of that algebra, as many as for the
+    # QuaternionAlgebra
     K, = quadratic_field(10)
     B = quaternion_algebra(K, -1, -1)
-    for (Q, n) in [(quaternion_algebra_ramified_at(QQ, 97), 5), (B, 4)]
-      A, = StructureConstantAlgebra(Q)
+    B5 = quaternion_algebra(quadratic_field(5)[1], -1, -19)
+    for (Q, n) in [(quaternion_algebra_ramified_at(QQ, 97), 5), (B, 4),
+                   (B5, 5)]
+      A, = Q === B5 ? restrict_scalars(Q, QQ) : StructureConstantAlgebra(Q)
       R = Hecke.representatives_of_maximal_orders(A)
       @test length(R) == n && all(L -> algebra(L) === A && is_maximal(L), R)
       @test type_number(maximal_order(Q)) == n
     end
-    B5, = restrict_scalars(quaternion_algebra(quadratic_field(5)[1], -1, -1), QQ)
-    A, = StructureConstantAlgebra(B5)
-    @test_throws ArgumentError Hecke.representatives_of_maximal_orders(A)
 
     # indefinite: the reduced norm is a bijection onto Cl_{G_N(O)} R (Voight,
     # Quaternion Algebras, Corollary 28.5.10): one type over QQ; over
@@ -836,6 +835,29 @@
       A, = StructureConstantAlgebra(B)
       @test length(Hecke.representatives_of_maximal_orders(A)) == n
     end
+    # with a center larger than the base field: M_2(Q(sqrt(-5))), of class
+    # number 2, has two types (ibid., 28.5.11), over QQ and over QQ as a
+    # number field, and as many representatives_of_maximal_orders; a number
+    # field has one maximal order, and other algebras with a larger center are
+    # refused
+    K5, = quadratic_field(-5)
+    Q1, = rationals_as_number_field()
+    over_Q1(A) = StructureConstantAlgebra(Q1, map(Q1, multiplication_table(A)))
+    A, = restrict_scalars(matrix_algebra(K5, 2), QQ)
+    for B in [A, over_Q1(A)]
+      M = maximal_order(B)
+      @test type_number(M) == 2
+      @test length(Hecke.representatives_of_maximal_orders(M)) == 2
+    end
+    F, = restrict_scalars(matrix_algebra(K5, 1), QQ)
+    for B in [F, over_Q1(F)]
+      @test length(Hecke.representatives_of_maximal_orders(maximal_order(B))) == 1
+    end
+    A, = restrict_scalars(matrix_algebra(K5, 3), QQ)
+    for B in [A, over_Q1(A)]
+      @test_throws ArgumentError Hecke.representatives_of_maximal_orders(
+        maximal_order(B))
+    end
     M = maximal_order(quaternion_algebra(K, 1, 1))
     R = base_ring(M)
     P = first(first.(prime_decomposition(R, 3)))
@@ -847,5 +869,106 @@
     E = order(algebra(M), sub(N, 2:5, 1:4))
     @test eichler_level(E) == P
     @test length(right_class_set(E)) == 2 && type_number(E) == 1
+  end
+
+  @testset "other presentations" begin
+    # An order of a quaternion algebra in another presentation has the right
+    # ideal classes, types and level of the same order in a QuaternionAlgebra.
+    # Its classes are pairwise inequivalent right ideals of the order itself
+    # and its types are left orders of these ideals (Voight, Quaternion
+    # Algebras, Lemma 17.4.13), all in its own algebra.
+    function has_classes_and_types(O, h, t)
+      C = right_class_set(O)
+      T = type_set(O)
+      return length(C) == h && all(I -> right_order(I) == O, C) &&
+        all(!Hecke._isisomorphic_generic(C[a], C[b]; side = :right)[1]
+            for a in eachindex(C) for b in (a + 1):length(C)) &&
+        type_number(O) == t && all(L -> algebra(L) === algebra(O), T) &&
+        issubset(T, left_order.(C))
+    end
+
+    # B_23 as a StructureConstantAlgebra: 3 classes and 3 types for a maximal
+    # order, 6 and 4 for an Eichler order of level 2
+    B = quaternion_algebra_ramified_at(QQ, 23)
+    M = maximal_order(B)
+    I = first(Hecke.maximal_integral_ideals(M, 2; side = :right))
+    E = order(B, vcat([one(B)], basis(I)))
+    A, AtoB = StructureConstantAlgebra(B)
+    to_A(O) = order(A, [preimage(AtoB, elem_in_algebra(b)) for b in basis(O)])
+    @test has_classes_and_types(to_A(M), 3, 3)
+    @test has_classes_and_types(to_A(E), 6, 4)
+    @test is_eichler(to_A(E)) && eichler_level(to_A(E)) == 2
+
+    # M_2(QQ) as a MatAlgebra: the matrices (a b; 6c d) form an Eichler order
+    # of level 6 with one class and one type
+    A = matrix_algebra(QQ, 2)
+    E = order(A, [A(matrix(QQ, [1 0; 0 0])), A(matrix(QQ, [0 1; 0 0])),
+                  A(matrix(QQ, [0 0; 6 0])), A(matrix(QQ, [0 0; 0 1]))])
+    @test eichler_level(E) == 6
+    @test length(right_class_set(E)) == 1 && type_number(E) == 1
+
+    # (-1, -19) over Q(sqrt(5)), with 8 classes and 5 types, as a
+    # StructureConstantAlgebra over Q(sqrt(5)) and over QQ; over QQ the level
+    # of the Eichler order of level P, for P over the split prime 11, is an
+    # ideal of norm 11 of a field isomorphic to the center, the same field
+    # for every order
+    K, = quadratic_field(5)
+    B = quaternion_algebra(K, -1, -19)
+    @test length(right_class_set(maximal_order(B))) == 8
+    A, = StructureConstantAlgebra(B)
+    @test has_classes_and_types(maximal_order(A), 8, 5)
+    A, AtoB = restrict_scalars(B, QQ)
+    MA = maximal_order(A)
+    @test has_classes_and_types(MA, 8, 5)
+    M = maximal_order(B)
+    R = base_ring(M)
+    P = first(first.(prime_decomposition(R, 11)))
+    I = first(Hecke.maximal_integral_ideals(M, P; side = :right))
+    one_row = pseudo_matrix(matrix(K, 1, 4, coefficients(one(B))), [1 * R])
+    N = pseudo_hnf(vcat(basis_pmatrix(I), one_row), :lowerleft)
+    E = order(B, sub(N, 2:5, 1:4))
+    EA = order(A, [preimage(AtoB, elem_in_algebra(b))
+                   for b in absolute_basis(E)])
+    l = eichler_level(EA)
+    @test norm(l) == 11 && order(l) === order(eichler_level(MA))
+    @test is_one(eichler_level(MA))
+
+    # the same over Q(sqrt(5)) as a relative extension of QQ as a number field
+    Q1, = rationals_as_number_field()
+    Q1t, t = Q1[:t]
+    L, = number_field(t^2 - 5)
+    M = maximal_order(quaternion_algebra(L, -1, -19))
+    C = right_class_set(M)
+    @test length(C) == 8 && all(I -> right_order(I) == M, C)
+    @test type_number(M) == 5
+    @test eichler_level(M) == 1 * base_ring(M)
+
+    # M_2 over the non-simple field Q(sqrt(2), sqrt(5)): level one for the
+    # maximal order, and level P for the matrices (a b; c d) with c in P, for P
+    # over 11, an Eichler order; one class and one type for each
+    Qx, x = QQ[:x]
+    L, = number_field([x^2 - 2, x^2 - 5])
+    AL = matrix_algebra(L, 2)
+    ML = maximal_order(AL)
+    RL = base_ring(ML)
+    @test eichler_level(ML) == 1 * RL
+    @test type_number(ML) == 1
+    @test length(Hecke.representatives_of_maximal_orders(ML)) == 1
+    P = first(first.(prime_decomposition(RL, 11)))
+    units = [AL(matrix(L, [1 0; 0 0])), AL(matrix(L, [0 1; 0 0])),
+             AL(matrix(L, [0 0; 1 0])), AL(matrix(L, [0 0; 0 1]))]
+    rows = vcat([matrix(L, 1, 4, coefficients(u)) for u in units]...)
+    ideals = [fractional_ideal(RL, I) for I in [1 * RL, 1 * RL, P, 1 * RL]]
+    EL = order(AL, pseudo_matrix(rows, ideals))
+    @test eichler_level(EL) == P
+    @test length(right_class_set(EL)) == 1 && type_number(EL) == 1
+
+    # an order over QQ that is not a module over the ring of integers of its
+    # center Q(sqrt(5)), and algebras of dimension 9 over their centers
+    O = order(A, vcat([one(A)], [2 * elem_in_algebra(b) for b in basis(MA)]))
+    @test_throws ArgumentError right_class_set(O)
+    @test_throws ArgumentError type_set(maximal_order(matrix_algebra(QQ, 3)))
+    A3, = restrict_scalars(matrix_algebra(quadratic_field(-5)[1], 3), QQ)
+    @test_throws ArgumentError type_set(maximal_order(A3))
   end
 end

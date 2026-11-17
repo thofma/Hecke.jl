@@ -277,7 +277,7 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
       end
     end
 
-    !(isfinite(mu)  && radiuslttwopower(mu, wprec)) && (attempt *= 2; continue)
+    !(isfinite(mu) && radiuslttwopower(mu, -wprec)) && (attempt *= 2; continue)
 
     # Algorithm is only precise up to wprec bits
     error_arf = arf_struct(0, 0, 0, 0)
@@ -287,7 +287,7 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
             (Ref{ArbFieldElem}, Ref{arf_struct}), mu, error_arf)
     ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
-    @assert radiuslttwopower(mu, prec)
+    @assert radiuslttwopower(mu, -prec)
     return mu
   end
 end
@@ -328,13 +328,20 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
 
   wprec = prec + 1
 
-  abs_disc = abs(evaluate(discriminant(E), v, 53))
+  # evaluate takes *absolute* precision! Refine unless we can exclude 0
+  disc = discriminant(E)
+  dprec = 53
+  abs_disc = abs(evaluate(disc, v, dprec))
+  while contains_zero(abs_disc)
+    dprec *= 2
+    abs_disc = abs(evaluate(disc, v, dprec))
+  end
 
-  N = ceil(Int,
+  N = Int(upper_bound(ZZRingElem,
             Rc(5)/3 * log(Rc(2))/log(Rc(10)) * (wprec + 1) + Rc(1)/2 +
             Rc(3)/4 * log(Rc(7) + Rc(4)/3 * log(Rc(H)) +
                                  Rc(1)/3 * log(max(Rc(1), inv(Rc(abs_disc)))))
-          )
+          ))
 
   while true
     newprec = attempt*wprec
@@ -348,15 +355,12 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
     x = evaluate(P[1], v, newprec)
     y = evaluate(P[2], v, newprec)
 
-    if abs(x)<0.5
-      t = 1/(x+1)
-      beta = 0
-    elseif abs(x) >= 0.5
+    if abs(x) >= 0.5
       t = 1/x
       beta = 1
     else
-      attempt = 2 * attempt
-      continue
+      t = 1/(x+1)
+      beta = 0
     end
 
     mu = -log(abs(t))
@@ -383,7 +387,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
       end
     end
 
-    !(isfinite(mu)  && radiuslttwopower(mu, wprec)) && (attempt *= 2; continue)
+    !(isfinite(mu) && radiuslttwopower(mu, -wprec)) && (attempt *= 2; continue)
 
     # Algorithm is only precise up to wprec bits
     error_arf = arf_struct(0, 0, 0, 0)
@@ -393,7 +397,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
             (Ref{ArbFieldElem}, Ref{arf_struct}), mu, error_arf)
     ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
-    @assert radiuslttwopower(mu, prec)
+    @assert radiuslttwopower(mu, -prec)
     return mu
   end
 end
@@ -768,20 +772,8 @@ function CPS_dvev_complex(E::EllipticCurve{T}, v::V, prec::Int = 100) where T wh
   H_fg = [max(abs(f(z)), abs(g(z))) for z in M]
   H_FG = [max(abs(F(z)), abs(G(z))) for z in M]
 
-  # minimum and maximum of Vector{ArbFieldElem} are bugged, even reduec(min/max, ...)
-  alpha_start_fg = H_fg[1]
-  beta_start_fg = H_fg[1]
-  for x in H_fg
-    alpha_start_fg = _min(alpha_start_fg, x)
-    beta_start_fg = _max(beta_start_fg, x)
-  end
-
-  alpha_start_FG = H_FG[1]
-  beta_start_FG = H_FG[1]
-  for x in H_FG
-    alpha_start_FG = _min(alpha_start_FG, x)
-    beta_start_FG = _max(beta_start_FG, x)
-  end
+  alpha_start_fg, beta_start_fg = extrema(H_fg)
+  alpha_start_FG, beta_start_FG = extrema(H_FG)
 
   #Determines precision. Choosing a smaller mu makes the function a lot slower as
   #alpha_bound converges very slowly. When I tested different values it took 0.5s for

@@ -181,17 +181,6 @@ function Mor(O::AbsSimpleNumFieldOrder, F::fqPolyRepField, h::fpPolyRingElem)
   return NfOrdToFqNmodMor(O, F, h)
 end
 
-function _get_coeff_raw(x::fqPolyRepFieldElem, i::Int)
-  u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, i)
-  return u
-end
-
-function _get_coeff_raw(x::FqPolyRepFieldElem, i::Int)
-  t = ZZRingElem()
-  ccall((:fmpz_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FqPolyRepFieldElem}, Int), t, x, i)
-  return t
-end
-
 # this is super slow
 # improve
 function (f::NfOrdQuoMap)(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
@@ -919,7 +908,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
 
     if quo != 0
       if v > small_mod
-        vv = fmpz_mod_ui(v, small_mod)
+        vv = mod(v, small_mod)
       else
         vv = UInt(v)
       end
@@ -927,7 +916,7 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
 
     if (quo != 0 && vv != 0) || !iszero(v)
       # We have something to do
-      if iszero(denominator(k) % char_Fq)
+      if is_divisible_by(denominator(k), char_Fq)
         throw(BadPrime(characteristic(Fq)))
       end
       _nf_to_fq!(s, k, Fq, t)
@@ -954,7 +943,6 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
   t = mF.t
   s = mF.s
   i = 0
-  char = UInt(Fq.n)
   small_mod = UInt(0)
 
   if quo != 0
@@ -975,15 +963,16 @@ function image(mF::NfToFqNmodMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimp
 
     if quo != 0
       if v > small_mod
-        vv = fmpz_mod_ui(v, small_mod)
+        vv = mod(v, small_mod)
       else
         vv = UInt(v)
       end
     end
 
 
-    # We always reduce, so do the test first
-    if !cached && iszero(fmpz_mod_ui(denominator(k), char))
+    # We always reduce, so do the test first.
+    # Use Fq.n to avoid allocating a ZZRingElem for the characteristic.
+    if !cached && iszero(mod(denominator(k), Fq.n))
       throw(BadPrime(characteristic(Fq)))
     end
 
@@ -1145,15 +1134,16 @@ function image(mF::NfToGFMor_easy, a::FacElem{AbsSimpleNumFieldElem, AbsSimpleNu
     if v > 0 && v < pminusone
       vv = UInt(v)
     else
-      vv = fmpz_mod_ui(v, pminusone)
+      vv = mod(v, pminusone)
     end
     if quo != 0
       vv = vv % quo # vv will always be positive
     end
     @assert vv < Fq.n  #please complain if this is triggered
 
-    # We always have to reduce, so check first
-    if !cached && (fmpz_mod_ui(denominator(k), Fq.n) == 0)
+    # We always reduce, so do the test first.
+    # Use Fq.n to avoid allocating a ZZRingElem for the characteristic.
+    if !cached && iszero(mod(denominator(k), Fq.n))
       throw(BadPrime(characteristic(Fq)))
     end
 
@@ -1336,8 +1326,4 @@ function evaluate_raw(x::fpPolyRingElem, y::fpFieldElem)
   z = ccall((:nmod_poly_evaluate_nmod, libflint), UInt,
               (Ref{fpPolyRingElem}, UInt), x, y.data)
   return parent(y)(z)
-end
-
-function fmpz_mod_ui(x::ZZRingElem, y::UInt)
-  return ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), x, y)
 end

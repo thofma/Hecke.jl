@@ -28,6 +28,25 @@
     @test !Hecke._is_sparse(group_algebra(QQ, G; sparse = false))
   end
 
+  @testset "Sparse group algebra construction and addition" begin
+    # Check coefficient inputs and the addition used in matrix multiplication.
+    local G = abelian_group([4])
+    D = group_algebra(ZZ, G; sparse = false, cached = false)
+    B = group_algebra(ZZ, G; sparse = true, cached = false)
+    c = ZZRingElem[1, 0, 0, 0]
+    @test D(c) == one(D)
+    @test_throws ArgumentError B(c)
+    @test_throws ArgumentError B([0, 0, 0, 0]; copy = true)
+    @test_throws ArgumentError elem_type(B)(B, c)
+    C = group_algebra(ZZ, abelian_group([0]))
+    @test_throws ArgumentError C(ZZRingElem[])
+    @test B(sparse_row(ZZ, 1, ZZ(1))) == one(B)
+    b = B(G[1])
+    row = matrix(B, 1, 2, [one(B), b])
+    col = matrix(B, 2, 1, [b, one(B)])
+    @test (row * col)[1, 1] == b + b
+  end
+
   @testset "Multiplication by group elements" begin
     local G, A
     G = small_group(6, 1)

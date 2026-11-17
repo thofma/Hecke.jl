@@ -398,15 +398,6 @@ function siegel_transform(T::ZZMatrix,tau::AcbMatrix)
   return (A*tau + B) * inv(C*tau+D)
 end
 
-# The Cholesky factor of the symmetric positive definite matrix x (arb_mat_cho).
-function cholesky_decomposition(x::ArbMatrix)
-  z = similar(x, nrows(x), ncols(x))
-  p = precision(base_ring(x))
-  fl = ccall((:arb_mat_cho, libflint), Cint, (Ref{ArbMatrix}, Ref{ArbMatrix}, Int), z, x, p)
-  @assert fl != 0
-  return z
-end
-
 ################################################################################
 #
 #  ComplexField input and output: evaluated at precision(Balls) in AcbField,

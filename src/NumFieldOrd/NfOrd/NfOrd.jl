@@ -34,10 +34,7 @@ function contains_equation_order(O::AbsNumFieldOrder)
   if isdefined(O, :index)
     return true
   end
-  if isdefined(O, :basis_mat_inv)
-    return isone(O.basis_mat_inv.den)
-  end
-  return isinteger(gen_index(O))
+  return isone(basis_mat_inv(FakeFmpqMat, O, copy = false).den)
 end
 
 ################################################################################
@@ -325,10 +322,9 @@ index $[ \mathcal O : \mathbf Z]$.
 """
 function index(O::AbsNumFieldOrder; copy::Bool = false)
   if !isdefined(O, :index)
-    i = gen_index(O)
-    !isone(denominator(i)) && error("Order does not contain the equation order")
-    O.index = abs(numerator(i))
-    end
+    contains_equation_order(O) || error("Order does not contain the equation order")
+    O.index = abs(numerator(gen_index(O)))
+  end
   if copy
     return deepcopy(O.index)
     else

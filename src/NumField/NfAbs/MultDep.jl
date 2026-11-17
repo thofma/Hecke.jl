@@ -130,7 +130,7 @@ mutable struct GeIdeal
   end
 end
 
-import Hecke.gcd, Hecke.isone, Hecke.*, Hecke.gcd_into!, Hecke.copy, Hecke.divexact,
+import Hecke.gcd, Hecke.isone, Hecke.*, Hecke.copy, Hecke.divexact,
        Hecke.is_unit, Hecke.coprime_base, Hecke.valuation
 
 function make_compatible!(a::GeIdeal, b::GeIdeal)
@@ -144,7 +144,7 @@ function make_compatible!(a::GeIdeal, b::GeIdeal)
   b.a = extend(b.a, o)
 end
 
-#is_unit, divexact, gcd, isone, *, gcd_into!, copy
+#is_unit, divexact, gcd, isone, *, copy
 isone(a::GeIdeal) = isone(a.a)
 is_unit(a::GeIdeal) = isone(a)
 copy(a::GeIdeal) = GeIdeal(a.a)
@@ -152,12 +152,6 @@ copy(a::GeIdeal) = GeIdeal(a.a)
 function gcd(a::GeIdeal, b::GeIdeal)
   make_compatible!(a, b)
   return GeIdeal(a.a + b.a)
-end
-
-function gcd_into!(a::GeIdeal, b::GeIdeal, c::GeIdeal)
-  make_compatible!(b, c)
-  a.a = b.a + c.a
-  return a
 end
 
 function *(a::GeIdeal, b::GeIdeal)

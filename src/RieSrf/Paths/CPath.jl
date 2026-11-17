@@ -406,9 +406,9 @@ function _set_chain_integral!(chain::CChain)
     GC.@preserve chain_integral M for r in 1:m
       k = Int(source_rows[r, 1])
       for j in 1:g
-        entry = _acb_mat_entry_ptr(chain_integral, r, j)
-        ccall((:acb_add, libflint), Nothing, (Ptr{acb_struct}, Ptr{acb_struct}, Ptr{acb_struct}, Int),
-              entry, entry, _acb_mat_entry_ptr(M, k, j), prec)
+        entry = Nemo.mat_entry_ptr(chain_integral, r, j)
+        ccall((:acb_add, libflint), Nothing, (Ptr{AcbFieldElem}, Ptr{AcbFieldElem}, Ptr{AcbFieldElem}, Int),
+              entry, entry, Nemo.mat_entry_ptr(M, k, j), prec)
       end
     end
     sigma *= permutation(path)

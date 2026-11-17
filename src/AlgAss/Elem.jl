@@ -356,8 +356,12 @@ end
 ################################################################################
 
 function zero!(a::GroupAlgebraElem)
-  for i = 1:length(coefficients(a, copy = false))
-    a.coeffs[i] = zero!(coefficients(a, copy = false)[i])
+  if _is_sparse(a)
+    zero!(a.coeffs_sparse)
+  else
+    for i = 1:length(coefficients(a, copy = false))
+      a.coeffs[i] = zero!(coefficients(a, copy = false)[i])
+    end
   end
   return a
 end
@@ -373,6 +377,10 @@ function add!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
   parent(a) != parent(b) && error("Parents don't match.")
   parent(c) != parent(b) && error("Parents don't match.")
   A = parent(a)
+  if _is_sparse(A)
+    c.coeffs_sparse = add!(c.coeffs_sparse, a.coeffs_sparse, b.coeffs_sparse)
+    return c
+  end
   d = dim(A)
 
   if c === a || c === b
@@ -416,9 +424,8 @@ function mul!(c::AbstractAssociativeAlgebraElem{T}, a::AbstractAssociativeAlgebr
 
   ccoeffs = coefficients(c, copy = false)
 
-  bfmpq = QQFieldElem(b, 1)
-  for i = 1:dim(parent(a))
-    ccoeffs[i] = mul!(ccoeffs[i], coefficients(a, copy = false)[i], bfmpq)
+  for i in 1:dim(parent(a))
+    ccoeffs[i] = mul!(ccoeffs[i], coefficients(a, copy = false)[i], b)
   end
 
   if c isa MatAlgebraElem

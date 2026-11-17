@@ -150,7 +150,6 @@ end
 @deprecate iskummer_extension is_kummer_extension
 @deprecate isleaf is_leaf
 @deprecate isleft_ideal is_left_ideal
-@deprecate islessorequal is_lessorequal
 @deprecate islinearly_disjoint is_linearly_disjoint
 @deprecate islll_reduced is_lll_reduced
 @deprecate islocal_norm is_local_norm
@@ -296,6 +295,10 @@ end
 @deprecate genus(A::QQMatrix, p::IntegerUnion) genus_from_gram(A, p)
 @deprecate genus(A::ZZMatrix, p::IntegerUnion) genus_from_gram(A, p)
 @deprecate genus(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0) genus_from_gram(A, p, val; offset)
+
+# Deprecated in 0.41.2
+@deprecate cholesky_decomposition(x::ArbMatrix) cholesky(x) false
+@deprecate gcd_into!(a, b, c) gcd!(a, b, c)
 
 # Keyword `isbasis` renamed to `is_basis` in 0.41.1
 function _is_basis_kwarg(is_basis::Bool, isbasis::Union{Nothing, Bool}, f::Symbol)

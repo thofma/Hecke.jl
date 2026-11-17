@@ -235,6 +235,44 @@
   C = add_scaled_row(A,B,F(1))
   @test C == A+B
 
+  # addmul!/submul! with the row aliased to the output, scalar on either side
+  A = sparse_row(F, [1, 3], [x, x*y + 1])
+  for (op, f) in ((+, addmul!), (-, submul!))
+    Z = deepcopy(A)
+    @test f(Z, y, Z) === Z
+    @test Z == op(A, y*A)
+    Z = deepcopy(A)
+    @test f(Z, Z, y) === Z
+    @test Z == op(A, A*y)
+  end
+  @test y*A != A*y
+
+  # Coerce scalars before adding the identity or negating.
+  @testset "Fixed-width scalars" begin
+    A = sparse_row(ZZ, 1, 1)
+    for (op, f, c) in ((+, addmul!, typemax(Int)),
+                       (-, submul!, typemin(Int) + 1),
+                       (-, submul!, typemin(Int)))
+      expected = sparse_row(ZZ, 1, op(one(ZZ), ZZ(c)))
+
+      Z = deepcopy(A)
+      @test f(Z, c, Z) === Z
+      @test Z == expected
+
+      Z = deepcopy(A)
+      @test f(Z, Z, c) === Z
+      @test Z == expected
+
+      Z = deepcopy(A)
+      @test f(Z, c, A) === Z
+      @test Z == expected
+
+      Z = deepcopy(A)
+      @test f(Z, A, c) === Z
+      @test Z == expected
+    end
+  end
+
   # mutating arithmetic
   randcoeff() = begin
     n = rand((1,1,1,2,5,7,15))

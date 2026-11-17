@@ -66,7 +66,13 @@ function preimage(f::ModAlgHom, a::ModAlgAssElem)
 end
 
 function zero_map(V::ModAlgAss, W::ModAlgAss)
-  return hom(V, W, zero_matrix(base_ring(algebra(V)), dim(V), dim(W)))
+  K = coefficient_ring(V)
+  if !has_algebra(V) && !has_algebra(W)
+    @req K == coefficient_ring(W) "Modules must have same coefficient ring"
+    consistent_action(V, W)
+  end
+  M = zero_matrix(K, dim(V), dim(W))
+  return hom(V, W, M; check = false)
 end
 
 #################################################################################

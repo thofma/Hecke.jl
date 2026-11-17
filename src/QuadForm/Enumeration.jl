@@ -749,11 +749,6 @@ end
 
 _deepcopy_cheap(x::QQFieldElem) = set!(QQFieldElem(), x)
 
-function is_lessorequal(x::QQFieldElem, y::UInt)
-  c = ccall((:fmpq_cmp_ui, libflint), Cint, (Ref{QQFieldElem}, UInt), x, y)
-  return c <= 0
-end
-
 ################################################################################
 #
 #  Enumeration functions on gram matrices

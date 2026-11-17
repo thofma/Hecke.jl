@@ -1084,7 +1084,8 @@ function _minmod(a::ZZRingElem, b::AbsSimpleNumFieldOrderElem)
     return ZZRingElem(0)
   end
 
-  if !is_defining_polynomial_nice(nf(parent(b)))
+  if !is_defining_polynomial_nice(nf(parent(b))) ||
+     !contains_equation_order(parent(b))
     return gcd(denominator(inv(b.elem_in_nf), parent(b)), a)
   end
   lf, ar = _factors_trial_division(a, 10^2)
@@ -1384,8 +1385,13 @@ function simplify(A::AbsNumFieldOrderIdeal)
       end
       A.norm = n
     end
-    be = mod(A.gen_two.elem_in_nf, A.gen_one^2)
-    A.gen_two = order(A)(be, false)
+    O = order(A)
+    m = A.gen_one^2
+    if contains_equation_order(O)
+      A.gen_two = O(mod(A.gen_two.elem_in_nf, m), false)
+    else
+      A.gen_two = mod(A.gen_two, m)
+    end
 
 
     if isdefined(A, :gens_normal)

@@ -771,16 +771,11 @@ function modular_proj_vec(A::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, 
   return res
 end
 
-@inline function mul_raw!(a::fqPolyRepFieldElem, b::fqPolyRepFieldElem, c::fqPolyRepFieldElem, K::fqPolyRepField)
-  ccall((:fq_nmod_mul, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), a, b, c, K)
-end
-
 @inbounds function inner_eval(z::Vector{Tuple{fqPolyRepFieldElem, Int, Int}})
   sort!(z, lt = (a,b) -> isless(b[2], a[2]))
   t = z[1][3] #should be largest...
   it = 1<<(t-1)
   u = one(z[1][1])
-  K = parent(u)
 #    @show map(i->nbits(i[2]), z)
   while t > 0
     i = 1
@@ -788,15 +783,15 @@ end
     while z[i][3] >= t
 #        @show i, is[i][1]
       if (z[i][2] & it) != 0
-        mul_raw!(v, v, z[i][1], K)
+        mul!(v, z[i][1])
       end
       i += 1
       if i > length(z)
         break
       end
     end
-    mul_raw!(u, u, u, K)
-    mul_raw!(u, u, v, K)
+    mul!(u, u)
+    mul!(u, v)
     t -= 1
     it = it >> 1
   end
@@ -809,7 +804,6 @@ end
   it = [bits(i[2]) for i=z]
   is = map(iterate, it)
   u = one(z[1][1])
-  K = parent(u)
 #    @show map(i->nbits(i[2]), z)
   while t > 0
     i = 1
@@ -817,7 +811,7 @@ end
     while z[i][3] >= t
 #        @show i, is[i][1]
       if is[i][1]
-        mul_raw!(v, v, z[i][1], K)
+        mul!(v, z[i][1])
       end
 
       if t > 1
@@ -834,8 +828,8 @@ end
         break
       end
     end
-    mul_raw!(u, u, u, K)
-    mul_raw!(u, u, v, K)
+    mul!(u, u)
+    mul!(u, v)
     t -= 1
   end
   return u

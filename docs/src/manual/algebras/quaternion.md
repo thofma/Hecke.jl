@@ -63,15 +63,15 @@ julia> m(z)
 
 ```@docs
 is_eichler(::Union{AlgAssAbsOrd, AlgAssRelOrd})
-eichler_level(::AlgAssAbsOrd{<:QuaternionAlgebra})
+eichler_level(::Union{AlgAssAbsOrd, AlgAssRelOrd})
 ```
 
 ## Right ideal classes and types
 
 ```@docs
-right_class_set(::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
-type_set(::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
-type_number(::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+right_class_set(::Union{AlgAssAbsOrd, AlgAssRelOrd})
+type_set(::Union{AlgAssAbsOrd, AlgAssRelOrd})
+type_number(::Union{AlgAssAbsOrd, AlgAssRelOrd})
 ```
 
 ## Splitting of quaternion algebras

@@ -175,10 +175,6 @@ end
 
 _inv_precond(A::Union{AcbMatrix, ArbMatrix}) = _solve_precond(A, identity_matrix(base_ring(A), nrows(A)))
 
-# Pointer to the entry (i, j) (1-based) of an acb_mat (valid while A is preserved).
-_acb_mat_entry_ptr(A::AcbMatrix, i::Int, j::Int) =
-  ccall((:acb_mat_entry_ptr, libflint), Ptr{acb_struct}, (Ref{AcbMatrix}, Int, Int), A, i - 1, j - 1)
-
 ################################################################################
 #
 #  Conversion between the fixed-precision types (AcbField, ArbField: used
@@ -229,9 +225,9 @@ end
 function _to_acb(M::ComplexMatrix, prec::Int)
   Z = zero_matrix(AcbField(prec), nrows(M), ncols(M))
   GC.@preserve Z M for i in 1:nrows(M), j in 1:ncols(M)
-    zp = _acb_mat_entry_ptr(Z, i, j)
-    mp = ccall((:acb_mat_entry_ptr, libflint), Ptr{acb_struct}, (Ref{ComplexMatrix}, Int, Int), M, i - 1, j - 1)
-    ccall((:acb_set_round, libflint), Nothing, (Ptr{acb_struct}, Ptr{acb_struct}, Int), zp, mp, prec)
+    zp = Nemo.mat_entry_ptr(Z, i, j)
+    mp = Nemo.mat_entry_ptr(M, i, j)
+    ccall((:acb_set_round, libflint), Nothing, (Ptr{AcbFieldElem}, Ptr{ComplexFieldElem}, Int), zp, mp, prec)
   end
   return Z
 end
