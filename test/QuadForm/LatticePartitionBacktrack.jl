@@ -24,15 +24,25 @@
 
   # the chain data is consistent and the generators generate the whole group
   D4 = ZZ[2 0 -1 0; 0 2 -1 0; -1 -1 2 -1; 0 0 -1 2]
-  chain = PB.stabilizer_chain(D4)
+  chain = PB.stabilizer_chain(PB.ShortVectors([D4]))
   @test prod(chain.orbit_lengths) == chain.order == 1152
   @test length(closure(matrix.(Ref(ZZ), chain.generators), *)) == 1152
 
   # entries which do not fit into machine integers
-  chain = PB.stabilizer_chain(ZZ(2)^70 * D4)
-  gens, order = matrix.(Ref(ZZ), chain.generators), chain.order
+  gens, order = PB.automorphism_group([ZZ(2)^70 * D4])
   @test order == 1152
   @test all(g -> g * D4 * transpose(g) == D4, gens)
+
+  # several forms, also skew-symmetric and asymmetric ones: the centralizer
+  # of a rotation of order 3 in the automorphism group of A2 has order 6
+  A2 = ZZ[2 -1; -1 2]
+  r = ZZ[0 1; -1 -1]
+  for F in [ZZ[0 1; -1 0], r * A2]
+    gens, order = PB.automorphism_group([A2, F])
+    @test order == 6
+    @test all(g -> g * A2 * transpose(g) == A2, gens)
+    @test all(g -> g * F * transpose(g) == F, gens)
+  end
 
   # a unimodular lattice without roots; all 928 minimal vectors look alike
   # until scalar products inside the cells are taken into account

@@ -8,10 +8,11 @@
 #  -------
 #
 #  This file is a small, self-contained and heavily documented implementation
-#  of partition backtracking for definite integer lattices. It is meant to be
-#  reviewed line by line and then extended. It is aimed at lattices without
-#  exploitable structure, such as unimodular lattices without roots; structure
-#  like roots or invariant sublattices is better detected beforehand.
+#  of partition backtracking for definite integer lattices, possibly with
+#  additional bilinear forms. It is meant to be reviewed line by line and
+#  then extended. Structure like roots or invariant sublattices is detected
+#  beforehand by the callers and handed over as additional forms, see
+#  `automorphism_group`.
 #
 #  Everything lives in the submodule `Hecke.LatticePartitionBacktrack`, so the
 #  short names used below (`Search`, `Orbit`, `refine!`, ...) cannot clash with
@@ -35,6 +36,12 @@
 #  contains a representative of each pair {e_i, -e_i}. Since an isometry
 #  preserves norms, it permutes V union -V. Consequently the image of every
 #  basis vector must be a signed member of this finite set.
+#
+#  More generally the input is a list of integral matrices F_1, ..., F_m,
+#  where F_1 = G is as above and the others are arbitrary, also skew-symmetric
+#  or not symmetric at all. Then (1) is required for every F_i, and the
+#  scalar product <x, y> below stands for a fixed combination of all the
+#  F_i(x, y) and F_i(y, x), see `ShortVectors`.
 #
 #  We encode v_j by the positive integer j and -v_j by -j, and call such a
 #  signed index a *point*. Let b_i = e_{order[i]} be the basis in the order
@@ -130,7 +137,7 @@
 #                        explicit orbit computation on points
 #    `stabilizer_chain`  the outer loop; best entry point for the algorithm
 #    `automorphism_group`
-#                        interface for `ZZLat`: reduce, run, conjugate back
+#                        the interface used by Hecke
 #
 #
 #  Extension points
@@ -182,7 +189,7 @@ module LatticePartitionBacktrack
 import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
                 change_base_ring, content, denominator, diagonal,
                 divexact, gram_matrix, identity_matrix, is_definite,
-                lll_gram_with_transform, matrix, mul!, nbits,
+                is_symmetric, lll_gram_with_transform, matrix, mul!, nbits,
                 ncols, nrows, rank, zero_matrix, __short_vectors,
                 _short_vectors_gram_integral
 
@@ -210,7 +217,9 @@ wrap(A::ZZMatrix) = Int[wrap(A[i, j]) for i in 1:nrows(A), j in 1:ncols(A)]
 #
 ################################################################################
 
-# The set V union -V of all non-zero vectors of norm at most `max_i G[i, i]`.
+# The set V union -V of all non-zero vectors whose norm with respect to the
+# first form is at most its largest diagonal entry, together with the
+# bilinear forms the isometries have to preserve.
 #
 # Column j of `vectors` is v_j; only one of v_j, -v_j is stored. A *point* is a
 # signed index: p > 0 stands for v_p and p < 0 for -v_{-p}.
@@ -218,12 +227,23 @@ wrap(A::ZZMatrix) = Int[wrap(A[i, j]) for i in 1:nrows(A), j in 1:ncols(A)]
 # A set of points is stored as a `BitVector` of length 2 * nv, in which the
 # point p > 0 has the index p and the point -p has the index nv + p.
 #
-# `exact_gram` is G as given and `gram` is G with wrapped entries, see `wrap`.
+# `exact_forms` are the forms F_1, ..., F_m as given; F_1 is symmetric and
+# positive definite, the others are arbitrary. The search does not look at
+# them one by one. It uses `gram`, which is F_1 with wrapped entries, and
+#
+#     `form` = F_1 + sum_{i > 1} (c_i * F_i + d_i * transpose(F_i))
+#
+# with fixed pseudo-random c_i and d_i (d_i = 0 if F_i is symmetric), again
+# with wrapped arithmetic. We write <x, y> = x * form * transpose(y); this is
+# not symmetric in general. An isometry preserves <x, y>, and up to the
+# unlikely event of a collision <p, x> determines all F_i(p, x) and
+# F_i(x, p). A collision only weakens the tests of the search, see `wrap`.
 struct ShortVectors
-  exact_gram::ZZMatrix
+  exact_forms::Vector{ZZMatrix}
   gram::Matrix{Int}
+  form::Matrix{Int}
   vectors::Matrix{Int}                  # n x nv, column j is v_j
-  gram_vectors::Matrix{Int}             # gram * vectors
+  form_vectors::Matrix{Int}             # form * vectors
   norms::Vector{Int}                    # norms[j] = <v_j, v_j>
   index::Dict{Vector{Int}, Int}         # v_j => j
   basis::Vector{Int}                    # basis[i] is the point equal to e_i
@@ -244,6 +264,20 @@ end
 # The elements of a set of points.
 points(S::ShortVectors, set::BitVector) = Int[point(S, i) for i in findall(set)]
 
+# The matrices `gram` and `form` of `ShortVectors`.
+function search_forms(exact_forms::Vector{ZZMatrix})
+  gram = wrap(exact_forms[1])
+  form = copy(gram)
+  for i in 2:length(exact_forms)
+    F = wrap(exact_forms[i])
+    form += (hash(i) % Int) * F
+    if !is_symmetric(exact_forms[i])
+      form += (hash(-i) % Int) * transpose(F)
+    end
+  end
+  return gram, form
+end
+
 # All non-zero vectors of norm at most `bound` with respect to the positive
 # definite form `G`, up to sign.
 function enumerate_vectors(G::ZZMatrix, bound = maximum(diagonal(G)))
@@ -254,21 +288,21 @@ function enumerate_vectors(G::ZZMatrix, bound = maximum(diagonal(G)))
   return Vector{Int}[Int.(v) for (v, _) in list]
 end
 
-function ShortVectors(exact_gram::ZZMatrix)
-  gram = wrap(exact_gram)
+function ShortVectors(exact_forms::Vector{ZZMatrix})
+  gram, form = search_forms(exact_forms)
   n = size(gram, 1)
-  list = enumerate_vectors(exact_gram)
+  list = enumerate_vectors(exact_forms[1])
   nv = length(list)
   vectors = Matrix{Int}(undef, n, nv)
   for (j, v) in enumerate(list)
     vectors[:, j] = v
   end
-  gram_vectors = gram * vectors
+  form_vectors = form * vectors
   norms = zeros(Int, nv)
   for j in 1:nv
     s = 0
     @inbounds @simd for i in 1:n
-      s += vectors[i, j] * gram_vectors[i, j]
+      s += vectors[i, j] * form_vectors[i, j]
     end
     norms[j] = s
   end
@@ -276,8 +310,8 @@ function ShortVectors(exact_gram::ZZMatrix)
   for j in 1:nv
     index[list[j]] = j
   end
-  S = ShortVectors(exact_gram, gram, vectors, gram_vectors, norms, index,
-                   zeros(Int, n))
+  S = ShortVectors(exact_forms, gram, form, vectors, form_vectors, norms,
+                   index, zeros(Int, n))
   e = zeros(Int, n)
   for i in 1:n
     e[i] = 1
@@ -301,12 +335,12 @@ function coordinates(S::ShortVectors, p::Int)
   return p < 0 ? -v : v
 end
 
-# The scalar product <p, q> of two points.
+# The value <p, q> on two points.
 function scalar_product(S::ShortVectors, p::Int, q::Int)
   j, k = abs(p), abs(q)
   s = 0
   @inbounds @simd for i in 1:dim(S)
-    s += S.vectors[i, j] * S.gram_vectors[i, k]
+    s += S.vectors[i, j] * S.form_vectors[i, k]
   end
   return (p < 0) == (q < 0) ? s : -s
 end
@@ -376,9 +410,10 @@ end
 # so the search stores and refines a cell only for its representative.
 #
 #   `sum_products`
-#                 sum_products[d] is the Gram matrix of the vectors s_k, the
-#                 sum of all points in the cell of position k at depth d,
-#                 where k runs over the representatives at depth d
+#                 sum_products[d] is the Gram matrix, with respect to
+#                 `gram`, of the vectors s_k, the sum of all points in
+#                 the cell of position k at depth d, where k runs over the
+#                 representatives at depth d
 #
 # An isometry mapping b_1, ..., b_{d-1} to image[1], ..., image[d-1] maps the
 # cells of the source onto the cells of the target, hence the sums s_k onto
@@ -411,7 +446,7 @@ end
 # cell, which keeps the branching of the search small.
 function base_order(S::ShortVectors)
   n = dim(S)
-  cells = [points_of_norm(S, S.gram[i, i]) for i in 1:n]
+  cells = [points_of_norm(S, S.form[i, i]) for i in 1:n]
   order = Int[]
   remaining = collect(1:n)
   for d in 1:n
@@ -419,7 +454,7 @@ function base_order(S::ShortVectors)
     b = popat!(remaining, position)
     push!(order, b)
     for i in remaining
-      refine_cell!(cells[i], S, cells[i], S.basis[b], S.gram[i, b])
+      refine_cell!(cells[i], S, cells[i], S.basis[b], S.form[i, b])
     end
   end
   return order
@@ -430,7 +465,7 @@ function Fingerprint(S::ShortVectors)
   n = dim(S)
   order = base_order(S)
   base = S.basis[order]
-  products = S.gram[order, order]
+  products = S.form[order, order]
   representative = cell_representatives(products)
   cell_sizes = zeros(Int, n, n)
   sum_products = Matrix{Int}[]
@@ -574,15 +609,15 @@ function image_matrix(search::Search)
   return M
 end
 
-# Equation (1), generalised to an isometry from the source to the target, in
-# exact arithmetic. This is the only place where the result of the search
-# is trusted, see `wrap`.
+# Equation (1) for all forms, generalised to an isometry from the source to
+# the target, in exact arithmetic. This is the only place where the result
+# of the search is trusted, see `wrap`.
 function is_isometry(search::Search)
   M = matrix(ZZ, image_matrix(search))
   Mt = transpose(M)
   P = search.product
-  return mul!(P, mul!(P, M, search.target.exact_gram), Mt) ==
-         search.source.source.exact_gram
+  return all(mul!(P, mul!(P, M, T), Mt) == F for (F, T) in
+             zip(search.source.source.exact_forms, search.target.exact_forms))
 end
 
 ################################################################################
@@ -670,21 +705,19 @@ end
 ################################################################################
 
 @doc raw"""
-    stabilizer_chain(G::ZZMatrix)
+    stabilizer_chain(S::ShortVectors)
 
-Given a positive definite integral Gram matrix `G`, compute its automorphism
-group by partition backtracking. Return a named tuple with entries
+Compute the group of all matrices `M` which preserve all forms of `S`, that
+is, `M*F*transpose(M) == F`, by partition backtracking. Return a named tuple
+with
 
-- `generators`: matrices `M` with `M*G*transpose(M) == G` generating the group;
+- `generators`: matrices generating the group;
 - `order`: the order of the group;
 - `orbit_lengths`: the factors of the orbit-stabilizer product for `order`;
 - `nodes`: the number of search nodes visited.
-
-For good performance `G` should be LLL reduced.
 """
-function stabilizer_chain(G::ZZMatrix)
-  # Phase 1: the finite set acted upon and the fingerprint of the identity.
-  S = ShortVectors(G)
+function stabilizer_chain(S::ShortVectors)
+  # Phase 1: the fingerprint of the identity.
   fingerprint = Fingerprint(S)
   search = Search(fingerprint, S)
   n = dim(S)
@@ -775,9 +808,25 @@ end
 
 ################################################################################
 #
-#  Interface for lattices
+#  Interface
 #
 ################################################################################
+
+@doc raw"""
+    automorphism_group(forms::Vector{ZZMatrix}) -> Vector{ZZMatrix}, ZZRingElem
+
+Given square integer matrices `forms`, the first of which is symmetric and
+positive definite, return generators and the order of the group of all
+integer matrices `g` with `g*F*transpose(g) == F` for all `F` in `forms`.
+For good performance the first form should be LLL reduced.
+"""
+function automorphism_group(forms::Vector{ZZMatrix})
+  if nrows(forms[1]) == 0
+    return ZZMatrix[identity_matrix(ZZ, 0)], one(ZZRingElem)
+  end
+  chain = stabilizer_chain(ShortVectors(forms))
+  return ZZMatrix[matrix(ZZ, g) for g in chain.generators], chain.order
+end
 
 @doc raw"""
     automorphism_group(L::ZZLat) -> Vector{ZZMatrix}, ZZRingElem
@@ -806,10 +855,9 @@ function automorphism_group(L::ZZLat)
   if maximum(diagonal(G)) <= maximum(diagonal(reduced))
     reduced, T = G, identity_matrix(ZZ, n)
   end
-  chain = stabilizer_chain(reduced)
+  generators, order = automorphism_group(ZZMatrix[reduced])
   Tinv = inv(T)
-  generators = ZZMatrix[Tinv * matrix(ZZ, g) * T for g in chain.generators]
-  return generators, chain.order
+  return ZZMatrix[Tinv * g * T for g in generators], order
 end
 
 end # module LatticePartitionBacktrack
