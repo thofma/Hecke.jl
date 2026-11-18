@@ -1456,6 +1456,11 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
   # Create the automorphism context and compute generators as well as orders
 
   C = ZLatAutoCtx(ZgramL)
+  if LatticePartitionBacktrack.ENABLED[]
+    fl = true
+    gens, order = LatticePartitionBacktrack.automorphism_group(ZgramL)
+    @goto search_done
+  end
   fl, Csmall = try_init_small(C, depth = depth, bacher_depth = bacher_depth)
   if fl
     auto(Csmall)
@@ -1466,6 +1471,7 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
     auto(C)
     gens, order = _get_generators(C)
   end
+  @label search_done
 
   @hassert :Lattice 1 begin
     flag = true
@@ -1713,6 +1719,10 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     ZgramMsmall[i] = TM * ZgramM[i] * TMtr
   end
 
+  if LatticePartitionBacktrack.ENABLED[]
+    b, T = LatticePartitionBacktrack.isometry(ZgramLsmall, ZgramMsmall)
+    @goto search_done
+  end
   fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
   if fl
     b, _T = isometry(CLsmall, CMsmall)
@@ -1721,6 +1731,7 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
     b, T = isometry(CL, CM)
   end
+  @label search_done
 
   if b
     T = change_base_ring(QQ, inv(TL)*T*TM)

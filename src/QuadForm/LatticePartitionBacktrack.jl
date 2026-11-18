@@ -1093,6 +1093,10 @@ end
 #
 ################################################################################
 
+# Whether Hecke uses this module to compute automorphism groups and
+# isometries of lattices.
+const ENABLED = Ref(false)
+
 # The set of short vectors for the input format described in
 # `automorphism_group`.
 function short_vectors(forms::Vector{ZZMatrix}, vector_set, labels,

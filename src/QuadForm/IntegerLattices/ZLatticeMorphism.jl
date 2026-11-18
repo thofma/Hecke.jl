@@ -180,6 +180,12 @@ function __assert_has_automorphisms(
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
     end
   end
+  if LatticePartitionBacktrack.ENABLED[]
+    gens, order = LatticePartitionBacktrack.automorphism_group(
+                    res, vector_set, invariants[1], unsigned_invariants[1])
+    fl = true
+    @goto search_done
+  end
   faithful = true
   if compress && length(res) > 1 # nothing to compress if there is only a single
     res, vector_set = _compress_gram_matrices!(res, vector_set)
@@ -233,6 +239,7 @@ function __assert_has_automorphisms(
     init(C; depth, bacher_depth, is_lll_reduced_known=true)
     gens, order = auto(C)
   end
+  @label search_done
 
   if use_weyl
     reduced_gens = copy(gens)
@@ -742,15 +749,23 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     if !b
       return false, zero_matrix(QQ,0,0)
     end
+    if LatticePartitionBacktrack.ENABLED[]
+      b, T = LatticePartitionBacktrack.isometry(grams1, grams2, V1, V2,
+                                                invariants1[1], invariants2[1])
+      @goto search_done
+    end
     fl, CLsmall, CMsmall = _try_iso_setup_small(grams1, grams2, depth = depth, bacher_depth = bacher_depth; vector_set1=V1, vector_set2=V2, invariants1, invariants2)
   end
-  if fl
+  if LatticePartitionBacktrack.ENABLED[]
+    b, T = LatticePartitionBacktrack.isometry(G1, G2)
+  elseif fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(ZZ, _T)
   else
     CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll], depth = depth, bacher_depth = bacher_depth)
     b, T = isometry(CL, CM)
   end
+  @label search_done
 
   if b
     # undo LLL
