@@ -96,7 +96,16 @@
 #
 #  The matrices found at step i fix b_1, ..., b_{i-1}; retaining them by level
 #  therefore gives a stabilizer chain and a certificate for the product in
-#  (3). Every returned matrix is additionally checked directly against (1).
+#  (3).
+#
+#
+#  Machine integers
+#  ----------------
+#
+#  The search computes with `Int` and lets it wrap around, see `wrap`. All
+#  its tests remain necessary conditions for an isometry. In return every
+#  complete image is checked against (1) in exact arithmetic before it is
+#  accepted, so the search works for forms with entries of any size.
 #
 #
 #  Why the finite search is complete
@@ -112,6 +121,7 @@
 #  Reading map
 #  -----------
 #
+#    `wrap`              why machine integers suffice
 #    `ShortVectors`      the finite set V union -V the group acts on
 #    `Fingerprint`       base order and expected cell sizes (source side)
 #    `Search`, `refine!`, `extend!`
@@ -169,10 +179,30 @@
 
 module LatticePartitionBacktrack
 
-import ..Hecke: @req, @hassert, @vprintln, ZZ, QQ, ZZLat, ZZMatrix,
-                ZZRingElem, change_base_ring, content, diagonal, divexact,
-                fits, gram_matrix, identity_matrix, is_definite,
-                lll_gram_with_transform, matrix, rank, __short_vectors
+import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
+                change_base_ring, content, denominator, diagonal,
+                divexact, gram_matrix, identity_matrix, is_definite,
+                lll_gram_with_transform, matrix, mul!, nbits,
+                ncols, nrows, rank, zero_matrix, __short_vectors,
+                _short_vectors_gram_integral
+
+################################################################################
+#
+#  Machine integers
+#
+################################################################################
+
+# The search computes with `Int` and lets the arithmetic wrap around. This is
+# harmless: reduction modulo 2^64 is a ring homomorphism, so an equation
+# between scalar products which holds over the integers also holds for the
+# wrapped values. Every test of the search is such an equation, satisfied by
+# all isometries; hence wrapping never discards an isometry. It may let a
+# wrong candidate pass, which is why a complete image is checked with exact
+# arithmetic, see `is_isometry`. Only the coordinates of the short vectors
+# have to fit into an `Int`.
+wrap(x::ZZRingElem) = BigInt(x) % Int
+
+wrap(A::ZZMatrix) = Int[wrap(A[i, j]) for i in 1:nrows(A), j in 1:ncols(A)]
 
 ################################################################################
 #
@@ -187,13 +217,16 @@ import ..Hecke: @req, @hassert, @vprintln, ZZ, QQ, ZZLat, ZZMatrix,
 #
 # A set of points is stored as a `BitVector` of length 2 * nv, in which the
 # point p > 0 has the index p and the point -p has the index nv + p.
+#
+# `exact_gram` is G as given and `gram` is G with wrapped entries, see `wrap`.
 struct ShortVectors
-  gram::Matrix{Int}               # G
-  vectors::Matrix{Int}            # n x nv, column j is v_j
-  gram_vectors::Matrix{Int}       # G * vectors, to speed up scalar products
-  norms::Vector{Int}              # norms[j] = <v_j, v_j>
-  index::Dict{Vector{Int}, Int}   # v_j => j
-  basis::Vector{Int}              # basis[i] is the point equal to e_i
+  exact_gram::ZZMatrix
+  gram::Matrix{Int}
+  vectors::Matrix{Int}                  # n x nv, column j is v_j
+  gram_vectors::Matrix{Int}             # gram * vectors
+  norms::Vector{Int}                    # norms[j] = <v_j, v_j>
+  index::Dict{Vector{Int}, Int}         # v_j => j
+  basis::Vector{Int}                    # basis[i] is the point equal to e_i
 end
 
 dim(S::ShortVectors) = size(S.vectors, 1)
@@ -211,35 +244,40 @@ end
 # The elements of a set of points.
 points(S::ShortVectors, set::BitVector) = Int[point(S, i) for i in findall(set)]
 
-# All arithmetic is done in `Int`. The scalar products themselves are bounded
-# by the norm bound (Cauchy--Schwarz), but intermediate sums need not be, so
-# we bound them once and for all here. An `OverflowError` tells the caller to
-# use a different algorithm.
-function ShortVectors(G::Matrix{Int})
-  n = size(G, 1)
-  bound = maximum(G[i, i] for i in 1:n)
-  list = __short_vectors(matrix(ZZ, G), nothing, bound)
+# All non-zero vectors of norm at most `bound` with respect to the positive
+# definite form `G`, up to sign.
+function enumerate_vectors(G::ZZMatrix, bound = maximum(diagonal(G)))
+  if all(x -> nbits(x) < 62, G)
+    return Vector{Int}[v for (v, _) in __short_vectors(G, nothing, bound)]
+  end
+  list = _short_vectors_gram_integral(Vector, G, ZZ(0), bound, ZZRingElem)
+  return Vector{Int}[Int.(v) for (v, _) in list]
+end
+
+function ShortVectors(exact_gram::ZZMatrix)
+  gram = wrap(exact_gram)
+  n = size(gram, 1)
+  list = enumerate_vectors(exact_gram)
   nv = length(list)
   vectors = Matrix{Int}(undef, n, nv)
-  norms = Vector{Int}(undef, nv)
-  index = Dict{Vector{Int}, Int}()
-  for (j, (v, norm)) in enumerate(list)
+  for (j, v) in enumerate(list)
     vectors[:, j] = v
-    norms[j] = norm
-    index[v] = j
   end
-
-  max_entry = maximum(abs, vectors; init = 0)
-  max_gram = maximum(abs, G; init = 0)
-  # The largest numbers occur in scalar products of sums of cells, see
-  # `cell_sums_match!`. The entries of such a sum s are bounded by
-  # m = 2 * nv * max_entry, those of G * s by n * max_gram * m, and a scalar
-  # product of two sums, with all its partial sums, by n * m times the latter.
-  m = big(2) * nv * max_entry
-  n^2 * max_gram * m^2 < typemax(Int) ||
-    throw(OverflowError("lattice too large for machine integers"))
-
-  S = ShortVectors(G, vectors, G * vectors, norms, index, zeros(Int, n))
+  gram_vectors = gram * vectors
+  norms = zeros(Int, nv)
+  for j in 1:nv
+    s = 0
+    @inbounds @simd for i in 1:n
+      s += vectors[i, j] * gram_vectors[i, j]
+    end
+    norms[j] = s
+  end
+  index = sizehint!(Dict{Vector{Int}, Int}(), nv)
+  for j in 1:nv
+    index[list[j]] = j
+  end
+  S = ShortVectors(exact_gram, gram, vectors, gram_vectors, norms, index,
+                   zeros(Int, n))
   e = zeros(Int, n)
   for i in 1:n
     e[i] = 1
@@ -320,6 +358,7 @@ end
 
 # The source side of a search: what an image of the basis has to look like.
 #
+#   `source`      the short vectors the fingerprint was computed from
 #   `order`       the base; b_i = e_{order[i]}
 #   `products`    products[k, d] = <b_k, b_d>
 #   `cell_sizes`  for d <= k, cell_sizes[d, k] is the size of the cell of
@@ -348,6 +387,7 @@ end
 # cells into account. These are the vector sums of [PS97, Section 4], taken
 # over the cells.
 struct Fingerprint
+  source::ShortVectors
   order::Vector{Int}
   products::Matrix{Int}
   cell_sizes::Matrix{Int}
@@ -408,7 +448,7 @@ function Fingerprint(S::ShortVectors)
       refine_cell!(cells[k], S, cells[k], base[d], products[k, d])
     end
   end
-  return Fingerprint(order, products, cell_sizes, representative,
+  return Fingerprint(S, order, products, cell_sizes, representative,
                      sum_products)
 end
 
@@ -437,6 +477,7 @@ mutable struct Search
   nodes::Int
   sums::Matrix{Int}
   gram_sums::Matrix{Int}
+  product::ZZMatrix               # work space of `is_isometry`
 end
 
 function Search(source::Fingerprint, target::ShortVectors)
@@ -449,7 +490,7 @@ function Search(source::Fingerprint, target::ShortVectors)
     end
   end
   return Search(source, target, zeros(Int, n), cells, 0, zeros(Int, n, n),
-                zeros(Int, n, n))
+                zeros(Int, n, n), zero_matrix(ZZ, n, n))
 end
 
 # The set of possible images of b_k once image[1], ..., image[depth-1] are
@@ -513,7 +554,7 @@ end
 # `image` now describes an isometry, and `false` if every extension failed.
 function extend!(search::Search, depth::Int)
   n = dim(search.target)
-  depth == n && return true
+  depth == n && return is_isometry(search)
   level = depth + 1
   for p in points(search.target, cell(search, level, level))
     search.image[level] = p
@@ -533,9 +574,16 @@ function image_matrix(search::Search)
   return M
 end
 
-# Equation (1), generalised to an isometry from `source` to `target`.
-is_isometry(M::Matrix{Int}, source::Matrix{Int}, target::Matrix{Int}) =
-  M * target * transpose(M) == source
+# Equation (1), generalised to an isometry from the source to the target, in
+# exact arithmetic. This is the only place where the result of the search
+# is trusted, see `wrap`.
+function is_isometry(search::Search)
+  M = matrix(ZZ, image_matrix(search))
+  Mt = transpose(M)
+  P = search.product
+  return mul!(P, mul!(P, M, search.target.exact_gram), Mt) ==
+         search.source.source.exact_gram
+end
 
 ################################################################################
 #
@@ -622,7 +670,7 @@ end
 ################################################################################
 
 @doc raw"""
-    stabilizer_chain(G::Matrix{Int})
+    stabilizer_chain(G::ZZMatrix)
 
 Given a positive definite integral Gram matrix `G`, compute its automorphism
 group by partition backtracking. Return a named tuple with entries
@@ -632,10 +680,9 @@ group by partition backtracking. Return a named tuple with entries
 - `orbit_lengths`: the factors of the orbit-stabilizer product for `order`;
 - `nodes`: the number of search nodes visited.
 
-Throws an `OverflowError` if the computation does not fit into machine
-integers. For good performance `G` should be LLL reduced.
+For good performance `G` should be LLL reduced.
 """
-function stabilizer_chain(G::Matrix{Int})
+function stabilizer_chain(G::ZZMatrix)
   # Phase 1: the finite set acted upon and the fingerprint of the identity.
   S = ShortVectors(G)
   fingerprint = Fingerprint(S)
@@ -687,9 +734,7 @@ function stabilizer_chain(G::Matrix{Int})
       p = first(remaining)
       search.image[step] = p
       if refine!(search, step) && extend!(search, step)
-        M = image_matrix(search)
-        is_isometry(M, G, G) || error("search returned a non-isometry")
-        g = Generator(M)
+        g = Generator(image_matrix(search))
         push!(generators[step], g)
         push!(stabilizer, g)
       else
@@ -741,8 +786,6 @@ Given a definite lattice `L`, return generators and the order of its
 automorphism group, computed by partition backtracking. The generators act on
 the coordinates with respect to the basis of `L`, that is, they satisfy
 `g*G*transpose(g) == G` for the Gram matrix `G` of `L`.
-
-Return `nothing` if the computation does not fit into machine integers.
 """
 function automorphism_group(L::ZZLat)
   @req is_definite(L) "Lattice must be definite"
@@ -763,20 +806,9 @@ function automorphism_group(L::ZZLat)
   if maximum(diagonal(G)) <= maximum(diagonal(reduced))
     reduced, T = G, identity_matrix(ZZ, n)
   end
-  all(x -> fits(Int, x), reduced) || return nothing
-
-  local chain
-  try
-    chain = stabilizer_chain(Matrix{Int}(reduced))
-  catch e
-    e isa OverflowError && return nothing
-    rethrow()
-  end
-
+  chain = stabilizer_chain(reduced)
   Tinv = inv(T)
   generators = ZZMatrix[Tinv * matrix(ZZ, g) * T for g in chain.generators]
-  @hassert :Lattice 1 all(g -> g * gram_matrix(L) * transpose(g) ==
-                               gram_matrix(L), generators)
   return generators, chain.order
 end
 

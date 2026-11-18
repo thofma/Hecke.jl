@@ -23,10 +23,16 @@
   end
 
   # the chain data is consistent and the generators generate the whole group
-  D4 = Int[2 0 -1 0; 0 2 -1 0; -1 -1 2 -1; 0 0 -1 2]
+  D4 = ZZ[2 0 -1 0; 0 2 -1 0; -1 -1 2 -1; 0 0 -1 2]
   chain = PB.stabilizer_chain(D4)
   @test prod(chain.orbit_lengths) == chain.order == 1152
   @test length(closure(matrix.(Ref(ZZ), chain.generators), *)) == 1152
+
+  # entries which do not fit into machine integers
+  chain = PB.stabilizer_chain(ZZ(2)^70 * D4)
+  gens, order = matrix.(Ref(ZZ), chain.generators), chain.order
+  @test order == 1152
+  @test all(g -> g * D4 * transpose(g) == D4, gens)
 
   # a unimodular lattice without roots; all 928 minimal vectors look alike
   # until scalar products inside the cells are taken into account
