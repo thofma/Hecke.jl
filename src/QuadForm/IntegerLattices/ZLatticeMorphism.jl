@@ -143,10 +143,14 @@ function __assert_has_automorphisms(
   if do_lll
     # Make the Gram matrix small
     Glll, T = lll_gram_with_transform(res[1])
+    # The short vectors are enumerated up to the largest diagonal entry. LLL
+    # does not minimise that entry, so keep the given basis if it is at
+    # least as good.
+    do_lll = maximum(diagonal(Glll)) < maximum(diagonal(GL))
+  end
+  if do_lll
     _L = integer_lattice(gram=Glll; cached=false)
-    Ttr = transpose(T)
     res = [Glll]
-    #res = ZZMatrix[T*g*Ttr for g in res]
   else
     Glll = GL
   end
