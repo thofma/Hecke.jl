@@ -44,6 +44,16 @@
     @test all(g -> g * F * transpose(g) == F, gens)
   end
 
+  # labels: the stabilizer of a vector, given by its scalar products with
+  # the short vectors; -1 is not in the group
+  V = PB.enumerate_vectors(D4)
+  w = ZZ[1 0 0 0] * D4
+  labels = Int[Int((w * matrix(ZZ, 4, 1, v))[1, 1]) for v in V]
+  gens, order = PB.automorphism_group([D4], [(v, 0) for v in V], labels)
+  @test order == 48
+  @test all(g -> g * D4 * transpose(g) == D4, gens)
+  @test all(g -> ZZ[1 0 0 0] * g == ZZ[1 0 0 0], gens)
+
   # a unimodular lattice without roots; all 928 minimal vectors look alike
   # until scalar products inside the cells are taken into account
   X29 = matrix(ZZ, 29, 29, [

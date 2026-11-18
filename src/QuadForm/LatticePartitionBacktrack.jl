@@ -11,8 +11,8 @@
 #  of partition backtracking for definite integer lattices, possibly with
 #  additional bilinear forms. It is meant to be reviewed line by line and
 #  then extended. Structure like roots or invariant sublattices is detected
-#  beforehand by the callers and handed over as additional forms, see
-#  `automorphism_group`.
+#  beforehand by the callers and handed over as additional forms and as
+#  labels of the short vectors, see `automorphism_group`.
 #
 #  Everything lives in the submodule `Hecke.LatticePartitionBacktrack`, so the
 #  short names used below (`Search`, `Orbit`, `refine!`, ...) cannot clash with
@@ -41,7 +41,10 @@
 #  where F_1 = G is as above and the others are arbitrary, also skew-symmetric
 #  or not symmetric at all. Then (1) is required for every F_i, and the
 #  scalar product <x, y> below stands for a fixed combination of all the
-#  F_i(x, y) and F_i(y, x), see `ShortVectors`.
+#  F_i(x, y) and F_i(y, x), see `ShortVectors`. The caller may also supply
+#  the set V itself together with a label for every vector; then an
+#  automorphism has to map every basis vector to a vector with the same
+#  label. The norm and the label of a point make up its *colour*.
 #
 #  We encode v_j by the positive integer j and -v_j by -j, and call such a
 #  signed index a *point*. Let b_i = e_{order[i]} be the basis in the order
@@ -60,7 +63,7 @@
 #
 #  For every position k the search maintains a *cell*: the set of points which
 #  are still possible images of b_k. Initially this is the set of points of
-#  norm <b_k, b_k>. Whenever image[d] is fixed, `refine!` shrinks the cell of
+#  the colour of b_k. Whenever image[d] is fixed, `refine!` shrinks the cell of
 #  every later position k > d to the points p with
 #
 #                         <p, image[d]> = <b_k, b_d>.
@@ -104,6 +107,9 @@
 #  The matrices found at step i fix b_1, ..., b_{i-1}; retaining them by level
 #  therefore gives a stabilizer chain and a certificate for the product in
 #  (3).
+#
+#  If -1 respects the colours it is an automorphism; this is used at the
+#  first level. With labels this need not be the case.
 #
 #
 #  Machine integers
@@ -217,9 +223,8 @@ wrap(A::ZZMatrix) = Int[wrap(A[i, j]) for i in 1:nrows(A), j in 1:ncols(A)]
 #
 ################################################################################
 
-# The set V union -V of all non-zero vectors whose norm with respect to the
-# first form is at most its largest diagonal entry, together with the
-# bilinear forms the isometries have to preserve.
+# A finite set V union -V of lattice vectors, together with the bilinear
+# forms the isometries have to preserve and a colouring they have to respect.
 #
 # Column j of `vectors` is v_j; only one of v_j, -v_j is stored. A *point* is a
 # signed index: p > 0 stands for v_p and p < 0 for -v_{-p}.
@@ -238,13 +243,20 @@ wrap(A::ZZMatrix) = Int[wrap(A[i, j]) for i in 1:nrows(A), j in 1:ncols(A)]
 # not symmetric in general. An isometry preserves <x, y>, and up to the
 # unlikely event of a collision <p, x> determines all F_i(p, x) and
 # F_i(x, p). A collision only weakens the tests of the search, see `wrap`.
+#
+# `colours` assigns to every point (by its index in a set of points) a hash
+# of its norm <v, v> and of its label. An isometry has to map every base
+# vector to a point of the same colour. A label is a pair of a signed and an
+# unsigned integer supplied by the caller; the label of -v is that of v with
+# the signed part negated. Labels must be invariant under the group that is
+# to be computed, and V must be invariant as a set.
 struct ShortVectors
   exact_forms::Vector{ZZMatrix}
   gram::Matrix{Int}
   form::Matrix{Int}
   vectors::Matrix{Int}                  # n x nv, column j is v_j
   form_vectors::Matrix{Int}             # form * vectors
-  norms::Vector{Int}                    # norms[j] = <v_j, v_j>
+  colours::Vector{UInt}
   index::Dict{Vector{Int}, Int}         # v_j => j
   basis::Vector{Int}                    # basis[i] is the point equal to e_i
 end
@@ -263,6 +275,9 @@ end
 
 # The elements of a set of points.
 points(S::ShortVectors, set::BitVector) = Int[point(S, i) for i in findall(set)]
+
+colour(norm::Int, label::Int, unsigned_label::UInt) =
+  hash((norm, label, unsigned_label))
 
 # The matrices `gram` and `form` of `ShortVectors`.
 function search_forms(exact_forms::Vector{ZZMatrix})
@@ -288,30 +303,53 @@ function enumerate_vectors(G::ZZMatrix, bound = maximum(diagonal(G)))
   return Vector{Int}[Int.(v) for (v, _) in list]
 end
 
-function ShortVectors(exact_forms::Vector{ZZMatrix})
+# The set V is given by `list`, up to sign; by default it consists of all
+# vectors whose norm with respect to the first form is at most its largest
+# diagonal entry. Vectors which do not have the colour of a standard basis
+# vector cannot be the image of one and are dropped.
+function ShortVectors(exact_forms::Vector{ZZMatrix},
+                      list::Vector{Vector{Int}} =
+                        enumerate_vectors(exact_forms[1]);
+                      labels::Vector{Int} = zeros(Int, length(list)),
+                      unsigned_labels::Vector{UInt} = zeros(UInt, length(list)))
   gram, form = search_forms(exact_forms)
   n = size(gram, 1)
-  list = enumerate_vectors(exact_forms[1])
-  nv = length(list)
-  vectors = Matrix{Int}(undef, n, nv)
+  all_vectors = Matrix{Int}(undef, n, length(list))
   for (j, v) in enumerate(list)
-    vectors[:, j] = v
+    all_vectors[:, j] = v
   end
-  form_vectors = form * vectors
-  norms = zeros(Int, nv)
-  for j in 1:nv
+
+  # the colours of v_j and of -v_j
+  all_form_vectors = form * all_vectors
+  all_colours = Matrix{UInt}(undef, length(list), 2)
+  for j in 1:length(list)
     s = 0
     @inbounds @simd for i in 1:n
-      s += vectors[i, j] * form_vectors[i, j]
+      s += all_vectors[i, j] * all_form_vectors[i, j]
     end
-    norms[j] = s
+    all_colours[j, 1] = colour(s, labels[j], unsigned_labels[j])
+    all_colours[j, 2] = colour(s, -labels[j], unsigned_labels[j])
   end
+  needed = Set{UInt}()
+  for j in 1:length(list)
+    v = view(all_vectors, :, j)
+    if count(!iszero, v) == 1
+      sum(v) == 1 && push!(needed, all_colours[j, 1])
+      sum(v) == -1 && push!(needed, all_colours[j, 2])
+    end
+  end
+  keep = Int[j for j in 1:length(list)
+             if all_colours[j, 1] in needed || all_colours[j, 2] in needed]
+  vectors = all_vectors[:, keep]
+  nv = length(keep)
+
   index = sizehint!(Dict{Vector{Int}, Int}(), nv)
   for j in 1:nv
-    index[list[j]] = j
+    index[list[keep[j]]] = j
   end
-  S = ShortVectors(exact_forms, gram, form, vectors, form_vectors, norms,
-                   index, zeros(Int, n))
+  S = ShortVectors(exact_forms, gram, form, vectors, all_form_vectors[:, keep],
+                   vcat(all_colours[keep, 1], all_colours[keep, 2]), index,
+                   zeros(Int, n))
   e = zeros(Int, n)
   for i in 1:n
     e[i] = 1
@@ -378,11 +416,8 @@ function cell_sum!(sum::AbstractVector{Int}, S::ShortVectors, cell::BitVector)
   return sum
 end
 
-# The set of all points of a given norm.
-function points_of_norm(S::ShortVectors, norm::Int)
-  set = S.norms .== norm
-  return vcat(set, set)
-end
+# The set of all points of a given colour.
+points_of_colour(S::ShortVectors, c::UInt) = BitVector(S.colours .== c)
 
 ################################################################################
 #
@@ -394,6 +429,7 @@ end
 #
 #   `source`      the short vectors the fingerprint was computed from
 #   `order`       the base; b_i = e_{order[i]}
+#   `colours`     colours[i] is the colour of b_i
 #   `products`    products[k, d] = <b_k, b_d>
 #   `cell_sizes`  for d <= k, cell_sizes[d, k] is the size of the cell of
 #                 position k after b_1, ..., b_{d-1} have been fixed
@@ -405,8 +441,8 @@ end
 # of b_d once the earlier images are known.
 #
 # Two positions k and l have the same cell at depth d whenever b_k and b_l
-# have the same norm and the same scalar products with b_1, ..., b_{d-1}.
-# This happens a lot (in the beginning every cell is determined by a norm),
+# have the same colour and the same scalar products with b_1, ..., b_{d-1}.
+# This happens a lot (in the beginning every cell is determined by a colour),
 # so the search stores and refines a cell only for its representative.
 #
 #   `sum_products`
@@ -421,21 +457,26 @@ end
 # the cell sizes this takes the scalar products between the points of the
 # cells into account. These are the vector sums of [PS97, Section 4], taken
 # over the cells.
+#
+#   `negation`    whether -b_i has the colour of b_i for all i; then -1 is
+#                 an automorphism
 struct Fingerprint
   source::ShortVectors
   order::Vector{Int}
+  colours::Vector{UInt}
   products::Matrix{Int}
   cell_sizes::Matrix{Int}
   representative::Matrix{Int}
   sum_products::Vector{Matrix{Int}}
+  negation::Bool
 end
 
-function cell_representatives(products::Matrix{Int})
-  n = size(products, 1)
+function cell_representatives(colours::Vector{UInt}, products::Matrix{Int})
+  n = length(colours)
   representative = zeros(Int, n, n)
   for d in 1:n, k in d:n
     representative[d, k] = findfirst(d:n) do l
-      products[l, l] == products[k, k] &&
+      colours[l] == colours[k] &&
         all(products[l, j] == products[k, j] for j in 1:d-1)
     end + d - 1
   end
@@ -444,9 +485,9 @@ end
 
 # Choose the base greedily: the next base vector is the one with the smallest
 # cell, which keeps the branching of the search small.
-function base_order(S::ShortVectors)
+function base_order(S::ShortVectors, basis::Vector{Int}, colours::Vector{UInt})
   n = dim(S)
-  cells = [points_of_norm(S, S.form[i, i]) for i in 1:n]
+  cells = [points_of_colour(S, colours[i]) for i in 1:n]
   order = Int[]
   remaining = collect(1:n)
   for d in 1:n
@@ -454,7 +495,7 @@ function base_order(S::ShortVectors)
     b = popat!(remaining, position)
     push!(order, b)
     for i in remaining
-      refine_cell!(cells[i], S, cells[i], S.basis[b], S.form[i, b])
+      refine_cell!(cells[i], S, cells[i], basis[b], S.form[i, b])
     end
   end
   return order
@@ -463,13 +504,18 @@ end
 # Compute the fingerprint by refining along the identity map.
 function Fingerprint(S::ShortVectors)
   n = dim(S)
-  order = base_order(S)
-  base = S.basis[order]
+  basis = S.basis
+  basis_colours = UInt[S.colours[bit_index(S, p)] for p in basis]
+  negation = all(p -> S.colours[bit_index(S, p)] == S.colours[bit_index(S, -p)],
+                 basis)
+  order = base_order(S, basis, basis_colours)
+  base = basis[order]
+  colours = basis_colours[order]
   products = S.form[order, order]
-  representative = cell_representatives(products)
+  representative = cell_representatives(colours, products)
   cell_sizes = zeros(Int, n, n)
   sum_products = Matrix{Int}[]
-  cells = [points_of_norm(S, products[k, k]) for k in 1:n]
+  cells = [points_of_colour(S, colours[k]) for k in 1:n]
   for d in 1:n
     cell_sizes[d, d:n] = count.(cells[d:n])
     sums = zeros(Int, n, 0)
@@ -483,8 +529,8 @@ function Fingerprint(S::ShortVectors)
       refine_cell!(cells[k], S, cells[k], base[d], products[k, d])
     end
   end
-  return Fingerprint(S, order, products, cell_sizes, representative,
-                     sum_products)
+  return Fingerprint(S, order, colours, products, cell_sizes,
+                     representative, sum_products, negation)
 end
 
 ################################################################################
@@ -520,7 +566,7 @@ function Search(source::Fingerprint, target::ShortVectors)
   cells = [Vector{BitVector}(undef, n) for _ in 1:n]
   for d in 1:n, k in d:n
     if source.representative[d, k] == k
-      cells[d][k] = d == 1 ? points_of_norm(target, source.products[k, k]) :
+      cells[d][k] = d == 1 ? points_of_colour(target, source.colours[k]) :
                              falses(2 * number_of_vectors(target))
     end
   end
@@ -708,8 +754,8 @@ end
     stabilizer_chain(S::ShortVectors)
 
 Compute the group of all matrices `M` which preserve all forms of `S`, that
-is, `M*F*transpose(M) == F`, by partition backtracking. Return a named tuple
-with
+is, `M*F*transpose(M) == F`, and which map every basis vector to a point of
+`S` of the same colour, by partition backtracking. Return a named tuple with
 
 - `generators`: matrices generating the group;
 - `order`: the order of the group;
@@ -747,10 +793,10 @@ function stabilizer_chain(S::ShortVectors)
 
     stabilizer = reduce(vcat, generators[step:n])
 
-    # Images already reached by the known subgroup need not be searched. At
-    # the first level -1 is known a priori, so p and -p lie in the same orbit
-    # even though -1 is added to the generators only at the end.
-    negation = step == 1
+    # Images already reached by the known subgroup need not be searched. If
+    # -1 is an automorphism, then at the first level p and -p lie in the same
+    # orbit even though -1 is added to the generators only at the end.
+    negation = step == 1 && fingerprint.negation
     orbit = push!(Orbit(S; closed_under_negation = negation), base[step])
     close!(orbit, S, stabilizer; target = length(candidates))
 
@@ -789,7 +835,7 @@ function stabilizer_chain(S::ShortVectors)
   #
   # Negation was treated implicitly in the first orbit, so it has to be among
   # the generators for the product of orbit lengths to be the group order.
-  if n > 0
+  if n > 0 && fingerprint.negation
     push!(generators[1], Generator(-Matrix{Int}(identity_matrix(ZZ, n))))
   end
 
@@ -812,19 +858,46 @@ end
 #
 ################################################################################
 
+# The set of short vectors for the input format described in
+# `automorphism_group`.
+function short_vectors(forms::Vector{ZZMatrix}, vector_set, labels,
+                       unsigned_labels; kwargs...)
+  list = Vector{Int}[v for (v, _) in vector_set]
+  nv = length(list)
+  return ShortVectors(forms, list;
+                      labels = isempty(labels) ? zeros(Int, nv) : labels,
+                      unsigned_labels = isempty(unsigned_labels) ?
+                                        zeros(UInt, nv) : unsigned_labels,
+                      kwargs...)
+end
+
 @doc raw"""
-    automorphism_group(forms::Vector{ZZMatrix}) -> Vector{ZZMatrix}, ZZRingElem
+    automorphism_group(forms::Vector{ZZMatrix}, [vector_set, labels,
+                       unsigned_labels]) -> Vector{ZZMatrix}, ZZRingElem
 
 Given square integer matrices `forms`, the first of which is symmetric and
 positive definite, return generators and the order of the group of all
 integer matrices `g` with `g*F*transpose(g) == F` for all `F` in `forms`.
 For good performance the first form should be LLL reduced.
+
+The group acts on the vectors whose norm with respect to the first form is
+at most its largest diagonal entry. Alternatively a set of vectors can be
+given, up to sign, which contains the standard basis vectors: `vector_set` is
+a list of tuples whose first entry is a vector, and `labels` and
+`unsigned_labels` are lists of integers, one for each vector, or empty. The
+label of `-v` is that of `v` with the signed part negated. Then only those
+`g` are returned which map every standard basis vector to a vector with the
+same label. The set and the labels have to be invariant under this group.
 """
-function automorphism_group(forms::Vector{ZZMatrix})
+function automorphism_group(forms::Vector{ZZMatrix}, vector_set = (),
+                            labels = Int[], unsigned_labels = UInt[];
+                            kwargs...)
   if nrows(forms[1]) == 0
     return ZZMatrix[identity_matrix(ZZ, 0)], one(ZZRingElem)
   end
-  chain = stabilizer_chain(ShortVectors(forms))
+  S = isempty(vector_set) ? ShortVectors(forms; kwargs...) :
+        short_vectors(forms, vector_set, labels, unsigned_labels; kwargs...)
+  chain = stabilizer_chain(S)
   return ZZMatrix[matrix(ZZ, g) for g in chain.generators], chain.order
 end
 
