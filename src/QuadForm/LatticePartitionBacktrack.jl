@@ -65,6 +65,8 @@
 #  The fingerprint also fixes the base order: greedily, the next base vector
 #  is the one whose cell is currently smallest.
 #
+#  Cells are stored as bit vectors.
+#
 #  Thus the recursion in `extend!` is the familiar pattern
 #
 #      choose a point of the cell -> refine the partition -> recurse.
@@ -176,6 +178,9 @@ import ..Hecke: @req, @hassert, @vprintln, ZZ, QQ, ZZLat, ZZMatrix,
 #
 # Column j of `vectors` is v_j; only one of v_j, -v_j is stored. A *point* is a
 # signed index: p > 0 stands for v_p and p < 0 for -v_{-p}.
+#
+# A set of points is stored as a `BitVector` of length 2 * nv, in which the
+# point p > 0 has the index p and the point -p has the index nv + p.
 struct ShortVectors
   gram::Matrix{Int}               # G
   vectors::Matrix{Int}            # n x nv, column j is v_j
@@ -188,6 +193,17 @@ end
 dim(S::ShortVectors) = size(S.vectors, 1)
 
 number_of_vectors(S::ShortVectors) = size(S.vectors, 2)
+
+# Conversion between points and their indices in a set of points.
+bit_index(S::ShortVectors, p::Int) = p > 0 ? p : number_of_vectors(S) - p
+
+function point(S::ShortVectors, i::Int)
+  nv = number_of_vectors(S)
+  return i <= nv ? i : nv - i
+end
+
+# The elements of a set of points.
+points(S::ShortVectors, set::BitVector) = Int[point(S, i) for i in findall(set)]
 
 # All arithmetic is done in `Int`. The scalar products themselves are bounded
 # by the norm bound (Cauchy--Schwarz), but intermediate sums need not be, so
@@ -244,16 +260,29 @@ end
 function scalar_product(S::ShortVectors, p::Int, q::Int)
   j, k = abs(p), abs(q)
   s = 0
-  @inbounds for i in 1:dim(S)
+  @inbounds @simd for i in 1:dim(S)
     s += S.vectors[i, j] * S.gram_vectors[i, k]
   end
   return (p < 0) == (q < 0) ? s : -s
 end
 
-# All points of a given norm, positive representatives first.
+# Set `refined` to {p in cell : <p, x> = c} and return it. The two sets may
+# be the same object.
+function refine_cell!(refined::BitVector, S::ShortVectors, cell::BitVector,
+                      x::Int, c::Int)
+  i = findfirst(cell)
+  while i !== nothing
+    refined[i] = scalar_product(S, point(S, i), x) == c
+    i = findnext(cell, i + 1)
+  end
+  refined === cell || map!(&, refined, refined, cell)
+  return refined
+end
+
+# The set of all points of a given norm.
 function points_of_norm(S::ShortVectors, norm::Int)
-  positive = findall(==(norm), S.norms)
-  return vcat(positive, -positive)
+  set = S.norms .== norm
+  return vcat(set, set)
 end
 
 ################################################################################
@@ -265,7 +294,7 @@ end
 # The source side of a search: what an image of the basis has to look like.
 #
 #   `order`       the base; b_i = e_{order[i]}
-#   `gram`        Gram matrix of the base: gram[i, j] = <b_i, b_j>
+#   `products`    products[k, d] = <b_k, b_d>
 #   `cell_sizes`  for d <= k, cell_sizes[d, k] is the size of the cell of
 #                 position k after b_1, ..., b_{d-1} have been fixed
 #
@@ -273,32 +302,43 @@ end
 # of b_d once the earlier images are known.
 struct Fingerprint
   order::Vector{Int}
-  gram::Matrix{Int}
+  products::Matrix{Int}
   cell_sizes::Matrix{Int}
 end
 
-# Compute the fingerprint by refining along the identity map. The base is
-# chosen greedily: the next base vector is the one with the smallest cell,
-# which keeps the branching of the search small.
-function Fingerprint(S::ShortVectors)
+# Choose the base greedily: the next base vector is the one with the smallest
+# cell, which keeps the branching of the search small.
+function base_order(S::ShortVectors)
   n = dim(S)
-  G = S.gram
-  cells = [points_of_norm(S, G[i, i]) for i in 1:n]
-  sizes = zeros(Int, n, n)        # sizes[d, i], indexed by basis vector i
+  cells = [points_of_norm(S, S.gram[i, i]) for i in 1:n]
   order = Int[]
   remaining = collect(1:n)
   for d in 1:n
-    for i in remaining
-      sizes[d, i] = length(cells[i])
-    end
-    _, position = findmin(i -> length(cells[i]), remaining)
+    _, position = findmin(i -> count(cells[i]), remaining)
     b = popat!(remaining, position)
     push!(order, b)
     for i in remaining
-      filter!(p -> scalar_product(S, p, S.basis[b]) == G[i, b], cells[i])
+      refine_cell!(cells[i], S, cells[i], S.basis[b], S.gram[i, b])
     end
   end
-  return Fingerprint(order, G[order, order], sizes[:, order])
+  return order
+end
+
+# Compute the fingerprint by refining along the identity map.
+function Fingerprint(S::ShortVectors)
+  n = dim(S)
+  order = base_order(S)
+  base = S.basis[order]
+  products = S.gram[order, order]
+  cell_sizes = zeros(Int, n, n)
+  cells = [points_of_norm(S, products[k, k]) for k in 1:n]
+  for d in 1:n
+    cell_sizes[d, d:n] = count.(cells[d:n])
+    for k in (d + 1):n
+      refine_cell!(cells[k], S, cells[k], base[d], products[k, d])
+    end
+  end
+  return Fingerprint(order, products, cell_sizes)
 end
 
 ################################################################################
@@ -310,7 +350,7 @@ end
 # State of one depth-first search for an image of the base.
 #
 #   `image[d]`     the point b_d is currently sent to
-#   `cells[d][k]`  for d <= k, the possible images of b_k once
+#   `cells[d][k]`  for d <= k, the set of possible images of b_k once
 #                  image[1], ..., image[d-1] are fixed
 #   `nodes`        number of search nodes visited (diagnostics only)
 #
@@ -319,15 +359,16 @@ mutable struct Search
   source::Fingerprint
   target::ShortVectors
   image::Vector{Int}
-  cells::Vector{Vector{Vector{Int}}}
+  cells::Vector{Vector{BitVector}}
   nodes::Int
 end
 
 function Search(source::Fingerprint, target::ShortVectors)
   n = dim(target)
-  cells = [[Int[] for _ in 1:n] for _ in 1:n]
-  for k in 1:n
-    cells[1][k] = points_of_norm(target, source.gram[k, k])
+  cells = [Vector{BitVector}(undef, n) for _ in 1:n]
+  for d in 1:n, k in d:n
+    cells[d][k] = d == 1 ? points_of_norm(target, source.products[k, k]) :
+                           falses(2 * number_of_vectors(target))
   end
   return Search(source, target, zeros(Int, n), cells, 0)
 end
@@ -341,11 +382,10 @@ function refine!(search::Search, depth::Int)
   source, target = search.source, search.target
   x = search.image[depth]
   for k in (depth + 1):dim(target)
-    required = source.gram[k, depth]
-    cell = filter(p -> scalar_product(target, p, x) == required,
-                  search.cells[depth][k])
-    length(cell) == source.cell_sizes[depth + 1, k] || return false
-    search.cells[depth + 1][k] = cell
+    refined = refine_cell!(search.cells[depth + 1][k], target,
+                           search.cells[depth][k], x,
+                           source.products[k, depth])
+    count(refined) == source.cell_sizes[depth + 1, k] || return false
   end
   return true
 end
@@ -358,7 +398,7 @@ function extend!(search::Search, depth::Int)
   n = dim(search.target)
   depth == n && return true
   level = depth + 1
-  for p in search.cells[level][level]
+  for p in points(search.target, search.cells[level][level])
     search.image[level] = p
     refine!(search, level) && extend!(search, level) && return true
   end
@@ -457,6 +497,7 @@ function close!(orbit::Orbit, S::ShortVectors, generators::Vector{Generator};
   return orbit
 end
 
+
 ################################################################################
 #
 #  Stabilizer chain
@@ -502,7 +543,7 @@ function stabilizer_chain(G::Matrix{Int})
       search.image[step - 1] = base[step - 1]
       refine!(search, step - 1) || error("identity violates the fingerprint")
     end
-    candidates = copy(search.cells[step][step])
+    candidates = points(S, search.cells[step][step])
 
     # A cell of size one: the earlier images determine this one.
     length(candidates) == 1 && continue
