@@ -1,6 +1,7 @@
 ################################################################################
 #
-#  Partition backtracking for automorphisms of definite lattices
+#  Partition backtracking for automorphisms and isometries of definite
+#  lattices
 #
 ################################################################################
 #
@@ -121,6 +122,15 @@
 #  accepted, so the search works for forms with entries of any size.
 #
 #
+#  Isometries
+#  ----------
+#
+#  The fingerprint describes the *source*, the short vectors in which images
+#  are searched are the *target*. For automorphisms the two belong to the
+#  same lattice. For an isometry test they belong to two lattices, and the
+#  first complete image is an isometry, see `isometry`.
+#
+#
 #  Why the finite search is complete
 #  ---------------------------------
 #
@@ -142,19 +152,13 @@
 #    `Generator`, `Orbit`, `close!`
 #                        explicit orbit computation on points
 #    `stabilizer_chain`  the outer loop; best entry point for the algorithm
-#    `automorphism_group`
+#    `automorphism_group`, `isometry`
 #                        the interface used by Hecke
 #
 #
 #  Extension points
 #  ----------------
 #
-#  The design keeps the *source* (a `Fingerprint`: base order, Gram matrix in
-#  base order, expected cell sizes) apart from the *target* (a `ShortVectors`
-#  set in which images are searched). `Search` only ever combines the two.
-#
-#    * Isometry testing: build the fingerprint from one lattice and the
-#      `ShortVectors` from the other, then call `extend!(search, 0)`.
 #    * Stronger refiners (Bacher polynomials, ...): add the test to `refine!`
 #      and the matching expected value to `Fingerprint`, as is done for the
 #      sums of cells.
@@ -193,7 +197,7 @@
 module LatticePartitionBacktrack
 
 import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
-                change_base_ring, content, denominator, diagonal,
+                change_base_ring, content, denominator, det, diagonal,
                 divexact, gram_matrix, identity_matrix, is_definite,
                 is_symmetric, lll_gram_with_transform, matrix, mul!, nbits,
                 ncols, nrows, rank, zero_matrix, __short_vectors,
@@ -258,7 +262,6 @@ struct ShortVectors
   form_vectors::Matrix{Int}             # form * vectors
   colours::Vector{UInt}
   index::Dict{Vector{Int}, Int}         # v_j => j
-  basis::Vector{Int}                    # basis[i] is the point equal to e_i
 end
 
 dim(S::ShortVectors) = size(S.vectors, 1)
@@ -307,11 +310,15 @@ end
 # vectors whose norm with respect to the first form is at most its largest
 # diagonal entry. Vectors which do not have the colour of a standard basis
 # vector cannot be the image of one and are dropped.
+#
+# `source` is only passed when an isometry from `source` onto this set is
+# sought: then the search asks for the colours of the basis of `source`.
 function ShortVectors(exact_forms::Vector{ZZMatrix},
                       list::Vector{Vector{Int}} =
                         enumerate_vectors(exact_forms[1]);
                       labels::Vector{Int} = zeros(Int, length(list)),
-                      unsigned_labels::Vector{UInt} = zeros(UInt, length(list)))
+                      unsigned_labels::Vector{UInt} = zeros(UInt, length(list)),
+                      source = nothing)
   gram, form = search_forms(exact_forms)
   n = size(gram, 1)
   all_vectors = Matrix{Int}(undef, n, length(list))
@@ -331,11 +338,17 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
     all_colours[j, 2] = colour(s, -labels[j], unsigned_labels[j])
   end
   needed = Set{UInt}()
-  for j in 1:length(list)
-    v = view(all_vectors, :, j)
-    if count(!iszero, v) == 1
-      sum(v) == 1 && push!(needed, all_colours[j, 1])
-      sum(v) == -1 && push!(needed, all_colours[j, 2])
+  if source === nothing
+    for j in 1:length(list)
+      v = view(all_vectors, :, j)
+      if count(!iszero, v) == 1
+        sum(v) == 1 && push!(needed, all_colours[j, 1])
+        sum(v) == -1 && push!(needed, all_colours[j, 2])
+      end
+    end
+  else
+    for p in basis_points(source)
+      push!(needed, source.colours[bit_index(source, p)])
     end
   end
   keep = Int[j for j in 1:length(list)
@@ -347,17 +360,9 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
   for j in 1:nv
     index[list[keep[j]]] = j
   end
-  S = ShortVectors(exact_forms, gram, form, vectors, all_form_vectors[:, keep],
-                   vcat(all_colours[keep, 1], all_colours[keep, 2]), index,
-                   zeros(Int, n))
-  e = zeros(Int, n)
-  for i in 1:n
-    e[i] = 1
-    S.basis[i] = find_point(S, e)
-    @assert S.basis[i] != 0
-    e[i] = 0
-  end
-  return S
+  return ShortVectors(exact_forms, gram, form, vectors,
+                      all_form_vectors[:, keep],
+                      vcat(all_colours[keep, 1], all_colours[keep, 2]), index)
 end
 
 # The point with coordinate vector `w`, or 0 if `w` is not a short vector.
@@ -365,6 +370,20 @@ function find_point(S::ShortVectors, w::Vector{Int})
   j = get(S.index, w, 0)
   j != 0 && return j
   return -get(S.index, -w, 0)
+end
+
+# The points e_1, ..., e_n.
+function basis_points(S::ShortVectors)
+  n = dim(S)
+  basis = zeros(Int, n)
+  e = zeros(Int, n)
+  for i in 1:n
+    e[i] = 1
+    basis[i] = find_point(S, e)
+    basis[i] != 0 || error("basis vector is not among the short vectors")
+    e[i] = 0
+  end
+  return basis
 end
 
 # The coordinate vector of the point `p`.
@@ -429,6 +448,7 @@ points_of_colour(S::ShortVectors, c::UInt) = BitVector(S.colours .== c)
 #
 #   `source`      the short vectors the fingerprint was computed from
 #   `order`       the base; b_i = e_{order[i]}
+#   `base`        the base as points of the source
 #   `colours`     colours[i] is the colour of b_i
 #   `products`    products[k, d] = <b_k, b_d>
 #   `cell_sizes`  for d <= k, cell_sizes[d, k] is the size of the cell of
@@ -463,6 +483,7 @@ points_of_colour(S::ShortVectors, c::UInt) = BitVector(S.colours .== c)
 struct Fingerprint
   source::ShortVectors
   order::Vector{Int}
+  base::Vector{Int}
   colours::Vector{UInt}
   products::Matrix{Int}
   cell_sizes::Matrix{Int}
@@ -504,7 +525,7 @@ end
 # Compute the fingerprint by refining along the identity map.
 function Fingerprint(S::ShortVectors)
   n = dim(S)
-  basis = S.basis
+  basis = basis_points(S)
   basis_colours = UInt[S.colours[bit_index(S, p)] for p in basis]
   negation = all(p -> S.colours[bit_index(S, p)] == S.colours[bit_index(S, -p)],
                  basis)
@@ -529,7 +550,7 @@ function Fingerprint(S::ShortVectors)
       refine_cell!(cells[k], S, cells[k], base[d], products[k, d])
     end
   end
-  return Fingerprint(S, order, colours, products, cell_sizes,
+  return Fingerprint(S, order, base, colours, products, cell_sizes,
                      representative, sum_products, negation)
 end
 
@@ -578,6 +599,18 @@ end
 # fixed.
 cell(search::Search, depth::Int, k::Int) =
   search.cells[depth][search.source.representative[depth, k]]
+
+# Whether the cells at depth 1 look like those of the source. This always
+# holds if the target is the source.
+function initial_cells_match!(search::Search)
+  source = search.source
+  n = dim(search.target)
+  n == 0 && return true
+  for k in 1:n
+    count(cell(search, 1, k)) == source.cell_sizes[1, k] || return false
+  end
+  return cell_sums_match!(search, 1)
+end
 
 # Individualize `image[depth]` and refine the cells of all later positions.
 #
@@ -768,9 +801,9 @@ function stabilizer_chain(S::ShortVectors)
   search = Search(fingerprint, S)
   n = dim(S)
 
-  # The base as points: at level `step` the entries before `step` are fixed
-  # and `base[step]` is the point whose orbit is being completed.
-  base = S.basis[fingerprint.order]
+  # At level `step` the entries of the base before `step` are fixed and
+  # `base[step]` is the point whose orbit is being completed.
+  base = fingerprint.base
 
   # `generators[i]` holds the automorphisms first found at level i. Each of
   # them fixes base[1:i-1], so the stabilizer of base[1:i-1] is generated by
@@ -899,6 +932,50 @@ function automorphism_group(forms::Vector{ZZMatrix}, vector_set = (),
         short_vectors(forms, vector_set, labels, unsigned_labels; kwargs...)
   chain = stabilizer_chain(S)
   return ZZMatrix[matrix(ZZ, g) for g in chain.generators], chain.order
+end
+
+@doc raw"""
+    isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
+             [vector_set1, vector_set2, labels1, labels2]) -> Bool, ZZMatrix
+
+Given two lists of square integer matrices as in `automorphism_group`, decide
+whether there is an integer matrix `g` with `g*forms2[i]*transpose(g) ==
+forms1[i]` for all `i`, and return such a matrix if it exists.
+
+If sets of vectors with labels are given, then `g` is moreover required to
+map every standard basis vector to a vector in `vector_set2` with the same
+label. The second set must contain every such image.
+"""
+function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
+                  vector_set1 = (), vector_set2 = (), labels1 = Int[],
+                  labels2 = Int[]; kwargs...)
+  n = nrows(forms1[1])
+  no = false, zero_matrix(ZZ, 0, 0)
+  if n != nrows(forms2[1]) || length(forms1) != length(forms2) ||
+     is_symmetric.(forms1) != is_symmetric.(forms2)
+    return no
+  end
+  n == 0 && return true, zero_matrix(ZZ, 0, 0)
+  # The search finds a matrix g of rank n with g*forms2[i]*transpose(g) ==
+  # forms1[i]; it is invertible over the integers if and only if the
+  # determinants agree.
+  det(forms1[1]) == det(forms2[1]) || return no
+  if isempty(vector_set1)
+    # An isometry maps the standard basis to vectors of at most this norm.
+    bound = maximum(diagonal(forms1[1]))
+    S1 = ShortVectors(forms1; kwargs...)
+    S2 = ShortVectors(forms2, enumerate_vectors(forms2[1], bound);
+                      source = S1, kwargs...)
+  else
+    S1 = short_vectors(forms1, vector_set1, labels1, UInt[]; kwargs...)
+    S2 = short_vectors(forms2, vector_set2, labels2, UInt[];
+                       source = S1, kwargs...)
+  end
+  search = Search(Fingerprint(S1), S2)
+  if initial_cells_match!(search) && extend!(search, 0)
+    return true, matrix(ZZ, image_matrix(search))
+  end
+  return no
 end
 
 @doc raw"""

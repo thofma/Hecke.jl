@@ -54,6 +54,26 @@
   @test all(g -> g * D4 * transpose(g) == D4, gens)
   @test all(g -> ZZ[1 0 0 0] * g == ZZ[1 0 0 0], gens)
 
+  # isometry
+  E8 = change_base_ring(ZZ, gram_matrix(root_lattice(:E, 8)))
+  for (G, F) in [(D4, ZZ[0 1 0 0; -1 0 0 0; 0 0 0 1; 0 0 -1 0]), (E8, E8)]
+    n = nrows(G)
+    T = identity_matrix(ZZ, n)
+    T[1, 2] = 1
+    T[n, 1] = -1
+    forms1 = G == F ? [G] : [G, F]
+    forms2 = [T * A * transpose(T) for A in forms1]
+    fl, M = PB.isometry(forms1, forms2)
+    @test fl
+    @test all(M * forms2[i] * transpose(M) == forms1[i]
+              for i in 1:length(forms1))
+  end
+  @test !PB.isometry([D4], [identity_matrix(ZZ, 4)])[1]
+  E7A1 = gram_matrix(direct_sum(root_lattice(:E, 7), root_lattice(:A, 1))[1])
+  @test !PB.isometry([2 * E8], [2 * identity_matrix(ZZ, 8)])[1]
+  @test !PB.isometry([E8], [change_base_ring(ZZ, E7A1)])[1]
+  @test !PB.isometry([A2, ZZ[0 1; -1 0]], [A2, ZZ[0 2; -2 0]])[1]
+
   # a unimodular lattice without roots; all 928 minimal vectors look alike
   # until scalar products inside the cells are taken into account
   X29 = matrix(ZZ, 29, 29, [
