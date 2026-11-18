@@ -297,13 +297,34 @@ end
 #   `products`    products[k, d] = <b_k, b_d>
 #   `cell_sizes`  for d <= k, cell_sizes[d, k] is the size of the cell of
 #                 position k after b_1, ..., b_{d-1} have been fixed
+#   `representative`
+#                 for d <= k, the smallest position l >= d which has the
+#                 same cell as k after b_1, ..., b_{d-1} have been fixed
 #
 # In particular `cell_sizes[d, d]` is the number of candidates for the image
 # of b_d once the earlier images are known.
+#
+# Two positions k and l have the same cell at depth d whenever b_k and b_l
+# have the same norm and the same scalar products with b_1, ..., b_{d-1}.
+# This happens a lot (in the beginning every cell is determined by a norm),
+# so the search stores and refines a cell only for its representative.
 struct Fingerprint
   order::Vector{Int}
   products::Matrix{Int}
   cell_sizes::Matrix{Int}
+  representative::Matrix{Int}
+end
+
+function cell_representatives(products::Matrix{Int})
+  n = size(products, 1)
+  representative = zeros(Int, n, n)
+  for d in 1:n, k in d:n
+    representative[d, k] = findfirst(d:n) do l
+      products[l, l] == products[k, k] &&
+        all(products[l, j] == products[k, j] for j in 1:d-1)
+    end + d - 1
+  end
+  return representative
 end
 
 # Choose the base greedily: the next base vector is the one with the smallest
@@ -330,6 +351,7 @@ function Fingerprint(S::ShortVectors)
   order = base_order(S)
   base = S.basis[order]
   products = S.gram[order, order]
+  representative = cell_representatives(products)
   cell_sizes = zeros(Int, n, n)
   cells = [points_of_norm(S, products[k, k]) for k in 1:n]
   for d in 1:n
@@ -338,7 +360,7 @@ function Fingerprint(S::ShortVectors)
       refine_cell!(cells[k], S, cells[k], base[d], products[k, d])
     end
   end
-  return Fingerprint(order, products, cell_sizes)
+  return Fingerprint(order, products, cell_sizes, representative)
 end
 
 ################################################################################
@@ -351,7 +373,8 @@ end
 #
 #   `image[d]`     the point b_d is currently sent to
 #   `cells[d][k]`  for d <= k, the set of possible images of b_k once
-#                  image[1], ..., image[d-1] are fixed
+#                  image[1], ..., image[d-1] are fixed; only filled if k is
+#                  the representative of its cell, see `cell`
 #   `nodes`        number of search nodes visited (diagnostics only)
 #
 # The cells of all depths are kept, so backtracking needs no undo step.
@@ -367,11 +390,18 @@ function Search(source::Fingerprint, target::ShortVectors)
   n = dim(target)
   cells = [Vector{BitVector}(undef, n) for _ in 1:n]
   for d in 1:n, k in d:n
-    cells[d][k] = d == 1 ? points_of_norm(target, source.products[k, k]) :
-                           falses(2 * number_of_vectors(target))
+    if source.representative[d, k] == k
+      cells[d][k] = d == 1 ? points_of_norm(target, source.products[k, k]) :
+                             falses(2 * number_of_vectors(target))
+    end
   end
   return Search(source, target, zeros(Int, n), cells, 0)
 end
+
+# The set of possible images of b_k once image[1], ..., image[depth-1] are
+# fixed.
+cell(search::Search, depth::Int, k::Int) =
+  search.cells[depth][search.source.representative[depth, k]]
 
 # Individualize `image[depth]` and refine the cells of all later positions.
 #
@@ -382,8 +412,9 @@ function refine!(search::Search, depth::Int)
   source, target = search.source, search.target
   x = search.image[depth]
   for k in (depth + 1):dim(target)
+    source.representative[depth + 1, k] == k || continue
     refined = refine_cell!(search.cells[depth + 1][k], target,
-                           search.cells[depth][k], x,
+                           cell(search, depth, k), x,
                            source.products[k, depth])
     count(refined) == source.cell_sizes[depth + 1, k] || return false
   end
@@ -398,7 +429,7 @@ function extend!(search::Search, depth::Int)
   n = dim(search.target)
   depth == n && return true
   level = depth + 1
-  for p in points(search.target, search.cells[level][level])
+  for p in points(search.target, cell(search, level, level))
     search.image[level] = p
     refine!(search, level) && extend!(search, level) && return true
   end
@@ -543,7 +574,7 @@ function stabilizer_chain(G::Matrix{Int})
       search.image[step - 1] = base[step - 1]
       refine!(search, step - 1) || error("identity violates the fingerprint")
     end
-    candidates = points(S, search.cells[step][step])
+    candidates = points(S, cell(search, step, step))
 
     # A cell of size one: the earlier images determine this one.
     length(candidates) == 1 && continue
