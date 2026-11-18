@@ -28,6 +28,13 @@
   @test prod(chain.orbit_lengths) == chain.order == 1152
   @test length(closure(matrix.(Ref(ZZ), chain.generators), *)) == 1152
 
+  # without the table of scalar products
+  E8 = gram_matrix(root_lattice(:E, 8))
+  E8 = change_base_ring(ZZ, E8)
+  @test PB.automorphism_group([E8]; masks_max_bytes = 0)[2] == 696729600
+  S = PB.ShortVectors([D4]; masks_max_bytes = 0)
+  @test PB.stabilizer_chain(S).nodes == chain.nodes
+
   # entries which do not fit into machine integers
   gens, order = PB.automorphism_group([ZZ(2)^70 * D4])
   @test order == 1152
@@ -55,7 +62,6 @@
   @test all(g -> ZZ[1 0 0 0] * g == ZZ[1 0 0 0], gens)
 
   # isometry
-  E8 = change_base_ring(ZZ, gram_matrix(root_lattice(:E, 8)))
   for (G, F) in [(D4, ZZ[0 1 0 0; -1 0 0 0; 0 0 0 1; 0 0 -1 0]), (E8, E8)]
     n = nrows(G)
     T = identity_matrix(ZZ, n)

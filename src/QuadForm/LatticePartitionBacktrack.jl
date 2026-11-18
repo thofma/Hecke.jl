@@ -76,7 +76,9 @@
 #  The fingerprint also fixes the base order: greedily, the next base vector
 #  is the one whose cell is currently smallest.
 #
-#  Cells are stored as bit vectors.
+#  Cells are stored as bit vectors, and for every point x that is used and
+#  every relevant value c the set {p : <p, x> = c} is tabulated. Refining a
+#  cell is then a bitwise `and` and its size a population count.
 #
 #  The cell sizes alone are a weak test on lattices whose short vectors all
 #  look alike, for example when they form a spherical design. Therefore the
@@ -254,12 +256,28 @@ wrap(A::ZZMatrix) = Int[wrap(A[i, j]) for i in 1:nrows(A), j in 1:ncols(A)]
 # unsigned integer supplied by the caller; the label of -v is that of v with
 # the signed part negated. Labels must be invariant under the group that is
 # to be computed, and V must be invariant as a set.
+#
+# The search spends its time intersecting sets of points with sets of the
+# form {p : <p, x> = c}. These sets are tabulated for all c in `values`, the
+# off-diagonal entries of `form` and their negatives; no other values are
+# ever asked for. Then `masks[r, j]` is the set {p : <p, v_j> = values[r]},
+# and it is left unassigned if this set is empty. The scalar products with
+# v_j are first computed on demand, for the points of the cell at hand only.
+# The table is filled for v_j once the scalar products computed for it,
+# counted in `work[j]`, would have paid for it, see `tabulate!`; so an easy
+# search or one with small cells tabulates little. The table is quadratic
+# in the number of vectors, so at most `budget` further bits are spent on it.
 struct ShortVectors
   exact_forms::Vector{ZZMatrix}
   gram::Matrix{Int}
   form::Matrix{Int}
   vectors::Matrix{Int}                  # n x nv, column j is v_j
   form_vectors::Matrix{Int}             # form * vectors
+  values::Vector{Int}
+  masks::Matrix{BitVector}
+  tabulated::BitVector                  # whether masks[:, j] is filled
+  work::Vector{Int}
+  budget::Base.RefValue{Int}
   colours::Vector{UInt}
   index::Dict{Vector{Int}, Int}         # v_j => j
 end
@@ -312,13 +330,15 @@ end
 # vector cannot be the image of one and are dropped.
 #
 # `source` is only passed when an isometry from `source` onto this set is
-# sought: then the search asks for the colours of the basis of `source`.
+# sought: then the search asks for the colours and the scalar products of
+# the basis of `source`.
 function ShortVectors(exact_forms::Vector{ZZMatrix},
                       list::Vector{Vector{Int}} =
                         enumerate_vectors(exact_forms[1]);
                       labels::Vector{Int} = zeros(Int, length(list)),
                       unsigned_labels::Vector{UInt} = zeros(UInt, length(list)),
-                      source = nothing)
+                      source = nothing,
+                      masks_max_bytes::Int = MASKS_MAX_BYTES)
   gram, form = search_forms(exact_forms)
   n = size(gram, 1)
   all_vectors = Matrix{Int}(undef, n, length(list))
@@ -346,10 +366,13 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
         sum(v) == -1 && push!(needed, all_colours[j, 2])
       end
     end
+    values = sort!(unique!(Int[s * form[i, j] for i in 1:n, j in 1:n,
+                               s in (1, -1) if i != j]))
   else
     for p in basis_points(source)
       push!(needed, source.colours[bit_index(source, p)])
     end
+    values = source.values
   end
   keep = Int[j for j in 1:length(list)
              if all_colours[j, 1] in needed || all_colours[j, 2] in needed]
@@ -361,8 +384,44 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
     index[list[keep[j]]] = j
   end
   return ShortVectors(exact_forms, gram, form, vectors,
-                      all_form_vectors[:, keep],
+                      all_form_vectors[:, keep], values,
+                      Matrix{BitVector}(undef, length(values), nv),
+                      falses(nv), zeros(Int, nv), Ref(8 * masks_max_bytes),
                       vcat(all_colours[keep, 1], all_colours[keep, 2]), index)
+end
+
+const MASKS_MAX_BYTES = 2^28
+
+# Whether the sets {p : <p, v_j> = c} are tabulated, where a set of
+# `cell_size` points is about to be refined. They are tabulated here if the
+# scalar products computed on demand for v_j so far would have sufficed for
+# all points, unless the budget is used up.
+function tabulate!(S::ShortVectors, j::Int, cell_size::Int)
+  S.tabulated[j] && return true
+  n = dim(S)
+  nv = number_of_vectors(S)
+  S.work[j] += cell_size
+  (S.work[j] >= nv && S.budget[] > 0) || return false
+  vals = S.values
+  masks = S.masks
+  @inbounds for k in 1:nv
+    s = 0
+    @simd for i in 1:n
+      s += S.vectors[i, k] * S.form_vectors[i, j]
+    end
+    r = searchsortedfirst(vals, s)
+    (r <= length(vals) && vals[r] == s) || continue
+    # <v_k, v_j> = s and <-v_k, v_j> = -s
+    for (row, i) in ((r, k), (searchsortedfirst(vals, -s), nv + k))
+      if !isassigned(masks, row, j)
+        masks[row, j] = falses(2 * nv)
+        S.budget[] -= 2 * nv
+      end
+      masks[row, j][i] = true
+    end
+  end
+  S.tabulated[j] = true
+  return true
 end
 
 # The point with coordinate vector `w`, or 0 if `w` is not a short vector.
@@ -406,6 +465,12 @@ end
 # be the same object.
 function refine_cell!(refined::BitVector, S::ShortVectors, cell::BitVector,
                       x::Int, c::Int)
+  if S.tabulated[abs(x)] || tabulate!(S, abs(x), count(cell))
+    # <p, -x> = c if and only if <p, x> = -c
+    r = searchsortedfirst(S.values, x > 0 ? c : -c)
+    isassigned(S.masks, r, abs(x)) || return fill!(refined, false)
+    return map!(&, refined, cell, S.masks[r, abs(x)])
+  end
   i = findfirst(cell)
   while i !== nothing
     refined[i] = scalar_product(S, point(S, i), x) == c
