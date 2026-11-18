@@ -505,6 +505,71 @@ function cell_sum!(sum::AbstractVector{Int}, S::ShortVectors, cell::BitVector)
   return sum
 end
 
+# The number of common elements of two sets of points.
+function count_common(a::BitVector, b::BitVector)
+  c = 0
+  @inbounds @simd for i in 1:length(a.chunks)
+    c += count_ones(a.chunks[i] & b.chunks[i])
+  end
+  return c
+end
+
+# An invariant of the point `p` relative to a set of points: a fixed
+# combination of the numbers of q in `cell` with <q, p> = c, where c runs
+# over `values`. An isometry mapping `cell` to a set of points preserves it.
+function count_invariant(S::ShortVectors, p::Int, cell::BitVector,
+                         cell_size::Int)
+  vals = S.values
+  j = abs(p)
+  t = 0
+  if S.tabulated[j] || tabulate!(S, j, cell_size)
+    for r in 1:length(vals)
+      # <q, -v_j> = c if and only if <q, v_j> = -c
+      row = p > 0 ? r : searchsortedfirst(vals, -vals[r])
+      isassigned(S.masks, row, j) || continue
+      t += (hash(vals[r]) % Int) * count_common(S.masks[row, j], cell)
+    end
+    return t
+  end
+  i = findfirst(cell)
+  while i !== nothing
+    c = scalar_product(S, point(S, i), p)
+    r = searchsortedfirst(vals, c)
+    if r <= length(vals) && vals[r] == c
+      t += hash(c) % Int
+    end
+    i = findnext(cell, i + 1)
+  end
+  return t
+end
+
+# Refining by `count_invariant` is only done for cells for which it is cheap.
+const COUNT_LIMIT = 2^20
+
+# Set `candidates` to the points of `cell` whose `count_invariant` relative
+# to `cell` is that of the point `b`, or is `value` if `b == 0`. Return this
+# value and a hash of the invariants of all points of `cell`.
+function refine_by_counts!(candidates::BitVector, S::ShortVectors,
+                           cell::BitVector, b::Int, value::Int)
+  copyto!(candidates, cell)
+  size = count(cell)
+  if size <= 1 || size * number_of_vectors(S) > COUNT_LIMIT
+    return 0, 0
+  end
+  if b != 0
+    value = count_invariant(S, b, cell, size)
+  end
+  total = 0
+  i = findfirst(cell)
+  while i !== nothing
+    t = count_invariant(S, point(S, i), cell, size)
+    total += hash(t) % Int
+    candidates[i] = t == value
+    i = findnext(cell, i + 1)
+  end
+  return value, total
+end
+
 # The set of all points of a given colour.
 points_of_colour(S::ShortVectors, c::UInt) = BitVector(S.colours .== c)
 
@@ -548,6 +613,17 @@ points_of_colour(S::ShortVectors, c::UInt) = BitVector(S.colours .== c)
 # cells into account. These are the vector sums of [PS97, Section 4], taken
 # over the cells.
 #
+#   `counts`      counts[:, d] describes the *candidates*, the cell of
+#                 position d at depth d refined once more: by the numbers
+#                 of points in the cell with given scalar product, see
+#                 `refine_by_counts!`. Its entries are the invariant of
+#                 b_d, a hash of the invariants of all points of the cell,
+#                 and the number of candidates. Only the candidates can be
+#                 images of b_d. The cell itself is left as it is, because
+#                 it is shared with later positions. This refinement costs
+#                 more than the others and is only switched on, and
+#                 `counts` filled, when a search turns out to be hard, see
+#                 `use_counts!`.
 #   `negation`    whether -b_i has the colour of b_i for all i; then -1 is
 #                 an automorphism
 struct Fingerprint
@@ -559,6 +635,7 @@ struct Fingerprint
   cell_sizes::Matrix{Int}
   representative::Matrix{Int}
   sum_products::Vector{Matrix{Int}}
+  counts::Matrix{Int}
   negation::Bool
 end
 
@@ -621,7 +698,7 @@ function Fingerprint(S::ShortVectors)
     end
   end
   return Fingerprint(S, order, base, colours, products, cell_sizes,
-                     representative, sum_products, negation)
+                     representative, sum_products, zeros(Int, 3, n), negation)
 end
 
 ################################################################################
@@ -636,6 +713,8 @@ end
 #   `cells[d][k]`  for d <= k, the set of possible images of b_k once
 #                  image[1], ..., image[d-1] are fixed; only filled if k is
 #                  the representative of its cell, see `cell`
+#   `candidates[d]`
+#                  the possible images of b_d, see `Fingerprint`
 #   `nodes`        number of search nodes visited (diagnostics only)
 #   `sums`, `gram_sums`
 #                  work space of `cell_sums_match!`
@@ -646,6 +725,8 @@ mutable struct Search
   target::ShortVectors
   image::Vector{Int}
   cells::Vector{Vector{BitVector}}
+  candidates::Vector{BitVector}
+  use_counts::Bool
   nodes::Int
   sums::Matrix{Int}
   gram_sums::Matrix{Int}
@@ -661,8 +742,9 @@ function Search(source::Fingerprint, target::ShortVectors)
                              falses(2 * number_of_vectors(target))
     end
   end
-  return Search(source, target, zeros(Int, n), cells, 0, zeros(Int, n, n),
-                zeros(Int, n, n), zero_matrix(ZZ, n, n))
+  candidates = [falses(2 * number_of_vectors(target)) for _ in 1:n]
+  return Search(source, target, zeros(Int, n), cells, candidates, false, 0,
+                zeros(Int, n, n), zeros(Int, n, n), zero_matrix(ZZ, n, n))
 end
 
 # The set of possible images of b_k once image[1], ..., image[depth-1] are
@@ -679,7 +761,45 @@ function initial_cells_match!(search::Search)
   for k in 1:n
     count(cell(search, 1, k)) == source.cell_sizes[1, k] || return false
   end
-  return cell_sums_match!(search, 1)
+  return cell_sums_match!(search, 1) && candidates_match!(search, 1)
+end
+
+# The number of nodes after which a search counts as hard.
+const HARD_SEARCH = 1000
+
+# Switch on the refinement of the candidates by counts. For this the
+# invariants of the base are computed along the identity map.
+function use_counts!(search::Search)
+  search.use_counts = true
+  source = search.source
+  S = source.source
+  n = dim(S)
+  identity = Search(source, S)
+  candidates = falses(2 * number_of_vectors(S))
+  counts = source.counts
+  for d in 1:n
+    if d > 1
+      identity.image[d - 1] = source.base[d - 1]
+      refine!(identity, d - 1)
+    end
+    counts[1, d], counts[2, d] =
+      refine_by_counts!(candidates, S, cell(identity, d, d), source.base[d], 0)
+    counts[3, d] = count(candidates)
+  end
+  return search
+end
+
+# Compute the candidates at `depth` and compare them with the fingerprint.
+function candidates_match!(search::Search, depth::Int)
+  counts = search.source.counts
+  candidates = search.candidates[depth]
+  if !search.use_counts
+    copyto!(candidates, cell(search, depth, depth))
+    return true
+  end
+  _, total = refine_by_counts!(candidates, search.target,
+                               cell(search, depth, depth), 0, counts[1, depth])
+  return total == counts[2, depth] && count(candidates) == counts[3, depth]
 end
 
 # Individualize `image[depth]` and refine the cells of all later positions.
@@ -689,6 +809,7 @@ end
 # products; then no isometry extends `image[1:depth]`.
 function refine!(search::Search, depth::Int)
   search.nodes += 1
+  search.nodes == HARD_SEARCH && use_counts!(search)
   source, target = search.source, search.target
   x = search.image[depth]
   for k in (depth + 1):dim(target)
@@ -698,7 +819,9 @@ function refine!(search::Search, depth::Int)
                            source.products[k, depth])
     count(refined) == source.cell_sizes[depth + 1, k] || return false
   end
-  return depth == dim(target) || cell_sums_match!(search, depth + 1)
+  return depth == dim(target) ||
+         (cell_sums_match!(search, depth + 1) &&
+          candidates_match!(search, depth + 1))
 end
 
 # Compare the scalar products of the sums of the cells at `depth` with
@@ -740,7 +863,7 @@ function extend!(search::Search, depth::Int)
   n = dim(search.target)
   depth == n && return is_isometry(search)
   level = depth + 1
-  for p in points(search.target, cell(search, level, level))
+  for p in points(search.target, search.candidates[level])
     search.image[level] = p
     refine!(search, level) && extend!(search, level) && return true
   end
@@ -877,6 +1000,7 @@ function stabilizer_chain(S::ShortVectors)
   # Phase 1: the fingerprint of the identity.
   fingerprint = Fingerprint(S)
   search = Search(fingerprint, S)
+  initial_cells_match!(search) || error("identity violates the fingerprint")
   n = dim(S)
 
   # At level `step` the entries of the base before `step` are fixed and
@@ -897,7 +1021,7 @@ function stabilizer_chain(S::ShortVectors)
       search.image[step - 1] = base[step - 1]
       refine!(search, step - 1) || error("identity violates the fingerprint")
     end
-    candidates = points(S, cell(search, step, step))
+    candidates = points(S, search.candidates[step])
 
     # A cell of size one: the earlier images determine this one.
     length(candidates) == 1 && continue
