@@ -7,11 +7,11 @@
 #  Purpose
 #  -------
 #
-#  This file is a small, self-contained and heavily documented reference
-#  implementation of partition backtracking for definite integer lattices. It
-#  favours readability over speed: there are no optional refiners, no caches
-#  and no narrow integer types. It is meant as a seed which can be reviewed
-#  line by line and then extended.
+#  This file is a small, self-contained and heavily documented implementation
+#  of partition backtracking for definite integer lattices. It is meant to be
+#  reviewed line by line and then extended. It is aimed at lattices without
+#  exploitable structure, such as unimodular lattices without roots; structure
+#  like roots or invariant sublattices is better detected beforehand.
 #
 #  Everything lives in the submodule `Hecke.LatticePartitionBacktrack`, so the
 #  short names used below (`Search`, `Orbit`, `refine!`, ...) cannot clash with
@@ -66,6 +66,11 @@
 #  is the one whose cell is currently smallest.
 #
 #  Cells are stored as bit vectors.
+#
+#  The cell sizes alone are a weak test on lattices whose short vectors all
+#  look alike, for example when they form a spherical design. Therefore the
+#  fingerprint also records the scalar products of the *sums* of the cells,
+#  see `Fingerprint`; these depend on the scalar products inside the cells.
 #
 #  Thus the recursion in `extend!` is the familiar pattern
 #
@@ -127,8 +132,9 @@
 #
 #    * Isometry testing: build the fingerprint from one lattice and the
 #      `ShortVectors` from the other, then call `extend!(search, 0)`.
-#    * Stronger refiners (vector sums, Bacher polynomials, ...): add the test
-#      to `refine!` and the matching expected value to `Fingerprint`.
+#    * Stronger refiners (Bacher polynomials, ...): add the test to `refine!`
+#      and the matching expected value to `Fingerprint`, as is done for the
+#      sums of cells.
 #    * Canonical forms: the sequence of cell sizes produced by `refine!` is an
 #      isometry invariant of a search node. A canonizer does not compare it
 #      to a fixed fingerprint but orders the nodes by it, explores all nodes
@@ -225,11 +231,12 @@ function ShortVectors(G::Matrix{Int})
 
   max_entry = maximum(abs, vectors; init = 0)
   max_gram = maximum(abs, G; init = 0)
-  limit = typemax(Int)
-  # |entries of G * v| <= n * max_gram * max_entry, and one more factor of
-  # n * max_entry bounds every partial sum of a scalar product or of a matrix
-  # times vector product.
-  widemul(n, max_gram) * max_entry * widemul(n, max_entry) < limit ||
+  # The largest numbers occur in scalar products of sums of cells, see
+  # `cell_sums_match!`. The entries of such a sum s are bounded by
+  # m = 2 * nv * max_entry, those of G * s by n * max_gram * m, and a scalar
+  # product of two sums, with all its partial sums, by n * m times the latter.
+  m = big(2) * nv * max_entry
+  n^2 * max_gram * m^2 < typemax(Int) ||
     throw(OverflowError("lattice too large for machine integers"))
 
   S = ShortVectors(G, vectors, G * vectors, norms, index, zeros(Int, n))
@@ -279,6 +286,26 @@ function refine_cell!(refined::BitVector, S::ShortVectors, cell::BitVector,
   return refined
 end
 
+# Add up the coordinate vectors of the points in `cell`.
+function cell_sum!(sum::AbstractVector{Int}, S::ShortVectors, cell::BitVector)
+  fill!(sum, 0)
+  nv = number_of_vectors(S)
+  i = findfirst(cell)
+  @inbounds while i !== nothing
+    if i <= nv
+      @simd for l in 1:dim(S)
+        sum[l] += S.vectors[l, i]
+      end
+    else
+      @simd for l in 1:dim(S)
+        sum[l] -= S.vectors[l, i - nv]
+      end
+    end
+    i = findnext(cell, i + 1)
+  end
+  return sum
+end
+
 # The set of all points of a given norm.
 function points_of_norm(S::ShortVectors, norm::Int)
   set = S.norms .== norm
@@ -308,11 +335,24 @@ end
 # have the same norm and the same scalar products with b_1, ..., b_{d-1}.
 # This happens a lot (in the beginning every cell is determined by a norm),
 # so the search stores and refines a cell only for its representative.
+#
+#   `sum_products`
+#                 sum_products[d] is the Gram matrix of the vectors s_k, the
+#                 sum of all points in the cell of position k at depth d,
+#                 where k runs over the representatives at depth d
+#
+# An isometry mapping b_1, ..., b_{d-1} to image[1], ..., image[d-1] maps the
+# cells of the source onto the cells of the target, hence the sums s_k onto
+# the corresponding sums, and it preserves their scalar products. Unlike
+# the cell sizes this takes the scalar products between the points of the
+# cells into account. These are the vector sums of [PS97, Section 4], taken
+# over the cells.
 struct Fingerprint
   order::Vector{Int}
   products::Matrix{Int}
   cell_sizes::Matrix{Int}
   representative::Matrix{Int}
+  sum_products::Vector{Matrix{Int}}
 end
 
 function cell_representatives(products::Matrix{Int})
@@ -353,14 +393,23 @@ function Fingerprint(S::ShortVectors)
   products = S.gram[order, order]
   representative = cell_representatives(products)
   cell_sizes = zeros(Int, n, n)
+  sum_products = Matrix{Int}[]
   cells = [points_of_norm(S, products[k, k]) for k in 1:n]
   for d in 1:n
     cell_sizes[d, d:n] = count.(cells[d:n])
+    sums = zeros(Int, n, 0)
+    for k in d:n
+      if representative[d, k] == k
+        sums = hcat(sums, cell_sum!(zeros(Int, n), S, cells[k]))
+      end
+    end
+    push!(sum_products, transpose(sums) * S.gram * sums)
     for k in (d + 1):n
       refine_cell!(cells[k], S, cells[k], base[d], products[k, d])
     end
   end
-  return Fingerprint(order, products, cell_sizes, representative)
+  return Fingerprint(order, products, cell_sizes, representative,
+                     sum_products)
 end
 
 ################################################################################
@@ -376,6 +425,8 @@ end
 #                  image[1], ..., image[d-1] are fixed; only filled if k is
 #                  the representative of its cell, see `cell`
 #   `nodes`        number of search nodes visited (diagnostics only)
+#   `sums`, `gram_sums`
+#                  work space of `cell_sums_match!`
 #
 # The cells of all depths are kept, so backtracking needs no undo step.
 mutable struct Search
@@ -384,6 +435,8 @@ mutable struct Search
   image::Vector{Int}
   cells::Vector{Vector{BitVector}}
   nodes::Int
+  sums::Matrix{Int}
+  gram_sums::Matrix{Int}
 end
 
 function Search(source::Fingerprint, target::ShortVectors)
@@ -395,7 +448,8 @@ function Search(source::Fingerprint, target::ShortVectors)
                              falses(2 * number_of_vectors(target))
     end
   end
-  return Search(source, target, zeros(Int, n), cells, 0)
+  return Search(source, target, zeros(Int, n), cells, 0, zeros(Int, n, n),
+                zeros(Int, n, n))
 end
 
 # The set of possible images of b_k once image[1], ..., image[depth-1] are
@@ -406,7 +460,8 @@ cell(search::Search, depth::Int, k::Int) =
 # Individualize `image[depth]` and refine the cells of all later positions.
 #
 # Returns `false` as soon as a cell does not have the size prescribed by the
-# fingerprint; then no isometry extends `image[1:depth]`.
+# fingerprint, or the sums of the cells do not have the prescribed scalar
+# products; then no isometry extends `image[1:depth]`.
 function refine!(search::Search, depth::Int)
   search.nodes += 1
   source, target = search.source, search.target
@@ -417,6 +472,37 @@ function refine!(search::Search, depth::Int)
                            cell(search, depth, k), x,
                            source.products[k, depth])
     count(refined) == source.cell_sizes[depth + 1, k] || return false
+  end
+  return depth == dim(target) || cell_sums_match!(search, depth + 1)
+end
+
+# Compare the scalar products of the sums of the cells at `depth` with
+# `sum_products[depth]` of the fingerprint.
+function cell_sums_match!(search::Search, depth::Int)
+  source, target = search.source, search.target
+  n = dim(target)
+  G = target.gram
+  expected = source.sum_products[depth]
+  sums, gram_sums = search.sums, search.gram_sums
+  a = 0                             # number of the current representative
+  @inbounds for k in depth:n
+    source.representative[depth, k] == k || continue
+    a += 1
+    cell_sum!(view(sums, :, a), target, search.cells[depth][k])
+    for i in 1:n
+      t = 0
+      @simd for j in 1:n
+        t += G[j, i] * sums[j, a]
+      end
+      gram_sums[i, a] = t
+    end
+    for b in 1:a
+      t = 0
+      @simd for i in 1:n
+        t += sums[i, b] * gram_sums[i, a]
+      end
+      t == expected[b, a] || return false
+    end
   end
   return true
 end
