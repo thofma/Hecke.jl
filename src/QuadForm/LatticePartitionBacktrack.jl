@@ -280,6 +280,7 @@ struct ShortVectors
   budget::Base.RefValue{Int}
   colours::Vector{UInt}
   index::Dict{Vector{Int}, Int}         # v_j => j
+  buffer::Vector{Int}                   # work space of `apply`
 end
 
 dim(S::ShortVectors) = size(S.vectors, 1)
@@ -387,7 +388,8 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
                       all_form_vectors[:, keep], values,
                       Matrix{BitVector}(undef, length(values), nv),
                       falses(nv), zeros(Int, nv), Ref(8 * masks_max_bytes),
-                      vcat(all_colours[keep, 1], all_colours[keep, 2]), index)
+                      vcat(all_colours[keep, 1], all_colours[keep, 2]), index,
+                      zeros(Int, n))
 end
 
 const MASKS_MAX_BYTES = 2^28
@@ -428,7 +430,10 @@ end
 function find_point(S::ShortVectors, w::Vector{Int})
   j = get(S.index, w, 0)
   j != 0 && return j
-  return -get(S.index, -w, 0)
+  w .= .-w
+  j = get(S.index, w, 0)
+  w .= .-w
+  return -j
 end
 
 # The points e_1, ..., e_n.
@@ -777,7 +782,15 @@ end
 
 # The image of the point `p` under `g`.
 function apply(S::ShortVectors, g::Generator, p::Int)
-  w = transpose(g.matrix) * view(S.vectors, :, abs(p))    # v * M as a column
+  M = g.matrix
+  w = S.buffer                                            # v * M
+  @inbounds for i in 1:dim(S)
+    s = 0
+    @simd for k in 1:dim(S)
+      s += S.vectors[k, abs(p)] * M[k, i]
+    end
+    w[i] = s
+  end
   q = find_point(S, w)
   q == 0 && error("image of a short vector is not short")
   return p < 0 ? -q : q
