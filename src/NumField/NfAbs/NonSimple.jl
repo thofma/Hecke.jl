@@ -245,17 +245,17 @@ end
 ################################################################################
 
 function Base.:(+)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
-  parent(a) == parent(b) || force_op(+, a, b)::AbsNonSimpleNumFieldElem
+  parent(a) == parent(b) || return force_op(+, a, b)::AbsNonSimpleNumFieldElem
   return AbsNonSimpleNumFieldElem(parent(a), data(a) + data(b))
 end
 
 function Base.:(-)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
-  parent(a) == parent(b) || force_op(-, a, b)::AbsNonSimpleNumFieldElem
+  parent(a) == parent(b) || return force_op(-, a, b)::AbsNonSimpleNumFieldElem
   return AbsNonSimpleNumFieldElem(parent(a), data(a) - data(b))
 end
 
 function Base.:(*)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
-  parent(a) == parent(b) || force_op(*, a, b)::AbsNonSimpleNumFieldElem
+  parent(a) == parent(b) || return force_op(*, a, b)::AbsNonSimpleNumFieldElem
   return parent(a)(data(a) * data(b))
 end
 
@@ -264,7 +264,7 @@ function Base.:(//)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
 end
 
 function Base.div(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
-  parent(a) == parent(b) || force_op(div, a, b)::AbsNonSimpleNumFieldElem
+  parent(a) == parent(b) || return force_op(div, a, b)::AbsNonSimpleNumFieldElem
   return a * inv(b)
 end
 
@@ -316,7 +316,7 @@ end
 ################################################################################
 
 function Base.:(==)(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
-  parent(a) == parent(b) || force_op(==, a, b)::Bool
+  parent(a) == parent(b) || return force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
 
