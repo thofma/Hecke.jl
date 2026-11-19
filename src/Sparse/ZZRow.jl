@@ -55,7 +55,7 @@ end
       return
     end
   end
-  ccall((:fmpz_set, libflint), Cvoid, (Ptr{ZZRingElem}, Ptr{ZZRingElem}), get_ptr(a, i), v)
+  set!(get_ptr(a, i), v)
   return v
 end
 

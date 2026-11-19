@@ -39,14 +39,8 @@ mutable struct NfOrdToFqNmodMor <: Map{AbsSimpleNumFieldOrder, fqPolyRepField, H
       u = F()
       gg = parent(nf(O).pol)(elem_in_nf(x))::QQPolyRingElem
       Nemo.fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
-      ccall((:nmod_poly_rem, libflint), Nothing,
-            (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ptr{Nothing}),
-            tmp_gfp_poly, tmp_gfp_poly, g, pointer_from_objref(F)+sizeof(ZZRingElem))
-      ccall((:fq_nmod_set, libflint), Nothing,
-            (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}),
-            u, tmp_gfp_poly, F)
-      ccall((:fq_nmod_reduce, libflint), Nothing,
-            (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), u, F)
+      rem!(tmp_gfp_poly, tmp_gfp_poly, g)
+      set!(u, tmp_gfp_poly)
       return u
     end
 
@@ -85,7 +79,7 @@ mutable struct NfOrdToFqNmodMor <: Map{AbsSimpleNumFieldOrder, fqPolyRepField, H
       for j in 1:d
         setcoeff!(c, j - 1, b[i][1, j])
       end
-      ccall((:fq_nmod_set, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), ib, c, F)
+      set!(ib, c)
       imageofbasis[i] = ib
     end
 
@@ -276,7 +270,7 @@ function NfOrdToFqMor(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{AbsSim
     for j in 1:d
       setcoeff!(c, j - 1, b[i][1, j])
     end
-    ccall((:fq_set, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}), ib, c, F)
+    set!(ib, c)
     imageofbasis[i] = ib
   end
 
@@ -320,9 +314,8 @@ function image(f::NfOrdToFqMor, x::AbsSimpleNumFieldOrderElem)
     u = F()
     gg = parent(nf(O).pol)(elem_in_nf(x, copy = false))::QQPolyRingElem
     Nemo.fmpq_poly_to_gfp_fmpz_poly_raw!(f.tmp_gfp_fmpz_poly, gg, f.t_fmpz_poly, f.t_fmpz)
-    ccall((:fmpz_mod_poly_rem, libflint), Nothing, (Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{FpPolyRingElem}, Ref{Nemo.fmpz_mod_ctx_struct}), f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field, base_ring(parent(f.tmp_gfp_fmpz_poly)).ninv)
-    ccall((:fq_set, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}), u, f.tmp_gfp_fmpz_poly, F)
-    ccall((:fq_reduce, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FqPolyRepField}), u, F)
+    rem!(f.tmp_gfp_fmpz_poly, f.tmp_gfp_fmpz_poly, f.poly_of_the_field)
+    set!(u, f.tmp_gfp_fmpz_poly)
     return u
   else
     return f.header.image(x)::FqPolyRepFieldElem
@@ -383,9 +376,7 @@ mutable struct NfOrdToGFMor <: Map{AbsSimpleNumFieldOrder, fpField, HeckeMap, Nf
     	function _image(x::AbsSimpleNumFieldOrderElem)
       	gg = parent(nf(O).pol)(elem_in_nf(x))::QQPolyRingElem
       	Nemo.fmpq_poly_to_gfp_poly_raw!(tmp_gfp_poly, gg)
-      	ccall((:nmod_poly_rem, libflint), Nothing,
-        	    (Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ref{fpPolyRingElem}, Ptr{Nothing}),
-          	  tmp_gfp_poly, tmp_gfp_poly, g, pointer_from_objref(F)+sizeof(ZZRingElem))
+      	rem!(tmp_gfp_poly, tmp_gfp_poly, g)
       	return coeff(tmp_gfp_poly, 0)
 			end
     end
@@ -581,9 +572,7 @@ function NfOrdToFqFieldMor(O::AbsSimpleNumFieldOrder, P::AbsNumFieldOrderIdeal{A
     v = coordinates(x, copy = false)
     zz = zero(F)
     for i in 1:n
-      ccall((:fq_default_mul_fmpz, libflint), Nothing,
-            (Ref{FqFieldElem}, Ref{FqFieldElem}, Ref{ZZRingElem}, Ref{FqField}),
-            tempF, imageofbasis[i], v[i], F)
+      mul!(tempF, imageofbasis[i], v[i])
       add!(zz, zz, tempF)
     end
     return zz
@@ -1316,10 +1305,8 @@ end
 
 
 function mul_mod(x::UInt, y::ZZRingElem, R)
-  d = ccall((:fmpz_fdiv_ui, libflint), UInt, (Ref{ZZRingElem}, UInt), y, modulus(R))
-  r = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt),
-             x, d, modulus(R), R.ninv)
-  return r
+  d = mod(y, modulus(R))
+  return Nemo.mulmod(x, d, modulus(R), R.ninv)
 end
 
 function evaluate_raw(x::fpPolyRingElem, y::fpFieldElem)

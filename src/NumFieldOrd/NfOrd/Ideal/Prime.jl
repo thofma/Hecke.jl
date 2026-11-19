@@ -99,7 +99,7 @@ function lift(K::AbsSimpleNumField, f::T) where {T <: Zmodn_poly}
   end
   r = K()
   for i=0:degree(f)
-    u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{T}, Int), f, i)
+    u = Nemo.coeff_raw(f, i)
     _num_setcoeff!(r, i, u)
   end
   return r

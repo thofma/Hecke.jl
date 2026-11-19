@@ -65,7 +65,7 @@ mutable struct ContinuationWorkspace
       entry = coefficient_table + (j*x_length + i)*entry_size
       if i < length(split_polynomial[j+1])
         c = split_polynomial[j+1][i+1]
-        ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}), entry, c)
+        Nemo._acb_set(entry, c)
         iszero(c) || (row_lengths[j+1] = i + 1)
       else
         ccall((:acb_zero, libflint), Nothing, (Ptr{acb_struct},), entry)

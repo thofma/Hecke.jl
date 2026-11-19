@@ -866,7 +866,7 @@ function _dedekind_zeta_attwell_duval_positive(K::AbsSimpleNumField, s, prec::In
     end
   end
 
-  ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), error_arf)
+  Nemo._arf_clear_fn(error_arf)
 
   return valaddederror
 end
