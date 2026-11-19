@@ -156,7 +156,16 @@ function __assert_has_automorphisms(
                                                                     search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct, use_multiset)
     use_projections = false # already added projections
   elseif use_weyl
-    error("not implemented")
+    R, root_types, components = root_lattice_recognition_fundamental(_L)
+    fundamental_roots = numerator.(basis_matrix.(components))
+    weyl_group_order = _weyl_group_order(root_types)
+    use_target_enum = false
+    if !isone(weyl_group_order)
+      # The chamber stabilizer fixes rho. This form fixes rho up to sign;
+      # the extra factor of two is removed when computing the reduced order.
+      weyl_dual = transpose(numerator(_weyl_vector(R) * Glll))
+      push!(res, weyl_dual * transpose(weyl_dual))
+    end
   end
   if use_projections
     proj = _invariant_projections(_L)
@@ -226,6 +235,14 @@ function __assert_has_automorphisms(
 
   if use_weyl
     reduced_gens = copy(gens)
+    if !use_target_enum && !isone(weyl_group_order)
+      for i in eachindex(reduced_gens)
+        if reduced_gens[i] * weyl_dual != weyl_dual
+          reduced_gens[i] = -reduced_gens[i]
+        end
+      end
+      @hassert :Lattice 1 all(g -> g * weyl_dual == weyl_dual, reduced_gens)
+    end
     _fundamental_roots = reduce(append!,[f[i:i,:] for i in 1:nrows(f)] for f in fundamental_roots; init=ZZMatrix[])
     _orbit_rep_fundamental = _orbit_representatives(reduced_gens, _fundamental_roots)
     _weyl_gens = _weyl_group_gens(Glll, fundamental_roots)

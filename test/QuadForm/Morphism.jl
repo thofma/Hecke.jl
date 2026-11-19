@@ -4,6 +4,41 @@
   @test (@inferred short_vectors(L, 1)) == []
   @test (@inferred short_vectors(L, 1, 2)) == []
 
+  # Weyl-vector constraints must work with ordinary enumeration and no projections.
+  @testset "Weyl reduction without targeted enumeration" begin
+    examples = [(ZZ[3 0 0; 0 5 0; 0 0 7], 8, 1),
+                (ZZ[2 -1 0; -1 2 0; 0 0 4], 24, 6),
+                (ZZ[2 -1 0; -1 2 -1; 0 -1 2], 48, 24),
+                (identity_matrix(ZZ, 3), 48, 8),
+                (ZZ[2 0 0; 0 2 0; 0 0 3], 16, 4)]
+    T = ZZ[1 1 0; 0 1 1; 0 0 1]
+    push!(examples, (T * examples[2][1] * transpose(T), 24, 6))
+    for (G, full_order, weyl_order) in examples, sign in (-1, 1),
+        do_lll in (false, true), try_small in (false, true)
+      H = sign * G
+      L = integer_lattice(; gram = H, cached = false)
+      C = Hecke.__assert_has_automorphisms(L; use_everything = false,
+          use_weyl = true, use_projections = false, compress = false,
+          use_norm_one = false, use_target_enum = true, depth = 0,
+          do_lll, try_small)
+      @test automorphism_group_order(L) == full_order
+      @test L.reduced_automorphism_group_order == div(full_order, weyl_order)
+      @test all(g -> g * H * transpose(g) == H,
+                L.automorphism_group_generators)
+      @test all(g -> g * H * transpose(g) == H,
+                L.reduced_automorphism_group_generators)
+      if try_small
+        @test length(C.G) == (weyl_order == 1 ? 1 : 2)
+      end
+      if !do_lll && weyl_order > 1
+        P = integer_lattice(; gram = G, cached = false)
+        R, _, _ = root_lattice_recognition_fundamental(P)
+        rho = Hecke._weyl_vector(R)
+        @test all(g -> rho * g == rho, L.reduced_automorphism_group_generators)
+      end
+    end
+  end
+
   G = ZZ[2 1 -1 -1 -1 1 1 -1 0 0 0 0 0 0 0 0; 1 2 -1 -1 -1 1 1 -1 0 0 0 0 0 0 0 0; -1 -1 2 0 1 0 -1 1 0 0 0 0 0 0 0 0; -1 -1 0 2 1 -1 0 0 0 0 0 0 0 0 0 0; -1 -1 1 1 2 0 -1 0 0 0 0 0 0 0 0 0; 1 1 0 -1 0 2 0 -1 0 0 0 0 0 0 0 0; 1 1 -1 0 -1 0 2 -1 0 0 0 0 0 0 0 0; -1 -1 1 0 0 -1 -1 2 0 0 0 0 0 0 0 0; 0 0 0 0 0 0 0 0 2 1 1 0 1 1 1 0; 0 0 0 0 0 0 0 0 1 2 1 0 1 1 0 0; 0 0 0 0 0 0 0 0 1 1 2 0 0 0 1 0; 0 0 0 0 0 0 0 0 0 0 0 2 1 0 -1 0; 0 0 0 0 0 0 0 0 1 1 0 1 4 1 0 1; 0 0 0 0 0 0 0 0 1 1 0 0 1 4 0 0; 0 0 0 0 0 0 0 0 1 0 1 -1 0 0 8 1; 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 18]
   L = integer_lattice(gram=G)
   @test length(shortest_vectors(L)) == 127
