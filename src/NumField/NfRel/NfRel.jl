@@ -212,23 +212,23 @@ end
 ################################################################################
 
 function Base.:(+)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
-  parent(a) == parent(b) || force_op(+, a, b)::RelSimpleNumFieldElem{T}
+  parent(a) == parent(b) || return force_op(+, a, b)::RelSimpleNumFieldElem{T}
   return parent(a)(data(a) + data(b))
 end
 
 function Base.:(-)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
-  parent(a) == parent(b) || force_op(-, a, b)::RelSimpleNumFieldElem{T}
+  parent(a) == parent(b) || return force_op(-, a, b)::RelSimpleNumFieldElem{T}
   return parent(a)(data(a) - data(b))
 end
 
 function Base.:(*)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T}
-  parent(a) == parent(b) || force_op(*, a, b)::RelSimpleNumFieldElem{T}
+  parent(a) == parent(b) || return force_op(*, a, b)::RelSimpleNumFieldElem{T}
   return parent(a)(data(a) * data(b))
 end
 
 function divexact(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}; check::Bool = true) where {T}
   b == 0 && error("Element not invertible")
-  parent(a) == parent(b) || force_op(divexact, a, b)::RelSimpleNumFieldElem{T}
+  parent(a) == parent(b) || return force_op(divexact, a, b)::RelSimpleNumFieldElem{T}
   return a*inv(b)
 end
 
@@ -307,7 +307,7 @@ end
 function Base.:(==)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where T
   reduce!(a)
   reduce!(b)
-  parent(a) == parent(b) || force_op(==, a, b)::Bool
+  parent(a) == parent(b) || return force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
 

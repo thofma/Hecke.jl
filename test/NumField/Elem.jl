@@ -248,6 +248,66 @@
   end
 end
 
+@testset "Binary operations with different parents" begin
+  # Operations on elements of different fields, and coercion between them,
+  # are carried out in a known common super field and throw if there is none.
+  Qx, x = QQ["x"]
+  k, = quadratic_field(2)
+  ky, y = k["y"]
+  pairs = [
+    (number_field(x^2 - 3, "a", cached = false)[2],
+     number_field(x^2 - 5, "a", cached = false)[2]),
+    (number_field([x^2 - 3], cached = false)[2][1],
+     number_field([x^2 - 5], cached = false)[2][1]),
+    (number_field(y^2 - 3, "a", cached = false)[2],
+     number_field(y^2 - 5, "a", cached = false)[2]),
+    (number_field([y^2 - 3], "a", cached = false)[2][1],
+     number_field([y^2 - 5], "a", cached = false)[2][1])]
+  @testset for (a, b) in pairs
+    @test_throws ErrorException a + b
+    @test_throws ErrorException a - b
+    @test_throws ErrorException a * b
+    @test_throws ErrorException a // b
+    @test_throws ErrorException a == b
+    @test_throws ErrorException parent(b)(a)
+  end
+
+  # Each embedding f: K -> M, a in K, b in M.
+  K1, a1 = number_field(x^2 - 3, "a", cached = false)
+  M1, b1 = number_field(x^4 - 3, "b", cached = false)
+  K2, a2 = number_field([x^2 - 3], "a", cached = false)
+  M2, b2 = number_field([x^2 - 3, x^2 - 5], "b", cached = false)
+  K3, a3 = number_field(y^2 - 3, "a", cached = false)
+  M3, b3 = number_field(y^4 - 3, "b", cached = false)
+  K4, a4 = number_field([y^2 - 3], "a", cached = false)
+  M4, b4 = number_field([y^2 - 3, y^2 - 5], "b", cached = false)
+  embeddings = [
+    (hom(K1, M1, b1^2), a1, b1),
+    (hom(K2, M2, [b2[1]]), a2[1], b2[2]),
+    (hom(K3, M3, b3^2), a3, b3),
+    (hom(K4, M4, [b4[1]]), a4[1], b4[2])]
+  @testset for (f, a, b) in embeddings
+    M = codomain(f)
+    embed(f)
+    @test parent(M(a)) === M && M(a) == f(a)
+    @test parent(a + b) === M && a + b == f(a) + b
+    @test parent(b - a) === M && b - a == b - f(a)
+    @test parent(a * b) === M && a * b == f(a) * b
+    @test parent(a // b) === M && a // b == f(a) // b
+    @test a == f(a) && f(a) == a && a != b
+  end
+
+  # For isomorphic fields embedded into each other, the result lies in the
+  # parent of the first operand.
+  L, c = number_field(x^2 - 12, "c", cached = false)
+  m = hom(L, K1, 2*a1)
+  embed(m)
+  embed(inv(m))
+  @test parent(a1 + c) === K1 && a1 + c == 3*a1
+  @test parent(c + a1) === L && c + a1 == 3*c//2
+  @test 2*a1 == c && c == 2*a1
+end
+
 @testset "is_square" begin
   #Enable one is_square is working for non-monic defining polynomials
   Qx, x = QQ["x"]
