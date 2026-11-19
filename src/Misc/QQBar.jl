@@ -57,7 +57,7 @@ function factor(f::PolyRingElem{QQBarFieldElem})
   rts = roots(f)
   facts = [gen(parent(f)) - r for r in rts]
   fac = Fac(parent(f)(leading_coefficient(f)), Dict(facts[i] => valuation(f, facts[i]) for i in 1:length(facts)))
-  @assert degree(f) == sum(e for (_,e) in fac)
+  @assert degree(f) == sum(e for (_,e) in fac; init = 0)
   return fac
 end
 
