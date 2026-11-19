@@ -133,7 +133,7 @@
     g, T = Hecke.reduction_with_transformation(f)
     @test g == binary_quadratic_form(3, 0, 7)
     @test T == matrix(ZZ, 2, 2, [-2, 1, 1, -1])
-    # b = a or a = c, where the sign of b is fixed by is_reduced
+    # |b| = |a| or a = c, where the sign of b is fixed by is_reduced
     for (a, b, c) in [(2, -2, 3), (3, -2, 3), (1, -1, 1), (-2, -2, -3),
                       (-3, -2, -3), (-1, -1, -1)]
       f = binary_quadratic_form(a, b, c)
