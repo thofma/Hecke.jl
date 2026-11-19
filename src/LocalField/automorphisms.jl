@@ -153,7 +153,7 @@ function absolute_automorphism_list(K::LocalField)
 end
 
 function absolute_automorphism_list(K::QadicField)
-  return automorphisms(K)
+  return automorphism_list(K)
 end
 
 

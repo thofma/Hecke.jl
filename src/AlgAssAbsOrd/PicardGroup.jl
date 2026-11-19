@@ -486,7 +486,7 @@ end
 
 function _principal_generator_fac_elem(a::AlgAssAbsOrdIdl)
   @assert is_maximal(order(a)) "Not implemented"
-  a, g = is_principal_maximal_fac_elem(a)
+  a, g = _is_principal_maximal_fac_elem(a)
   if !a
     error("Ideal is not principal")
   end
