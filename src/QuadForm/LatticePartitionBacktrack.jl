@@ -631,4 +631,815 @@ function count_invariant(S::ShortVectors, elements::AbstractVector{Int},
   return result
 end
 
+################################################################################
+#
+#  Ordered partitions
+#
+################################################################################
+
+# An ordered partition of some points, given by their indices, into cells:
+# the c-th cell consists of `elements[starts[c]:starts[c + 1] - 1]`.
+struct Partition
+  elements::Vector{Int}
+  starts::Vector{Int}
+end
+
+Partition() = Partition(Int[], Int[1])
+
+function Base.empty!(P::Partition)
+  empty!(P.elements)
+  resize!(P.starts, 1)
+  return P
+end
+
+number_of_cells(P::Partition) = length(P.starts) - 1
+
+cell(P::Partition, c::Int) = view(P.elements, P.starts[c]:(P.starts[c + 1] - 1))
+
+cell_size(P::Partition, c::Int) = P.starts[c + 1] - P.starts[c]
+
+# Append a cell.
+function Base.push!(P::Partition, elements)
+  append!(P.elements, elements)
+  push!(P.starts, length(P.elements) + 1)
+  return P
+end
+
+# The first among the smallest cells with more than one element, or 0.
+function smallest_cell(P::Partition)
+  best = 0
+  for c in 1:number_of_cells(P)
+    k = cell_size(P, c)
+    if k > 1 && (best == 0 || k < cell_size(P, best))
+      best = c
+    end
+  end
+  return best
+end
+
+# The index of the cell containing the element `i`, or 0.
+function find_cell(P::Partition, i::Int)
+  for c in 1:number_of_cells(P)
+    i in cell(P, c) && return c
+  end
+  return 0
+end
+
+# The span of some integer vectors modulo a prime, to recognise linear
+# independence: vectors which are independent modulo a prime are independent,
+# and the rank modulo a prime does not depend on the basis of the lattice.
+struct Span
+  rows::Vector{Vector{Int}}             # in echelon form
+  pivots::Vector{Int}
+end
+
+Span() = Span(Vector{Int}[], Int[])
+
+const SPAN_PRIME = 2147483629
+
+# Add `v` to the span. Returns whether this made the span larger.
+function enlarge!(span::Span, v::AbstractVector{Int})
+  w = mod.(v, SPAN_PRIME)
+  for (row, pivot) in zip(span.rows, span.pivots)
+    c = w[pivot]
+    c == 0 && continue
+    @. w = mod(w - c * row, SPAN_PRIME)
+  end
+  pivot = findfirst(!iszero, w)
+  pivot === nothing && return false
+  c = invmod(w[pivot], SPAN_PRIME)
+  @. w = mod(c * w, SPAN_PRIME)
+  push!(span.rows, w)
+  push!(span.pivots, pivot)
+  return true
+end
+
+################################################################################
+#
+#  Reference paths
+#
+################################################################################
+
+# A path of the search tree to compare other nodes with.
+#
+#   `source`      the short vectors the path lives in
+#   `sequence`    the points b_1, ..., b_m individualized along the path;
+#                 they generate the lattice
+#   `traces`      traces[d + 1] is the trace of the node (b_1, ..., b_d), see
+#                 `advance!`
+#   `refined`, `kept`, `branch`
+#                 what a node which looks like (b_1, ..., b_d) does: which
+#                 cell is split by counting, which cells are kept, and on
+#                 which cell the search branches next; see `advance!`. The
+#                 entries with index d + 1 belong to depth d.
+#   `matrix`      the matrix with rows b_1, ..., b_m
+#   `solver`      an integer matrix with `solver * matrix == 1`, which exists
+#                 because the sequence generates the lattice; see
+#                 `is_isometry`
+#   `basis`       the standard basis vectors as points of the source if
+#                 there are labels, otherwise empty
+#   `negation`    whether -e_i has the label of e_i for all i; then -1 is
+#                 an automorphism
+#   `ordered`     whether the order of the sequence is prescribed, see
+#                 `record`
+mutable struct Reference
+  source::ShortVectors
+  sequence::Vector{Int}
+  traces::Vector{Vector{Int}}
+  refined::Vector{Int}
+  kept::Vector{Vector{Int}}
+  branch::Vector{Int}
+  matrix::ZZMatrix
+  solver::ZZMatrix
+  basis::Vector{Int}
+  negation::Bool
+  ordered::Bool
+end
+
+################################################################################
+#
+#  Walking through the search tree
+#
+################################################################################
+
+# A node of the search tree is a sequence of points x_1, ..., x_d, which are
+# said to be *individualized*. It carries an ordered partition of points
+# into cells: two points are in the same cell if nothing we computed tells
+# them apart, given x_1, ..., x_d. The partition of a node only depends on
+# the node up to isometry, and so does its *trace*, the list of numbers
+# produced while the partition is computed. The children of a node are
+# obtained by individualizing the points of one of its cells.
+#
+# A `Node` is what a walk knows about a node (x_1, ..., x_d):
+#
+#   `partition`    its partition
+#   `branch`       the cell whose points are individualized next, or 0 at a
+#                  leaf
+#   `basis`        linearly independent points whose scalar products have
+#                  been used to split cells, on the way to the node and at
+#                  it; every other point used for this lies in their span
+#   `span`         their span
+#   `dependent`    points which are known to lie in this span
+mutable struct Node
+  partition::Partition
+  branch::Int
+  basis::Vector{Int}
+  span::Span
+  dependent::PointSet
+end
+
+Node(N::Int) = Node(Partition(), 0, Int[], Span(), point_set(N))
+
+# A `Walk` is the state of a walk through this tree.
+#
+#   `mode`         what happens with the trace:
+#                    `:record`    it is stored in the reference
+#                    `:follow`    it is compared with the reference; a node
+#                                 with a different trace is abandoned
+#                    `:minimize`  it is compared with the reference; a node
+#                                 with a larger trace is abandoned, and a
+#                                 smaller trace replaces that of the
+#                                 reference, see `canonical_form`
+#   `planned`      whether the choices listed under `Reference` are taken
+#                  from the reference (they are stored there in the mode
+#                  `:record`) or made by the rules of `advance!`
+#   `sequence`     the individualized points x_1, x_2, ...
+#   `path`         path[d + 1] is the node (x_1, ..., x_d)
+#   `visited`      number of nodes visited
+#   `position`     the number of entries of the trace seen at this node
+#   `improved`     in the mode `:minimize`, the depth of the node on the
+#                  current path whose trace replaced that of the reference,
+#                  until a leaf below it is reached; otherwise
+#                  `typemax(Int)`
+#
+# The nodes of all depths are kept, so backtracking needs no undo step.
+mutable struct Walk
+  target::ShortVectors
+  reference::Reference
+  mode::Symbol
+  planned::Bool
+  sequence::Vector{Int}
+  path::Vector{Node}
+  visited::Int
+  position::Int
+  improved::Int
+  scratch::Partition
+  spare::Partition
+  members::PointSet
+  values::Vector{Int}
+  invariants::Vector{Int}
+  distinct::Vector{Int}
+  sums::Matrix{Int}
+  total::Vector{Int}
+  product::ZZMatrix               # work space of `is_isometry`
+  isometry::ZZMatrix              # the isometry found, see `is_isometry`
+end
+
+function Walk(target::ShortVectors, reference::Reference, mode::Symbol,
+              planned::Bool)
+  n = dim(target)
+  N = 2 * number_of_vectors(target)
+  return Walk(target, reference, mode, planned, Int[], Node[], 0, 0,
+              typemax(Int), Partition(), Partition(),
+              point_set(N), zeros(Int, N), zeros(Int, N), Int[],
+              zeros(Int, n, 0), zeros(Int, n), zero_matrix(ZZ, n, n),
+              zero_matrix(ZZ, n, n))
+end
+
+# Report the next number of the trace of the current node. Returns whether
+# the walk may go on.
+function observe!(walk::Walk, depth::Int, value::Int)
+  reference = walk.reference
+  trace = reference.traces[depth + 1]
+  if walk.mode == :record
+    push!(trace, value)
+    return true
+  end
+  position = walk.position += 1
+  if walk.mode == :follow
+    return position <= length(trace) && trace[position] == value
+  end
+  position <= length(trace) && value == trace[position] && return true
+  position <= length(trace) && value > trace[position] && return false
+  # The trace is smaller than that of the reference, or the reference has
+  # none here: the current path replaces the reference from here on.
+  resize!(trace, position)
+  trace[position] = value
+  replace_reference!(walk, depth)
+  return true
+end
+
+# The path of the walk replaces the reference from the node at `depth` on.
+function replace_reference!(walk::Walk, depth::Int)
+  reference = walk.reference
+  if walk.improved > depth
+    walk.improved = depth
+    resize!(reference.traces, depth + 1)
+    empty!(reference.sequence)
+  end
+  return
+end
+
+# The trace of the current node is complete. Returns whether the walk may go
+# on. A trace which is the beginning of that of the reference is smaller, so
+# traces are compared as sequences and not only entry by entry.
+function finish_trace!(walk::Walk, depth::Int)
+  trace = walk.reference.traces[depth + 1]
+  walk.mode == :record && return true
+  walk.position == length(trace) && return true
+  walk.mode == :follow && return false
+  resize!(trace, walk.position)
+  replace_reference!(walk, depth)
+  return true
+end
+
+# Append to `P` the cells into which `elements` fall by `values`, in
+# increasing order of the values, and report their values and sizes.
+function split!(walk::Walk, depth::Int, P::Partition, elements, values)
+  distinct = empty!(walk.distinct)
+  for t in 1:length(elements)
+    r = searchsortedfirst(distinct, values[t])
+    if r > length(distinct) || distinct[r] != values[t]
+      insert!(distinct, r, values[t])
+    end
+  end
+  for value in distinct
+    for (t, i) in enumerate(elements)
+      values[t] == value && push!(P.elements, i)
+    end
+    push!(P.starts, length(P.elements) + 1)
+    observe!(walk, depth, value) || return false
+    observe!(walk, depth, cell_size(P, number_of_cells(P))) || return false
+  end
+  return true
+end
+
+# The same for the scalar products of the points with the point with index
+# `x`.
+function split_by_products!(walk::Walk, depth::Int, P::Partition, elements,
+                            x::Int)
+  S = walk.target
+  table = tabulate!(S, x, length(elements))
+  if table === nothing
+    values = walk.values
+    for (t, i) in enumerate(elements)
+      values[t] = product(S, i, x)
+    end
+    return split!(walk, depth, P, elements, values)
+  end
+  # <p, -v> = -<p, v>
+  positive = x <= number_of_vectors(S)
+  rows = positive ? (1:length(table.sets)) : (length(table.sets):-1:1)
+  for r in rows
+    set = table.sets[r]
+    before = length(P.elements)
+    @inbounds for i in elements
+      has(set, i) && push!(P.elements, i)
+    end
+    length(P.elements) == before && continue
+    push!(P.starts, length(P.elements) + 1)
+    observe!(walk, depth, positive ? table.values[r] : -table.values[r]) ||
+      return false
+    observe!(walk, depth, length(P.elements) - before) || return false
+  end
+  return true
+end
+
+# The index of the first point which is alone in its cell of `P` and enlarges
+# the span of the node, or 0. The span is enlarged by it.
+function next_fixed_point!(node::Node, S::ShortVectors, P::Partition)
+  nv = number_of_vectors(S)
+  for c in 1:number_of_cells(P)
+    cell_size(P, c) == 1 || continue
+    i = first(cell(P, c))
+    j = i <= nv ? i : i - nv
+    has(node.dependent, j) && continue
+    enlarge!(node.span, view(S.vectors, :, j)) && return i
+    toggle!(node.dependent, j)
+  end
+  return 0
+end
+
+# Set `out` to the partition `P` with every cell split by the scalar
+# products of its points with the point with index `x`.
+function split_all!(walk::Walk, depth::Int, out::Partition, P::Partition,
+                    x::Int)
+  empty!(out)
+  # All these scalar products are about to be needed.
+  tabulate!(walk.target, x, length(P.elements) - number_of_cells(P))
+  for c in 1:number_of_cells(P)
+    if cell_size(P, c) == 1
+      push!(out, cell(P, c))
+    else
+      split_by_products!(walk, depth, out, cell(P, c), x) || return false
+    end
+  end
+  empty!(P)
+  return true
+end
+
+# Step 1 of `advance!`. Returns the partition, or `nothing` if the node is
+# abandoned.
+function split_cells!(walk::Walk, depth::Int, x::Int)
+  S = walk.target
+  node = walk.path[depth + 1]
+  P, spare = empty!(walk.scratch), empty!(walk.spare)
+  empty!(node.basis)
+  empty!(node.span.rows)
+  empty!(node.span.pivots)
+  fill!(node.dependent, 0)
+  if depth == 0
+    for (c, colour) in enumerate(S.palette)
+      push!(P, findall(==(c), S.colours))
+      observe!(walk, 0, colour[1]) && observe!(walk, 0, colour[2]) &&
+        observe!(walk, 0, colour[3] % Int) &&
+        observe!(walk, 0, cell_size(P, c)) || return nothing
+    end
+  else
+    walk.sequence[depth] = x
+    xi = index(S, x)
+    old = walk.path[depth].partition
+    for c in 1:number_of_cells(old)
+      if c == walk.path[depth].branch
+        push!(spare, xi)
+        cell_size(old, c) > 1 && push!(spare, filter(!=(xi), cell(old, c)))
+      else
+        push!(spare, cell(old, c))
+      end
+    end
+    split_all!(walk, depth, P, spare, xi) || return nothing
+    walk.planned && return P
+    parent = walk.path[depth]
+    append!(node.basis, parent.basis)
+    append!(node.span.rows, parent.span.rows)
+    append!(node.span.pivots, parent.span.pivots)
+    copyto!(node.dependent, parent.dependent)
+    enlarge!(node.span, view(S.vectors, :, abs(x))) && push!(node.basis, x)
+  end
+  # Points which are alone in their cell are fixed. Use them like x, unless
+  # the walk is planned: there this costs more than it saves. A fixed point
+  # in the span of those used before splits no cell.
+  while !walk.planned && length(node.span.pivots) < dim(S)
+    i = next_fixed_point!(node, S, P)
+    i == 0 && break
+    push!(node.basis, point(S, i))
+    # If every point is alone in its cell, there is nothing to split.
+    length(P.elements) > number_of_cells(P) || continue
+    split_all!(walk, depth, spare, P, i) || return nothing
+    P, spare = spare, P
+  end
+  walk.scratch, walk.spare = P, spare
+  return P
+end
+
+# Counting scalar products is only done for cells of at most this size.
+const COUNT_LIMIT = 512
+
+# Go to the node (x_1, ..., x_depth), where x_depth is the point `x` and the
+# walk is at (x_1, ..., x_{depth-1}); for `depth == 0` go to the root.
+# Returns `false` if the node is abandoned because its trace differs from
+# that of the reference.
+#
+# The partition of the new node is computed from that of the old one:
+#
+#   1. The point x becomes a cell of its own. Every other cell is split by
+#      the scalar products <p, x> of its points p. At the root the cells
+#      are the sets of points of the same colour. If the walk is not
+#      planned, the same is done with the points which are alone in their
+#      cell, as long as they are linearly independent of those used before:
+#      such points are fixed by every automorphism fixing x_1, ..., x_depth.
+#   2. One cell C is split further: by an invariant of its points p which
+#      combines the numbers of points q of C with <q, p> = c, for all c. An
+#      isometry mapping this node to another one maps C to the corresponding
+#      cell, so it preserves this invariant.
+#   3. The scalar products of the sums of the cells are reported, see
+#      `sums_match!`.
+#   4. Cells which are not needed are dropped.
+#
+# Then the cell to branch on is determined. If the walk is not planned, C
+# and the cell to branch on are the first among the smallest cells with more
+# than one point. The node is a leaf if the points which have been used to
+# split cells span the space; otherwise only the cells which are needed to
+# span it are kept, see `keep_spanning!`. These rules only depend on the
+# node up to isometry.
+#
+# A planned walk follows a reference path b_1, ..., b_m: C and the cell to
+# branch on are the cells which contain b_{depth+1} at the node (b_1, ...,
+# b_depth), and the cells containing none of the later b_k are dropped
+# there, since the search never branches on them. The points of a cell are
+# the possible images of the b_k in it. Dropping cells weakens the trace,
+# but it makes the cost of a node proportional to the cells which matter.
+function advance!(walk::Walk, depth::Int, x::Int = 0)
+  walk.visited += 1
+  walk.position = 0
+  S, reference = walk.target, walk.reference
+  while length(walk.path) <= depth
+    push!(walk.path, Node(2 * number_of_vectors(walk.target)))
+    push!(walk.sequence, 0)
+  end
+  node = walk.path[depth + 1]
+  recording = walk.mode == :record
+  if walk.mode != :follow
+    while length(reference.traces) <= depth
+      push!(reference.traces, Int[])
+      push!(reference.refined, 0)
+      push!(reference.kept, Int[])
+      push!(reference.branch, 0)
+    end
+    # A new trace starts here, unless it is compared with the reference.
+    (recording || walk.improved < depth) && empty!(reference.traces[depth + 1])
+  end
+
+  # Step 1
+  P = split_cells!(walk, depth, x)
+  P === nothing && return false
+
+  # Step 2
+  next = 0
+  if !walk.planned
+    refined = smallest_cell(P)
+  elseif recording
+    # The next point of the reference path is, among the later ones, the
+    # first in a smallest cell, which keeps the branching small; unless the
+    # order of the path is prescribed.
+    later = view(reference.sequence, (depth + 1):length(reference.sequence))
+    if !isempty(later)
+      if !reference.ordered
+        cells = Int[find_cell(P, index(S, b)) for b in later]
+        k = argmin(Int[cell_size(P, c) for c in cells])
+        later[1], later[k] = later[k], later[1]
+      end
+      next = index(S, later[1])
+    end
+    refined = next == 0 ? 0 : find_cell(P, next)
+  else
+    refined = reference.refined[depth + 1]
+  end
+  if refined != 0 && !(1 < cell_size(P, refined) <= COUNT_LIMIT)
+    refined = 0
+  end
+  walk.planned && recording && (reference.refined[depth + 1] = refined)
+  Q = empty!(node.partition)
+  for c in 1:number_of_cells(P)
+    elements = cell(P, c)
+    if c == refined
+      invariants, members = walk.invariants, walk.members
+      foreach(i -> toggle!(members, i), elements)
+      for (t, i) in enumerate(elements)
+        invariants[t] = count_invariant(S, elements, members, i)
+      end
+      foreach(i -> toggle!(members, i), elements)
+      split!(walk, depth, Q, elements, invariants) || return false
+    else
+      push!(Q, elements)
+    end
+  end
+
+  # Step 3
+  sums_match!(walk, depth, Q) || return false
+  finish_trace!(walk, depth) || return false
+
+  # Step 4 and the cell to branch on
+  if !walk.planned
+    # The points of `node.basis` determine every automorphism fixing x_1,
+    # ..., x_depth, so if they span the space the node is a leaf.
+    if length(node.span.pivots) == dim(S)
+      node.branch = 0
+    else
+      keep_spanning!(node, S, Q)
+      node.branch = smallest_cell(Q)
+    end
+    return true
+  end
+  if recording
+    kept = reference.kept[depth + 1] =
+      Int[c for c in 1:number_of_cells(Q)
+          if any(b -> index(S, b) in cell(Q, c), later)]
+  else
+    kept = reference.kept[depth + 1]
+  end
+  keep!(Q, kept)
+  if recording
+    reference.branch[depth + 1] = next == 0 ? 0 : find_cell(Q, next)
+  end
+  node.branch = reference.branch[depth + 1]
+  return true
+end
+
+# Report the scalar products of the sums of the cells of `Q`.
+#
+# An isometry mapping one node to another maps the cells of the first onto
+# the cells of the second, hence their sums onto each other, and it preserves
+# the scalar products of the sums. Unlike the sizes of the cells this takes
+# the scalar products between the points of different cells into account.
+# These are the vector sums of [PS97, Section 4], taken over the cells.
+# Instead of all scalar products of two sums, those with a fixed combination
+# of all sums are reported.
+function sums_match!(walk::Walk, depth::Int, Q::Partition)
+  S = walk.target
+  n = dim(S)
+  cells = number_of_cells(Q)
+  size(walk.sums, 2) < cells && (walk.sums = zeros(Int, n, 2 * cells))
+  sums, total = walk.sums, walk.total
+  fill!(total, 0)
+  for c in 1:cells
+    sum = cell_sum!(view(sums, :, c), S, cell(Q, c))
+    total .+= mix(c) .* sum
+  end
+  weights = S.form * total
+  for c in 1:cells
+    s = 0
+    @inbounds @simd for l in 1:n
+      s += sums[l, c] * weights[l]
+    end
+    observe!(walk, depth, s) || return false
+  end
+  return true
+end
+
+# Add up the coordinate vectors of the points with the given indices.
+function cell_sum!(sum::AbstractVector{Int}, S::ShortVectors, elements)
+  n, nv = size(S.vectors)
+  fill!(sum, 0)
+  @inbounds for i in elements
+    if i <= nv
+      @simd for l in 1:n
+        sum[l] += S.vectors[l, i]
+      end
+    else
+      @simd for l in 1:n
+        sum[l] -= S.vectors[l, i - nv]
+      end
+    end
+  end
+  return sum
+end
+
+# In a walk which is not planned, about this many points are kept at a node.
+const KEEP_LIMIT = 2^12
+
+# Drop cells of `Q` which are not needed: the cells with more than one point
+# are taken in the order of their sizes, until their points and those of
+# `node.basis` span the space and there are at least `KEEP_LIMIT` of them.
+# The points which are alone in their cell are fixed and have been used.
+#
+# The cells which are kept are enough to tell the nodes apart which matter,
+# and the cost of a node is proportional to them. Keeping few cells weakens
+# the trace, however: more children of a node look alike.
+function keep_spanning!(node::Node, S::ShortVectors, Q::Partition)
+  n, nv = size(S.vectors)
+  span = Span(copy(node.span.rows), copy(node.span.pivots))
+  kept = Int[]
+  points = 0
+  for c in sortperm(Int[cell_size(Q, c) for c in 1:number_of_cells(Q)])
+    cell_size(Q, c) == 1 && continue
+    length(span.pivots) == n && points >= KEEP_LIMIT && break
+    push!(kept, c)
+    points += cell_size(Q, c)
+    for i in cell(Q, c)
+      length(span.pivots) == n && break
+      enlarge!(span, view(S.vectors, :, i <= nv ? i : i - nv))
+    end
+  end
+  return keep!(Q, sort!(kept))
+end
+
+# Drop all cells of `P` except those with the given indices.
+function keep!(P::Partition, kept::Vector{Int})
+  last = 0
+  for (new, c) in enumerate(kept)
+    for i in cell(P, c)
+      P.elements[last += 1] = i
+    end
+    P.starts[new + 1] = last + 1
+  end
+  resize!(P.elements, last)
+  resize!(P.starts, length(kept) + 1)
+  return P
+end
+
+# Points which generate the lattice: the standard basis vectors which are
+# among the vectors, and, if some are missing, further vectors in the given
+# order until the lattice is generated.
+function generators(S::ShortVectors)
+  n, nv = size(S.vectors)
+  points = Int[]
+  for j in 1:nv
+    v = view(S.vectors, :, j)
+    if count(!iszero, v) == 1 && abs(sum(v)) == 1
+      push!(points, sum(v) * j)
+    end
+  end
+  if length(points) < n
+    L = Generated(n)
+    enlarge!(L, S.vectors, abs.(points))
+    for j in 1:nv
+      is_everything(L) && break
+      enlarge!(L, S.vectors, j:j) && push!(points, j)
+    end
+    is_everything(L) || error("the vectors do not generate the lattice")
+  end
+  return points
+end
+
+# A reference path through the given points, which have to generate the
+# lattice. Their order is chosen along the way, see `advance!`, unless
+# `ordered` is set.
+#
+# Any generators would do. By default the standard basis vectors are used if
+# they are short enough, see `generators`. In particular the path is not
+# determined by the lattice alone; see `canonical_form` for a rule which is.
+Reference(S::ShortVectors) = record(S).reference
+
+# The walk along a new reference path, see `Reference`. It is at the end of
+# the path.
+function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
+                ordered::Bool = false)
+  n = dim(S)
+  reference = Reference(S, copy(sequence), Vector{Int}[], Int[],
+                        Vector{Int}[], Int[], zero_matrix(ZZ, 0, n),
+                        zero_matrix(ZZ, n, 0), Int[], true, ordered)
+  walk = Walk(S, reference, :record, true)
+  advance!(walk, 0)
+  for d in 1:length(sequence)
+    advance!(walk, d, reference.sequence[d])
+  end
+
+  m = length(reference.sequence)
+  B = zero_matrix(ZZ, m, n)
+  for k in 1:m
+    B[k, :] = coordinates(S, reference.sequence[k])
+  end
+  reference.matrix = B
+  # The Hermite normal form of B is the identity matrix on top of zero rows.
+  reference.solver = sub(hnf_with_transform(B)[2], 1:n, 1:m)
+  if any(!iszero, S.labels) || any(!iszero, S.unsigned_labels)
+    reference.basis = basis_points(S)
+  end
+  reference.negation = all(p -> label(S, p) == label(S, -p), reference.basis)
+  return walk
+end
+
+# The indices of the points which are individualized at the children of the
+# node (x_1, ..., x_depth).
+function children(walk::Walk, depth::Int)
+  node = walk.path[depth + 1]
+  return cell(node.partition, node.branch)
+end
+
+# Extend a partial image to a complete one.
+#
+# The walk follows a reference path b_1, ..., b_m and is at a node (x_1, ...,
+# x_depth) with the trace of (b_1, ..., b_depth). Returns `true` if it ends at
+# a node (x_1, ..., x_m) such that b_k -> x_k describes an isometry, and
+# `false` if there is none below the node.
+function extend!(walk::Walk, depth::Int)
+  depth == length(walk.reference.sequence) && return is_isometry(walk)
+  S = walk.target
+  for i in children(walk, depth)
+    advance!(walk, depth + 1, point(S, i)) && extend!(walk, depth + 1) &&
+      return true
+  end
+  return false
+end
+
+# Whether b_k -> x_k describes an isometry, in exact arithmetic, where the
+# x_k are the points of the walk and the b_k those of its reference. If so,
+# it is stored in the walk. This is the only place where the result of the
+# search is trusted, see `search_form`.
+#
+# Let B and X be the matrices whose rows are the b_k and the x_k. The only
+# candidate is the matrix M with B * M = X, whose row i is the image of e_i;
+# it is integral since `solver * B == 1`. It has to satisfy this equation and
+# equation (1) for all forms, generalised to an isometry from the source to
+# the target, and it has to map every standard basis vector to a vector with
+# the same label.
+function is_isometry(walk::Walk)
+  reference = walk.reference
+  source, target = reference.source, walk.target
+  n = dim(target)
+  m = length(reference.sequence)
+  X = zero_matrix(ZZ, m, n)
+  for k in 1:m
+    X[k, :] = coordinates(target, walk.sequence[k])
+  end
+  M = reference.solver * X
+  reference.matrix * M == X || return false
+  Mt = transpose(M)
+  P = walk.product
+  all(mul!(P, mul!(P, M, T), Mt) == F for (F, T) in
+      zip(source.exact_forms, target.exact_forms)) || return false
+  for (i, e) in enumerate(reference.basis)
+    all(x -> fits(Int, x), view(M, i:i, :)) || return false
+    p = find_point(target, Int[Int(M[i, j]) for j in 1:n])
+    (p != 0 && label(target, p) == label(source, e)) || return false
+  end
+  walk.isometry = M
+  return true
+end
+
+################################################################################
+#
+#  Interface
+#
+################################################################################
+
+# The set of short vectors for the input format described in
+# `automorphism_group`.
+function short_vectors(forms::Vector{ZZMatrix}, vector_set, labels,
+                       unsigned_labels; kwargs...)
+  list = Vector{Int}[v for (v, _) in vector_set]
+  nv = length(list)
+  return ShortVectors(forms, list;
+                      labels = isempty(labels) ? zeros(Int, nv) : labels,
+                      unsigned_labels = isempty(unsigned_labels) ?
+                                        zeros(UInt, nv) : unsigned_labels,
+                      kwargs...)
+end
+
+@doc raw"""
+    isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
+             [vector_set1, vector_set2, labels1, labels2]) -> Bool, ZZMatrix
+
+Given two lists of square integer matrices as in `automorphism_group`, decide
+whether there is an integer matrix `g` with `g*forms2[i]*transpose(g) ==
+forms1[i]` for all `i`, and return such a matrix if it exists.
+
+If sets of vectors with labels are given, then `g` is moreover required to
+map every standard basis vector to a vector in `vector_set2` with the same
+label. The second set must contain every such image.
+"""
+function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
+                  vector_set1 = (), vector_set2 = (), labels1 = Int[],
+                  labels2 = Int[]; kwargs...)
+  n = nrows(forms1[1])
+  no = false, zero_matrix(ZZ, 0, 0)
+  if n != nrows(forms2[1]) || length(forms1) != length(forms2) ||
+     is_symmetric.(forms1) != is_symmetric.(forms2)
+    return no
+  end
+  n == 0 && return true, zero_matrix(ZZ, 0, 0)
+  # The search finds a matrix g of rank n with g*forms2[i]*transpose(g) ==
+  # forms1[i]; it is invertible over the integers if and only if the
+  # determinants agree.
+  det(forms1[1]) == det(forms2[1]) || return no
+  if isempty(vector_set1)
+    # An isometry maps the vectors of the first lattice of norm at most
+    # `bound` onto those of the second.
+    list, bound = generating_vectors(forms1[1])
+    S1 = ShortVectors(forms1, list; kwargs...)
+    S2 = ShortVectors(forms2, enumerate_vectors(forms2[1], bound);
+                      source = S1, kwargs...)
+  else
+    S1 = short_vectors(forms1, vector_set1, labels1, UInt[]; kwargs...)
+    S2 = short_vectors(forms2, vector_set2, labels2, UInt[];
+                       source = S1, kwargs...)
+  end
+  walk = Walk(S2, Reference(S1), :follow, true)
+  if advance!(walk, 0) && extend!(walk, 0)
+    return true, walk.isometry
+  end
+  return no
+end
+
 end # module LatticePartitionBacktrack
