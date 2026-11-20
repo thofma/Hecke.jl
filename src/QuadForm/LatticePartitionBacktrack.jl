@@ -1810,6 +1810,250 @@ function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
 end
 
 
+################################################################################
+#
+#  Canonical forms
+#
+################################################################################
+
+# State of the search for the smallest leaf, see `canonical_form`.
+#
+#   `walk`           the walk; its reference is the smallest path found so
+#                    far, with the points individualized at its leaf as
+#                    `sequence`
+#   `key`, `basis`   the key and the basis of that leaf, see
+#                    `canonical_basis`
+#   `automorphisms`  the automorphisms found so far
+#   `first`          the points individualized at the first leaf
+#   `base`           the base of the stabilizer chain along the path to the
+#                    first leaf, see `generating_base`
+#   `levels`, `orbit_lengths`
+#                    the stabilizer chain along `base`, see
+#                    `stabilizer_chain`; empty if it has not been computed
+mutable struct Minimization
+  walk::Walk
+  key::Vector{ZZRingElem}
+  basis::ZZMatrix
+  automorphisms::Vector{Generator}
+  first::Vector{Int}
+  base::Vector{Int}
+  levels::Vector{Vector{Generator}}
+  orbit_lengths::Vector{Int}
+end
+
+# For points which span the space: the basis of the lattice, as the rows of a
+# matrix U, for which the coordinate matrix H of the points is in column
+# Hermite normal form; and a key, consisting of H, the matrices of the forms
+# with respect to this basis, and the labels of the points.
+#
+# Two sequences of points have the same key if and only if an automorphism
+# respecting their labels maps one to the other: it maps the basis of the one
+# to that of the other.
+function canonical_basis(S::ShortVectors, points::Vector{Int})
+  Q = zero_matrix(ZZ, length(points), dim(S))
+  for (k, p) in enumerate(points)
+    Q[k, :] = coordinates(S, p)
+  end
+  # T * transpose(Q) is in row Hermite normal form.
+  T = hnf_with_transform(transpose(Q))[2]
+  U = inv(transpose(T))
+  key = ZZRingElem[]
+  append!(key, Q * transpose(T))
+  for F in S.exact_forms
+    append!(key, U * F * transpose(U))
+  end
+  for p in points
+    push!(key, ZZ(label(S, p)[1]), ZZ(label(S, p)[2]))
+  end
+  return U, key
+end
+
+# Whether the automorphism with matrix `M` maps the set of points to itself
+# and respects the colours.
+function respects_colours(S::ShortVectors, M::Matrix{Int})
+  nv = number_of_vectors(S)
+  for j in 1:nv
+    q = find_point(S, transpose(M) * view(S.vectors, :, j))
+    q == 0 && return false
+    S.colours[index(S, q)] == S.colours[j] || return false
+    S.colours[index(S, -q)] == S.colours[nv + j] || return false
+  end
+  return true
+end
+
+# The walk is at a leaf (x_1, ..., x_depth) whose traces are those of the
+# reference. Compare it with the leaf of the reference.
+#
+# If it has the same key, the map from one leaf to the other is an
+# automorphism g. Then the walk can go back to the last node which the two
+# leaves have in common: g maps the subtree which contains the leaf of the
+# reference, and which has been searched, onto the one being searched.
+# Returns the depth of that node, and otherwise `typemax(Int)`.
+function compare_leaf!(state::Minimization, depth::Int)
+  walk = state.walk
+  S, best = walk.target, walk.reference
+  node = walk.path[depth + 1]
+  sequence = walk.sequence[1:depth]
+  U, key = canonical_basis(S, node.basis)
+  if isempty(state.base)
+    state.first = copy(sequence)
+    state.base = generating_base(walk, depth)
+  end
+  # While the walk is on an improved path, the reference has no leaf.
+  if walk.improved != typemax(Int) || key < state.key
+    best.sequence = sequence
+    state.key = key
+    state.basis = U
+    walk.improved = typemax(Int)
+    return typemax(Int)
+  end
+  key == state.key || return typemax(Int)
+  M = Matrix{Int}(inv(state.basis) * U)
+  (S.complete || respects_colours(S, M)) || return typemax(Int)
+  push!(state.automorphisms, Generator(M))
+  return something(findfirst(d -> sequence[d] != best.sequence[d],
+                             1:min(depth, length(best.sequence))), 1) - 1
+end
+
+# A base for the stabilizer chain along the path to the leaf (x_1, ...,
+# x_depth), where the walk is: these points, then the other points of the
+# basis of the leaf, then points which make the sequence generate the
+# lattice. For the latter, points which are alone in their cell are
+# preferred: they are fixed, so their levels of the chain are trivial.
+function generating_base(walk::Walk, depth::Int)
+  S = walk.target
+  node = walk.path[depth + 1]
+  base = walk.sequence[1:depth]
+  append!(base, setdiff(node.basis, base))
+  L = Generated(dim(S))
+  enlarge!(L, S.vectors, abs.(base))
+  H = Matrix{Int}(L.basis)
+  P = node.partition
+  fixed = Int[point(S, first(cell(P, c))) for c in 1:number_of_cells(P)
+              if cell_size(P, c) == 1]
+  for p in vcat(fixed, generators(S))
+    is_everything(L) && break
+    is_generated(H, view(S.vectors, :, abs(p))) && continue
+    push!(base, p)
+    enlarge!(L, S.vectors, abs(p):abs(p))
+    H = Matrix{Int}(L.basis)
+  end
+  return base
+end
+
+# Search the subtree below the node (x_1, ..., x_depth), where the walk is,
+# for leaves which are smaller than that of the reference.
+#
+# A child is skipped if a known automorphism fixing x_1, ..., x_depth maps a
+# child which has been searched to it: the automorphism maps the subtree of
+# the one onto the subtree of the other. Such automorphisms are `inherited`
+# from the parent, taken from the stabilizer chain, see `on_first_path`, or
+# found at leaves; of the latter, the first `seen` have been looked at.
+# Returns `typemax(Int)`, or the depth of the node to go back to, see
+# `compare_leaf!`.
+function minimize!(state::Minimization, depth::Int,
+                   inherited::Vector{Generator} = Generator[],
+                   seen::Int = 0)
+  walk = state.walk
+  S = walk.target
+  walk.path[depth + 1].branch == 0 && return compare_leaf!(state, depth)
+  searched = Orbit(S)
+  # automorphisms fixing x_1, ..., x_depth
+  fixing = copy(inherited)
+  for (number, i) in enumerate(children(walk, depth))
+    x = point(S, i)
+    if number == 2 && on_first_path(state, depth)
+      # All automorphisms fixing x_1, ..., x_depth are known.
+      state.orbit_lengths[depth + 1] == length(children(walk, depth)) &&
+        return typemax(Int)
+      # They contain those known so far.
+      empty!(fixing)
+      append!(fixing, reduce(vcat, state.levels[(depth + 1):end]))
+    end
+    while seen < length(state.automorphisms)
+      g = state.automorphisms[seen += 1]
+      if all(d -> apply(S, g, walk.sequence[d]) == walk.sequence[d], 1:depth)
+        push!(fixing, g)
+      end
+    end
+    close!(searched, S, fixing)
+    x in searched && continue
+    back = typemax(Int)
+    if advance!(walk, depth + 1, x)
+      # Those which fix x as well serve below, also off the first path.
+      below = filter(g -> apply(S, g, x) == x, fixing)
+      back = minimize!(state, depth + 1, below, seen)
+    end
+    back < depth && return back
+    push!(searched, x)
+  end
+  return typemax(Int)
+end
+
+# Whether the node (x_1, ..., x_depth), where the walk is, lies on the path to
+# the first leaf, strictly above it. If so, the stabilizer chain along that
+# path is there: it is computed when it is first asked for, after the walk
+# has come back from the first leaf. It gives all automorphisms fixing x_1,
+# ..., x_depth, so that below such a node only one child of each of their
+# orbits has to be searched; the walk need not find them leaf by leaf.
+#
+# This is only done if the set of short vectors is complete: then the group
+# of `stabilizer_chain` is the group of all automorphisms.
+function on_first_path(state::Minimization, depth::Int)
+  walk = state.walk
+  S = walk.target
+  S.complete || return false
+  if isempty(state.levels)
+    chain = stabilizer_chain(S, state.base)
+    state.levels = chain.levels
+    state.orbit_lengths = chain.orbit_lengths
+  end
+  return depth < length(state.first) &&
+         view(walk.sequence, 1:depth) == view(state.first, 1:depth)
+end
+
+@doc raw"""
+    canonical_form(forms::Vector{ZZMatrix}, [vector_set, labels,
+                   unsigned_labels]) -> Vector{ZZMatrix}, ZZMatrix
+
+Given square integer matrices `forms` as in `automorphism_group`, return
+matrices `canonical` and a unimodular matrix `T` with
+`T*forms[i]*transpose(T) == canonical[i]`, such that `canonical` only depends
+on the isometry class: two lists of forms have the same canonical forms if
+and only if `isometry` finds an isometry between them.
+
+If a set of vectors with labels is given as in `automorphism_group`, it has to
+generate the lattice, and the canonical forms depend on the lattice together
+with the labelled set. All its vectors are used.
+
+# Algorithm
+
+The search tree of `advance!` only depends on the isometry class if the walk
+is not planned. A leaf comes with a sequence of points which span the space.
+Among the leaves with the smallest traces, the one with the smallest key is
+chosen, see `canonical_basis`; any other choice with the same key differs by
+an automorphism. The rows of `T` are the basis for which the points of that
+leaf have a coordinate matrix in column Hermite normal form.
+"""
+function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
+                        labels = Int[], unsigned_labels = UInt[]; kwargs...)
+  n = nrows(forms[1])
+  n == 0 && return forms, identity_matrix(ZZ, 0)
+  S = isempty(vector_set) ? ShortVectors(forms; kwargs...) :
+        short_vectors(forms, vector_set, labels, unsigned_labels;
+                      everything = true, kwargs...)
+  best = Reference(S, Int[], Vector{Int}[], Int[], Vector{Int}[], Int[],
+                   zero_matrix(ZZ, 0, n), zero_matrix(ZZ, n, 0), Int[], true,
+                   true)
+  walk = Walk(S, best, :minimize, false)
+  advance!(walk, 0)
+  state = Minimization(walk, ZZRingElem[], zero_matrix(ZZ, n, n), Generator[],
+                       Int[], Int[], Vector{Generator}[], Int[])
+  minimize!(state, 0)
+  T = state.basis
+  return ZZMatrix[T * F * transpose(T) for F in forms], T
+end
+
 @doc raw"""
     automorphism_group(L::ZZLat) -> Vector{ZZMatrix}, ZZRingElem
 

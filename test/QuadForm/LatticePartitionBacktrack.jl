@@ -1,3 +1,5 @@
+import Random
+
 @testset "Lattice partition backtrack" begin
   PB = Hecke.LatticePartitionBacktrack
   A2 = ZZ[2 -1; -1 2]
@@ -194,4 +196,55 @@
   end
 
   @test_throws ArgumentError PB.automorphism_group(hyperbolic_plane_lattice())
+
+  # canonical forms: they do not depend on the basis, they are isometric to
+  # the given forms, and they tell lattices apart
+  rng = Random.MersenneTwister(1)
+  function another_basis(n)
+    U = identity_matrix(ZZ, n)
+    for _ in 1:(3 * n)
+      E = identity_matrix(ZZ, n)
+      i, j = rand(rng, 1:n), rand(rng, 1:n)
+      i != j && (E[i, j] = rand(rng, -2:2))
+      U = E * U
+    end
+    return U
+  end
+  D4D4 = block_diagonal_matrix([D4, D4])
+  for forms in [[A2], [D4], [E8], [D4D4], [X29], [A2, r * A2],
+                [ZZ[2 1 0; 1 4 1; 0 1 6]], [ZZ(2)^70 * A2]]
+    canonical, T = PB.canonical_form(forms)
+    @test abs(det(T)) == 1
+    @test [T * F * transpose(T) for F in forms] == canonical
+    W = another_basis(nrows(forms[1]))
+    @test PB.canonical_form([W * F * transpose(W) for F in forms])[1] ==
+          canonical
+  end
+  @test PB.canonical_form([E8])[1] != PB.canonical_form([D4D4])[1]
+  @test PB.canonical_form([A2, r * A2])[1] !=
+        PB.canonical_form([A2, transpose(r) * A2])[1]
+
+  # the Leech lattice: here the canonical form relies on the automorphism
+  # group, which is computed first
+  Leech = change_base_ring(ZZ, gram_matrix(leech_lattice()))
+  canonical, T = PB.canonical_form([Leech])
+  @test T * Leech * transpose(T) == canonical[1]
+  W = -identity_matrix(ZZ, 24)[24:-1:1, :]
+  @test PB.canonical_form([W * Leech * transpose(W)])[1] == canonical
+
+  # bases in which the vectors are enumerated up to different norms
+  for (G, T) in bases
+    @test PB.canonical_form([G])[1] ==
+          PB.canonical_form([T * G * transpose(T)])[1]
+  end
+
+  # canonical forms of a lattice with a labelled set of vectors: the labels
+  # single out a vector
+  canonical, T = PB.canonical_form([D4], [(v, 0) for v in V], labels1)
+  W = another_basis(4)
+  H = W * D4 * transpose(W)
+  V2 = PB.enumerate_vectors(H)
+  labels2 = Int[Int((w * transpose(matrix(ZZ, 1, 4, v) * W))[1, 1]) for v in V2]
+  @test PB.canonical_form([H], [(v, 0) for v in V2], labels2)[1] == canonical
+  @test T * D4 * transpose(T) == canonical[1]
 end
