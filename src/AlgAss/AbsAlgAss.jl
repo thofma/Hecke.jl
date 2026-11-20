@@ -546,7 +546,7 @@ function _gens(A::AbstractAssociativeAlgebra, ::Val{return_full_basis} = Val(fal
         ind = Tuple{Int, Int}[ (length(generators), power) ]
         push!(elts_in_gens, ind)
         cur_dim == d ? break : nothing
-        mul!(b, b, new_gen)
+        b = b * new_gen
         power += 1
         new_elt = _add_row_to_rref!(B, coefficients(b), pivot_rows, cur_dim + 1)
       end
