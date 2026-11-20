@@ -52,7 +52,9 @@ function __assert_has_automorphisms(
   use_multiset::Bool=true,
   do_lll::Bool=true,
   use_dual::Bool=false,
+  algorithm::Symbol=:partition_backtrack,
 )
+  @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -119,7 +121,8 @@ function __assert_has_automorphisms(
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(LGL, sv)
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
                                use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
-                               compress, use_target_enum, allow_short_vectors_direct)
+                               compress, use_target_enum, allow_short_vectors_direct,
+                               algorithm)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
@@ -184,6 +187,12 @@ function __assert_has_automorphisms(
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
     end
   end
+  if algorithm == :partition_backtrack
+    gens, order = LatticePartitionBacktrack.automorphism_group(
+                    res, vector_set, invariants[1], unsigned_invariants[1])
+    fl = true
+    @goto search_done
+  end
   faithful = true
   if compress && length(res) > 1 # nothing to compress if there is only a single
     res, vector_set = _compress_gram_matrices!(res, vector_set)
@@ -237,6 +246,7 @@ function __assert_has_automorphisms(
     init(C; depth, bacher_depth, is_lll_reduced_known=true)
     gens, order = auto(C)
   end
+  @label search_done
 
   if use_weyl
     reduced_gens = copy(gens)
@@ -621,7 +631,7 @@ end
 
 # documented in ../Lattices.jl
 
-function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
+function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, kwargs...)
   if L == M
     return true
   end
@@ -635,7 +645,7 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
   end
 
   if is_definite(L) && is_definite(M)
-    return is_isometric_with_isometry(L, M, depth = depth, bacher_depth = bacher_depth)[1]
+    return is_isometric_with_isometry(L, M; depth, bacher_depth, kwargs...)[1]
   end
 
   if rank(L) == 2
@@ -652,7 +662,7 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, kwargs...)
 
   # cornercase
   if rank(L) == 0
@@ -660,7 +670,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_
   end
 
   if is_definite(L) && is_definite(M)
-    return _is_isometric_with_isometry_definite(L, M; depth, bacher_depth)
+    return _is_isometric_with_isometry_definite(L, M; depth, bacher_depth, kwargs...)
   end
 
   error("Not implemented for indefinite lattices")
@@ -669,7 +679,9 @@ end
 # assumes rank >0, definite, no genus check
 _is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
 
-function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, use_norm_one=true)
+function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, use_norm_one=true,
+                                              algorithm::Symbol = :partition_backtrack)
+  @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
   if rank(L) != rank(M)
     return false, zero_matrix(QQ, 0, 0)
   end
@@ -729,7 +741,7 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
       if length(sv1)>0
         S1, T1, _, _ = _norm_one_sublattice_automorphism_group(_L1, sv1; doauto=false)
         S2, T2, _, _ = _norm_one_sublattice_automorphism_group(_L2, sv2; doauto=false)
-        b,T = is_isometric_with_isometry(T1,T2)
+        b,T = is_isometric_with_isometry(T1, T2; algorithm)
         !b && return false, zero_matrix(QQ,0,0)
         B1 = vcat(basis_matrix(S1),basis_matrix(T1))
         B2 = vcat(basis_matrix(S2),basis_matrix(T2))
@@ -746,15 +758,23 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     if !b
       return false, zero_matrix(QQ,0,0)
     end
+    if algorithm == :partition_backtrack
+      b, T = LatticePartitionBacktrack.isometry(grams1, grams2, V1, V2,
+                                                invariants1[1], invariants2[1])
+      @goto search_done
+    end
     fl, CLsmall, CMsmall = _try_iso_setup_small(grams1, grams2, depth = depth, bacher_depth = bacher_depth; vector_set1=V1, vector_set2=V2, invariants1, invariants2)
   end
-  if fl
+  if algorithm == :partition_backtrack
+    b, T = LatticePartitionBacktrack.isometry(G1, G2)
+  elseif fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(ZZ, _T)
   else
     CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll], depth = depth, bacher_depth = bacher_depth)
     b, T = isometry(CL, CM)
   end
+  @label search_done
 
   if b
     # undo LLL

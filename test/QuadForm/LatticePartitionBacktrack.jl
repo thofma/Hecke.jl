@@ -247,4 +247,24 @@ import Random
   labels2 = Int[Int((w * transpose(matrix(ZZ, 1, 4, v) * W))[1, 1]) for v in V2]
   @test PB.canonical_form([H], [(v, 0) for v in V2], labels2)[1] == canonical
   @test T * D4 * transpose(T) == canonical[1]
+
+  # the search can be chosen where Hecke computes automorphism groups and
+  # isometries of lattices; both searches agree
+  L = root_lattice(:E, 6)
+  M = lll(L)
+  K, a = quadratic_field(-3)
+  LK = lattice(hermitian_space(K, 2))
+  for algorithm in [:partition_backtrack, :plesken_souvignier]
+    @test automorphism_group_order(L; redo = true, algorithm) == 103680
+    fl, T = is_isometric_with_isometry(L, M; algorithm)
+    @test fl && T * gram_matrix(M) * transpose(T) == gram_matrix(L)
+    @test automorphism_group_order(LK; redo = true, algorithm) == 72
+    @test is_isometric_with_isometry(LK, LK; algorithm)[1]
+  end
+  @test_throws ArgumentError automorphism_group_generators(
+                               L; redo = true, algorithm = :none)
+  # Gram matrices with entries which do not fit into a machine integer
+  B = rescale(root_lattice(:A, 3), ZZ(2)^70)
+  @test automorphism_group_order(B) == 48
+  @test is_isometric_with_isometry(B, lll(B))[1]
 end
