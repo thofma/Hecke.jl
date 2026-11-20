@@ -1333,12 +1333,23 @@ end
 # x_depth) with the trace of (b_1, ..., b_depth). Returns `true` if it ends at
 # a node (x_1, ..., x_m) such that b_k -> x_k describes an isometry, and
 # `false` if there is none below the node.
-function extend!(walk::Walk, depth::Int)
+function extend!(walk::Walk, depth::Int, fixing = nothing)
   depth == length(walk.reference.sequence) && return is_isometry(walk)
   S = walk.target
+  failed = nothing
   for i in children(walk, depth)
-    advance!(walk, depth + 1, point(S, i)) && extend!(walk, depth + 1) &&
-      return true
+    x = point(S, i)
+    failed !== nothing && x in failed && continue
+    if advance!(walk, depth + 1, x)
+      below = fixing === nothing ? nothing :
+                filter(g -> apply(S, g, x) == x, fixing)
+      extend!(walk, depth + 1, below) && return true
+    end
+    if fixing !== nothing && !isempty(fixing)
+      failed === nothing && (failed = Orbit(S))
+      push!(failed, x)
+      close!(failed, S, fixing)
+    end
   end
   return false
 end
@@ -1380,6 +1391,327 @@ end
 
 ################################################################################
 #
+#  Generators and orbits
+#
+################################################################################
+
+# A known automorphism, as a matrix whose row i is the image of e_i. The
+# matrix of its inverse is computed when it is first asked for, see
+# `inverse`; until then it is empty.
+mutable struct Generator
+  matrix::Matrix{Int}
+  inverse::Matrix{Int}
+end
+
+Generator(M::Matrix{Int}) = Generator(M, zeros(Int, 0, 0))
+
+function inverse(g::Generator)
+  if isempty(g.inverse) && !isempty(g.matrix)
+    g.inverse = Matrix{Int}(inv(matrix(ZZ, g.matrix)))
+  end
+  return g.inverse
+end
+
+apply(S::ShortVectors, g::Generator, p::Int) = apply(S, g.matrix, p)
+
+# Whether `M * F * transpose(M) == F` for all forms F, in exact arithmetic.
+function preserves_forms(S::ShortVectors, M::Matrix{Int})
+  Z = matrix(ZZ, M)
+  return all(F -> Z * F * transpose(Z) == F, S.exact_forms)
+end
+
+# The image of the point `p` under the automorphism with matrix `M`.
+function apply(S::ShortVectors, M::Matrix{Int}, p::Int)
+  w = S.buffer                                            # v * M
+  @inbounds for i in 1:dim(S)
+    s = 0
+    @simd for k in 1:dim(S)
+      s += S.vectors[k, abs(p)] * M[k, i]
+    end
+    w[i] = s
+  end
+  q = find_point(S, w)
+  q == 0 && error("the set of vectors is not invariant under an " *
+                  "automorphism which was found")
+  return p < 0 ? -q : q
+end
+
+# An incrementally maintained orbit of points.
+#
+# A generator may be appended after an orbit has already been partially
+# closed. `cursor[i]` records how many orbit points have been acted on by the
+# i-th generator, so that `close!` can resume instead of starting again.
+#
+# `seen[j]` is a two-bit set: bit 0 records +j and bit 1 records -j. If
+# `closed_under_negation` is set, the orbit is that of a group containing -1:
+# only one of p, -p is stored in `points`, and both bits are marked together.
+#
+# The orbit remembers how it was built: `points[i]` is the image of
+# `points[parent[i]]` under the generator with index `via[i]`, and
+# `parent[i]` is 0 for a starting point. See `transversal`.
+mutable struct Orbit
+  points::Vector{Int}
+  seen::Vector{UInt8}
+  cursor::Vector{Int}
+  closed_under_negation::Bool
+  parent::Vector{Int}
+  via::Vector{Int}
+end
+
+# An empty union of orbits; `push!` adds starting points.
+Orbit(S::ShortVectors; closed_under_negation::Bool = false) =
+  Orbit(Int[], zeros(UInt8, number_of_vectors(S)), Int[],
+        closed_under_negation, Int[], Int[])
+
+Base.length(orbit::Orbit) =
+  orbit.closed_under_negation ? 2 * length(orbit.points) : length(orbit.points)
+
+Base.isempty(orbit::Orbit) = isempty(orbit.points)
+
+Base.in(p::Int, orbit::Orbit) =
+  orbit.seen[abs(p)] & (p < 0 ? 0x02 : 0x01) != 0
+
+function Base.push!(orbit::Orbit, p::Int, parent::Int = 0, via::Int = 0)
+  p in orbit && return orbit
+  orbit.seen[abs(p)] |= orbit.closed_under_negation ? 0x03 :
+                        (p < 0 ? 0x02 : 0x01)
+  push!(orbit.points, p)
+  push!(orbit.parent, parent)
+  push!(orbit.via, via)
+  return orbit
+end
+
+# Close `orbit` under `generators`. The list of generators may only grow
+# between calls. Closure stops early once the orbit has `target` points; the
+# cell bounds the size of an orbit, so nothing is lost. The last generators
+# of the list are applied first: these are the ones found most recently,
+# which move the starting point.
+function close!(orbit::Orbit, S::ShortVectors, generators::Vector{Generator};
+                target::Int = typemax(Int))
+  while length(orbit.cursor) < length(generators)
+    push!(orbit.cursor, 0)
+  end
+  while length(orbit) < target
+    i = findlast(<(length(orbit.points)), orbit.cursor)
+    i === nothing && break
+    from = orbit.cursor[i] += 1
+    push!(orbit, apply(S, generators[i], orbit.points[from]), from, i)
+  end
+  return orbit
+end
+
+# The indices of the generators whose product, from left to right, maps the
+# starting point of the orbit to its i-th point, or to the negative of that
+# point if the orbit is closed under negation.
+function transversal(orbit::Orbit, i::Int)
+  word = Int[]
+  while orbit.parent[i] != 0
+    push!(word, orbit.via[i])
+    i = orbit.parent[i]
+  end
+  return reverse!(word)
+end
+
+# After this many Schreier generators in a row which give nothing new,
+# `seed_stabilizer!` stops.
+const SCHREIER_FAILURES = 16
+
+# Seed the levels after `step` with automorphisms fixing base[1:step].
+#
+# `orbit` is the orbit of base[step] under the group H generated by
+# `stabilizer`, which fixes base[1:step-1]. If u_p denotes the element of H
+# with base[step] -> p from `transversal`, then for every point p of the
+# orbit and every generator g the Schreier generator
+#
+#                     u_p * g * inverse(u_q),    q = g(p),
+#
+# fixes base[step]; by Schreier's lemma these elements generate the
+# stabilizer of base[step] in H. Such an element belongs to the first level
+# l whose base point it moves. It is added to the generators of that level
+# if it enlarges the orbit of base[l] under the generators known for the
+# levels from l on.
+#
+# The later levels would find these automorphisms by searching. Knowing
+# them in advance saves these searches, and it makes the orbits which
+# classify the candidates larger. Not all Schreier generators are formed;
+# the levels are completed by the search in any case.
+function seed_stabilizer!(generators::Vector{Vector{Generator}},
+                          S::ShortVectors, base::Vector{Int}, step::Int,
+                          orbit::Orbit, stabilizer::Vector{Generator})
+  m = length(base)
+  key(p) = orbit.closed_under_negation ? abs(p) : p
+  position = Dict(key(p) => i for (i, p) in enumerate(orbit.points))
+  known = Dict{Int, Orbit}()            # orbits of base[l] at later levels l
+  failures = 0
+  for i in 1:length(orbit.points), (k, g) in enumerate(stabilizer)
+    failures < SCHREIER_FAILURES || return
+    j = position[key(apply(S, g, orbit.points[i]))]
+    orbit.parent[j] == i && orbit.via[j] == k && continue
+    first, last = push!(transversal(orbit, i), k), transversal(orbit, j)
+    # the image of a point under the Schreier generator s, up to sign
+    function image(p::Int)
+      for a in first
+        p = apply(S, stabilizer[a].matrix, p)
+      end
+      for a in Iterators.reverse(last)
+        p = apply(S, inverse(stabilizer[a]), p)
+      end
+      return p
+    end
+    # If the orbit is closed under negation, s may map base[step] to its
+    # negative; then -s fixes it.
+    sign = image(base[step]) == base[step] ? 1 : -1
+    l = findfirst(l -> sign * image(base[l]) != base[l], (step + 1):m)
+    if l === nothing
+      failures += 1
+      continue
+    end
+    l += step
+    deeper = get!(known, l) do
+      close!(push!(Orbit(S), base[l]), S, reduce(vcat, generators[l:m]))
+    end
+    if sign * image(base[l]) in deeper
+      failures += 1
+    else
+      one = stabilizer[1].matrix^0
+      s = prod(stabilizer[a].matrix for a in first) *
+          prod(inverse(stabilizer[a]) for a in Iterators.reverse(last);
+               init = one)
+      back = prod(stabilizer[a].matrix for a in last; init = one) *
+             prod(inverse(stabilizer[a]) for a in Iterators.reverse(first))
+      preserves_forms(S, s) || error("Schreier generator is not exact")
+      push!(generators[l], Generator(sign * s, sign * back))
+      filter!(entry -> entry.first > l, known)
+      failures = 0
+    end
+  end
+  return
+end
+
+################################################################################
+#
+#  Stabilizer chain
+#
+################################################################################
+
+@doc raw"""
+    stabilizer_chain(S::ShortVectors, [base::Vector{Int}])
+
+Compute the group of all matrices `M` which preserve all forms of `S`, that
+is, `M*F*transpose(M) == F`, and which map every basis vector to a point of
+`S` of the same colour, by partition backtracking. Return a named tuple with
+
+- `generators`: matrices generating the group;
+- `order`: the order of the group;
+- `orbit_lengths`: the factors of the orbit-stabilizer product for `order`;
+- `nodes`: the number of search nodes visited;
+- `levels`: `levels[i]` are the generators which fix the first i - 1 points of
+  the base but not the i-th; those in `levels[i:end]` generate the stabilizer
+  of the first i - 1 points.
+
+The base is a sequence of points which generate the lattice. If it is given,
+its order is kept.
+"""
+function stabilizer_chain(S::ShortVectors, base = nothing)
+  # Phase 1: the reference path, whose points are the base. The walk which
+  # recorded it has the partitions of all nodes of the path.
+  identity = base === nothing ? record(S) : record(S, base; ordered = true)
+  reference = identity.reference
+  walk = Walk(S, reference, :follow, true)
+  walk.visited = identity.visited
+  n = dim(S)
+
+  # At level `step` the entries of the base before `step` are fixed and
+  # `base[step]` is the point whose orbit is being completed.
+  base = reference.sequence
+  m = length(base)
+
+  # `generators[i]` holds the automorphisms first found at level i. Each of
+  # them fixes base[1:i-1], so the stabilizer of base[1:i-1] is generated by
+  # the union of generators[i:m].
+  generators = [Generator[] for _ in 1:m]
+  orbit_lengths = ones(Int, m)
+
+  # Phase 2: build the stabilizer chain from left to right.
+  for step in 1:m
+    # Put the walk at the node where base[1:step-1] is mapped to itself. The
+    # cell it branches on is the set of possible images of base[step].
+    resize!(walk.path, step)
+    resize!(walk.sequence, step)
+    walk.path[step] = identity.path[step]
+    step > 1 && (walk.sequence[step - 1] = base[step - 1])
+    candidates = Int[point(S, i) for i in children(walk, step - 1)]
+
+    # A cell of size one: the earlier images determine this one.
+    length(candidates) == 1 && continue
+
+    stabilizer = reduce(vcat, generators[step:m])
+
+    # Images already reached by the known subgroup need not be searched. If
+    # -1 is an automorphism, then at the first level p and -p lie in the same
+    # orbit even though -1 is added to the generators only at the end.
+    negation = step == 1 && reference.negation
+    orbit = push!(Orbit(S; closed_under_negation = negation), base[step])
+    close!(orbit, S, stabilizer; target = length(candidates))
+
+    # Points proven not to be an image of base[step]. This is a union of
+    # orbits of the known subgroup: if no automorphism fixing base[1:step-1]
+    # maps base[step] to p, then the same holds for every point in the orbit
+    # of p.
+    impossible = Orbit(S; closed_under_negation = negation)
+
+    remaining = filter(p -> !(p in orbit), candidates)
+    while !isempty(remaining)
+      # One automorphism base[step] -> p is enough: if it exists it is a new
+      # generator, if not the whole orbit of p is impossible.
+      p = first(remaining)
+      if advance!(walk, step, p) &&
+         extend!(walk, step, filter(g -> apply(S, g, p) == p, stabilizer))
+        g = Generator(Matrix{Int}(walk.isometry))
+        push!(generators[step], g)
+        push!(stabilizer, g)
+      else
+        push!(impossible, p)
+      end
+      # A new generator can merge orbits of either kind, so close both.
+      close!(orbit, S, stabilizer; target = length(candidates))
+      close!(impossible, S, stabilizer)
+      filter!(q -> !(q in orbit) && !(q in impossible), remaining)
+    end
+    orbit_lengths[step] = length(orbit)
+    if length(orbit) > 1
+      seed_stabilizer!(generators, S, base, step, orbit, stabilizer)
+    end
+
+    @vprintln :Lattice 2 "partition backtrack step $step: orbit length " *
+      "$(orbit_lengths[step]), generators $(length(generators[step])), " *
+      "nodes $(walk.visited)"
+  end
+
+  # Phase 3: finish and certify the chain.
+  #
+  # Negation was treated implicitly in the first orbit, so it has to be among
+  # the generators for the product of orbit lengths to be the group order.
+  if n > 0 && reference.negation
+    push!(generators[1], Generator(-Matrix{Int}(identity_matrix(ZZ, n))))
+  end
+
+  # Generators found at level i must fix all earlier base points. Together
+  # with the exact check of every matrix this makes equation (3) auditable.
+  for i in 1:m, g in generators[i], j in 1:(i - 1)
+    apply(S, g, base[j]) == base[j] || error("broken stabilizer chain")
+  end
+
+  return (generators = Matrix{Int}[g.matrix for level in generators
+                                   for g in level],
+          order = prod(ZZRingElem.(orbit_lengths); init = one(ZZRingElem)),
+          orbit_lengths = orbit_lengths,
+          nodes = walk.visited,
+          levels = generators)
+end
+
+################################################################################
+#
 #  Interface
 #
 ################################################################################
@@ -1395,6 +1727,41 @@ function short_vectors(forms::Vector{ZZMatrix}, vector_set, labels,
                       unsigned_labels = isempty(unsigned_labels) ?
                                         zeros(UInt, nv) : unsigned_labels,
                       kwargs...)
+end
+
+@doc raw"""
+    automorphism_group(forms::Vector{ZZMatrix}, [vector_set, labels,
+                       unsigned_labels]) -> Vector{ZZMatrix}, ZZRingElem
+
+Given square integer matrices `forms`, the first of which is symmetric and
+positive definite, return generators and the order of the group of all
+integer matrices `g` with `g*F*transpose(g) == F` for all `F` in `forms`.
+For good performance the first form should be LLL reduced.
+
+The group acts on the vectors up to the smallest norm, with respect to the
+first form, for which they generate the lattice. Alternatively a set of
+vectors can be given, up to sign, which contains the standard basis vectors:
+`vector_set` is a list of tuples whose first entry is a vector, and `labels`
+and `unsigned_labels` are lists of integers, one for each vector, or empty.
+The label of `-v` is that of `v` with the signed part negated. Then exactly
+those `g` are returned which map every standard basis vector to a vector
+with the same label. The set and the labels have to be invariant under this
+group.
+
+The second entries of the tuples are not used. In the output of the targeted
+enumeration they are the norms of the vector with respect to the forms, which
+are recomputed here.
+"""
+function automorphism_group(forms::Vector{ZZMatrix}, vector_set = (),
+                            labels = Int[], unsigned_labels = UInt[];
+                            kwargs...)
+  if nrows(forms[1]) == 0
+    return ZZMatrix[identity_matrix(ZZ, 0)], one(ZZRingElem)
+  end
+  S = isempty(vector_set) ? ShortVectors(forms; kwargs...) :
+        short_vectors(forms, vector_set, labels, unsigned_labels; kwargs...)
+  chain = stabilizer_chain(S)
+  return ZZMatrix[matrix(ZZ, g) for g in chain.generators], chain.order
 end
 
 @doc raw"""
@@ -1440,6 +1807,33 @@ function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
     return true, walk.isometry
   end
   return no
+end
+
+
+@doc raw"""
+    automorphism_group(L::ZZLat) -> Vector{ZZMatrix}, ZZRingElem
+
+Given a definite lattice `L`, return generators and the order of its
+automorphism group, computed by partition backtracking. The generators act on
+the coordinates with respect to the basis of `L`, that is, they satisfy
+`g*G*transpose(g) == G` for the Gram matrix `G` of `L`.
+"""
+function automorphism_group(L::ZZLat)
+  @req is_definite(L) "Lattice must be definite"
+  n = rank(L)
+  n == 0 && return ZZMatrix[identity_matrix(ZZ, 0)], one(ZZRingElem)
+
+  # Rescale to a primitive positive definite integral form and LLL reduce.
+  # Neither changes the automorphism group; reduction makes the set of short
+  # vectors small. With T*G*transpose(T) reduced, an automorphism g of the
+  # reduced form is inv(T)*g*T in the original basis.
+  G = gram_matrix(L)
+  G = change_base_ring(ZZ, sign(G[1, 1]) * denominator(G) * G)
+  G = divexact(G, content(G))
+  reduced, T = lll_gram_with_transform(G)
+  generators, order = automorphism_group(ZZMatrix[reduced])
+  Tinv = inv(T)
+  return ZZMatrix[Tinv * g * T for g in generators], order
 end
 
 end # module LatticePartitionBacktrack
