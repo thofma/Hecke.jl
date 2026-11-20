@@ -39,6 +39,54 @@
     @test Hecke.action_of_gens(V) == ms
   end
 
+  # zero maps preserve endpoints and dimensions, and require compatible modules
+  let
+    for K in (QQ, GF(3)), (m, n) in ((0, 0), (0, 2), (2, 0), (2, 3))
+      V = Amodule([zero_matrix(K, m, m)])
+      W = Amodule([identity_matrix(K, n)])
+      h = zero_map(V, W)
+      @test domain(h) === V && codomain(h) === W
+      @test matrix(h) == zero_matrix(K, m, n)
+      if m != n
+        fl, h = is_isomorphic_with_isomorphism(V, W)
+        @test !fl
+        @test domain(h) === V && codomain(h) === W
+        @test matrix(h) == zero_matrix(K, m, n)
+      end
+    end
+
+    for n in (0, 1)
+      V = Amodule([zero_matrix(GF(3), n, n)])
+      W = Amodule([zero_matrix(GF(5), n, n)])
+      U = Amodule([zero_matrix(GF(3), n, n) for _ in 1:2])
+      @test_throws ArgumentError zero_map(V, W)
+      @test_throws AssertionError zero_map(V, U)
+    end
+  end
+
+  # separately constructed zero-dimensional modules have a unique isomorphism
+  let
+    for K in (QQ, GF(3))
+      A = group_algebra(K, abelian_group([2]))
+      for (V, W) in ((Amodule([zero_matrix(K, 0, 0)]),
+                     Amodule([zero_matrix(K, 0, 0)])),
+                    (Amodule(A, [zero_matrix(K, 0, 0) for _ in 1:dim(A)]),
+                     Amodule(A, [zero_matrix(K, 0, 0) for _ in 1:dim(A)])))
+        fl, h = is_isomorphic_with_isomorphism(V, W)
+        @test fl
+        @test domain(h) === V && codomain(h) === W
+        @test matrix(h) == zero_matrix(K, 0, 0)
+        @test is_invertible(matrix(h))
+      end
+    end
+
+    V = Amodule([zero_matrix(GF(3), 0, 0)])
+    W = Amodule([zero_matrix(GF(5), 0, 0)])
+    U = Amodule([zero_matrix(GF(3), 0, 0) for _ in 1:2])
+    @test_throws ArgumentError is_isomorphic_with_isomorphism(V, W)
+    @test_throws AssertionError is_isomorphic_with_isomorphism(V, U)
+  end
+
   # modules without nonzero homomorphisms are not isomorphic
   let
     V = Amodule([matrix(QQ, 1, 1, [1])])

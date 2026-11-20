@@ -7,45 +7,6 @@
 #
 # TODO: redo the calculations
 
-struct _RightClassSetIsomorphismContext{A, M, O, I, J}
-  algebra::A
-  algebra_map::M
-  order::O
-  ideals::IdDict{I, J}
-end
-
-function _right_class_set_isomorphism_context(O::AlgAssRelOrd)
-  A = algebra(O)
-  AQ, AQtoA = restrict_scalars(A, QQ)
-  OQ = order(AQ, preimage.(Ref(AQtoA), elem_in_algebra.(absolute_basis(O))))
-  ideals = IdDict{ideal_type(typeof(O)), ideal_type(typeof(OQ))}()
-  return _RightClassSetIsomorphismContext(AQ, AQtoA, OQ, ideals)
-end
-
-function _absolute_ideal(C::_RightClassSetIsomorphismContext, I)
-  return get!(C.ideals, I) do
-    ideal_from_lattice_gens(C.algebra, C.order,
-                            preimage.(Ref(C.algebra_map), absolute_basis(I)))
-  end
-end
-
-function _prepare_for_class_set_isomorphism!(I)
-  O = left_order(I)
-  if !has_attribute(O, :maximal_order)
-    # Keep the maximal order stable across comparisons so that the PIP caches
-    # attached to it, in particular the unit representatives, can be reused.
-    set_attribute!(O, :maximal_order, maximal_order(O))
-  end
-  return nothing
-end
-
-function _isomorphic_for_right_class_set(C::_RightClassSetIsomorphismContext, I, J)
-  IQ = _absolute_ideal(C, I)
-  JQ = _absolute_ideal(C, J)
-  _prepare_for_class_set_isomorphism!(IQ)
-  return _isisomorphic_generic(IQ, JQ; side = :right)[1]
-end
-
 @doc raw"""
     right_class_set(O::Union{AlgAssAbsOrd, AlgAssRelOrd}) -> Vector
 
@@ -55,6 +16,11 @@ Two ideals $I$ and $J$ lie in the same class if $J = \alpha I$ for some
 $\alpha \in A^\times$.
 
 The representatives are integral right ideals of $O$.
+
+The algebra $A$ may be given in any presentation, for example as a
+`StructureConstantAlgebra` or a `MatAlgebra`, or over $\mathbf{Q}$ with a
+number field as its center; in the latter case $O$ must be a module over the
+ring of integers of the center.
 
 # Examples
 
@@ -70,7 +36,7 @@ julia> length(right_class_set(maximal_order(quaternion_algebra(QQ, -1, 3))))
 1
 ```
 """
-@attr Vector{ideal_type(typeof(O))} function right_class_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+@attr Vector{ideal_type(typeof(O))} function right_class_set(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
   return _right_class_set(O)
 end
 
@@ -89,62 +55,12 @@ function _right_class_set(
   return _right_class_set_indefinite(O)
 end
 
-_right_class_set(O::AlgAssRelOrd) = _right_class_set_naive(O)
-
-function _right_class_set_naive(O::AlgAssRelOrd)
-#    { Compute the right class set of a quaternion order O in a naive way.
-#      This code is originally by Voight (also appears as commented out code in
-#      ideals-jv.m). Some small modifications have been made.
-#
-#      We use this naive version, because it works for any order.
-#    }
-  avoidprimes = support(_reduced_disc(O))
+# Any other presentation: the right class set of the model, carried back.
+function _right_class_set(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
+  OQ, from, _ = _quaternion_model(O)
   A = algebra(O)
-  R = base_ring(O)
-  massformula = 1//length(unit_group_modulo_scalars(O))
-  masses = [massformula] # record the contribution of each ideal class to the total mass
-  masstotal = mass(O)
-  #    vprintf Quaternion:
-  #        "Starting with the trivial ideal class. \nMass %o out of total mass %o\n", massformula, masstotal;
-  ideals = [1*O]
-  isomorphism_context = _right_class_set_isomorphism_context(O)
-  pe = 1
-  # We first try prime ideals of small norm
-  primes = sort!(prime_ideals_up_to(R, 100), by = norm)
-  while massformula != masstotal
-    #@info pe, massformula, masstotal
-    if length(primes) == 0
-      # have not found anything, so we switch over to
-      # enumerating prime ideals by minimum
-      pe = next_prime(pe)
-      primes = prime_ideals_over(R, pe)
-    end
-    pp = popfirst!(primes)
-      if pp in avoidprimes
-        continue
-      end
-      maxids = maximal_integral_ideals(O, pp; side = :right)
-      for II in maxids
-        found = false
-        for J in ideals
-          if _isomorphic_for_right_class_set(isomorphism_context, II, J)
-            found = true
-            break
-          end
-        end
-        if !found
-          push!(ideals, II)
-          mass = 1//length(unit_group_modulo_scalars(left_order(II)))
-          massformula += mass
-          push!(masses, mass)
-          if massformula == masstotal
-            break
-          end
-        end
-      #end
-    end
-  end
-  return ideals
+  return [ideal_from_lattice_gens(A, O, from.(absolute_basis(I)), :right)
+          for I in right_class_set(OQ)]
 end
 
 ################################################################################
@@ -688,7 +604,9 @@ Return representatives of the types of the order $O$ of a quaternion algebra
 $A$ over $\mathbf{Q}$ or a number field: one order for each isomorphism class
 of orders locally isomorphic to $O$.
 
-If $A$ is not totally definite, $O$ must be an Eichler order.
+If $A$ is not totally definite, $O$ must be an Eichler order. The algebra may
+be given in any presentation, as for [`right_class_set`](@ref); the
+representatives are orders of $A$.
 
 # Examples
 
@@ -699,7 +617,7 @@ julia> length(type_set(O)), length(right_class_set(O))
 (5, 8)
 ```
 """
-@attr Vector{typeof(O)} function type_set(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+@attr Vector{typeof(O)} function type_set(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
   return _type_set(O)
 end
 
@@ -709,7 +627,7 @@ end
 Return the number of types of the order $O$, that is, the length of
 [`type_set`](@ref).
 """
-function type_number(O::Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd})
+function type_number(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
   return length(type_set(O))
 end
 
@@ -737,9 +655,12 @@ function _type_set(
   return _type_set_definite(O)
 end
 
-function _type_set(O::AlgAssRelOrd)
-  @req !is_eichler(algebra(O)) "Algebra must be totally definite"
-  return _type_set_definite(O)
+# Any other presentation: the types of the model, carried back.
+function _type_set(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
+  OQ, from, _ = _quaternion_model(O)
+  A = algebra(O)
+  return [_get_order_from_gens(A, from.(elem_in_algebra.(absolute_basis(L))))
+          for L in type_set(OQ)]
 end
 
 # The same over a number field, comparing left orders by _is_isomorphic.
@@ -786,6 +707,73 @@ function _type_set_indefinite(
     push!(types, left_order(I))
   end
   return types
+end
+
+################################################################################
+#
+#  Other presentations
+#
+################################################################################
+
+# A ring isomorphism carries orders, right ideal classes, types and levels to
+# orders, right ideal classes, types and levels, so an order of a quaternion
+# algebra in another presentation is answered in an isomorphic
+# QuaternionAlgebra over QQ or an absolute simple number field, where the
+# methods above apply.
+
+# The order O carried into the model of its algebra, the isomorphism from the
+# model back to algebra(O) as a function on elements, and a function carrying
+# an ideal of the ring of integers of the base field of the model to the
+# corresponding ideal of the ring of integers of the center of algebra(O).
+#
+# The model order is spanned by O over the ring of integers of the center, so
+# it is the image of O exactly when O is a module over that ring, which is
+# required: otherwise O is an order over a non-maximal order of the center.
+function _quaternion_model(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
+  Q, from, to, level = _quaternion_model(algebra(O))
+  Q === algebra(O) && return O, from, level
+  OQ = _get_order_from_gens(Q, to.(elem_in_algebra.(absolute_basis(O))))
+  @req all(x -> from(elem_in_algebra(x)) in O, absolute_basis(OQ)) (
+    "Order must be a module over the ring of integers of the center")
+  return OQ, from, level
+end
+
+# The model of the quaternion algebra A: a QuaternionAlgebra Q over QQ or an
+# absolute simple number field, the isomorphism Q -> A and its inverse as
+# functions on elements, and the map on ideals described above.
+function _quaternion_model(A::QuaternionAlgebra)
+  K = base_ring(A)
+  if K isa QQField || K isa AbsSimpleNumField
+    return A, identity, identity, identity
+  end
+  Kabs, KabstoK = absolute_simple_field(K)
+  a, b = standard_form(A)
+  Q = quaternion_algebra(Kabs, preimage(KabstoK, a), preimage(KabstoK, b))
+  to = x -> Q(map(c -> preimage(KabstoK, c), coefficients(x)))
+  from = y -> A(map(KabstoK, coefficients(y)))
+  level = J -> image(KabstoK, J)
+  return Q, from, to, level
+end
+
+function _quaternion_model(A::StructureConstantAlgebra)
+  @req is_simple(A) "Algebra must be simple"
+  @req dimension_over_center(A) == 4 (
+    "Algebra must be a quaternion algebra over its center")
+  if dimension_of_center(A) > 1
+    # A quaternion algebra over the number field of its center
+    C, CtoA = _as_algebra_over_center(A)
+    Q, from, to, level = _quaternion_model(C)
+    return Q, y -> CtoA(from(y)), x -> to(preimage(CtoA, x)), level
+  end
+  QtoA = isomorphism(QuaternionAlgebra, A)
+  Q, from, to, level = _quaternion_model(domain(QtoA))
+  return Q, y -> QtoA(from(y)), x -> to(preimage(QtoA, x)), level
+end
+
+function _quaternion_model(A::AbstractAssociativeAlgebra)
+  S, StoA = StructureConstantAlgebra(A)
+  Q, from, to, level = _quaternion_model(S)
+  return Q, y -> StoA(from(y)), x -> to(preimage(StoA, x)), level
 end
 
 function _is_isomorphic(R::T, S::T) where {T <: Union{AlgAssAbsOrd{QuaternionAlgebra{QQFieldElem}}, AlgAssRelOrd}}
@@ -992,22 +980,27 @@ end
 
 Return whether the order $O$ of a quaternion algebra is an Eichler order, that
 is, the intersection of two maximal orders.
+
+The algebra may be given in any presentation, as for
+[`right_class_set`](@ref).
 """
 function is_eichler(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
-  A = algebra(O)
-  @req A isa QuaternionAlgebra "Order must be an order of a quaternion algebra"
-  return _eichler_level_factors(O) !== nothing
+  return _eichler_level_factors(first(_quaternion_model(O))) !== nothing
 end
 
 @doc raw"""
-    eichler_level(O::AlgAssAbsOrd{<:QuaternionAlgebra}) -> ZZRingElem
-    eichler_level(O::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra})
-      -> AbsNumFieldOrderIdeal
+    eichler_level(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
+      -> Union{ZZRingElem, AbsNumFieldOrderIdeal, RelNumFieldOrderIdeal}
 
-Return the level of the Eichler order $O$ of a quaternion algebra $A$ over
-$K$: the ideal $M$ of the ring of integers of $K$, coprime to the discriminant
-$D$ of $A$, with $\operatorname{discrd}(O) = DM$ [Voi21](@cite), 23.4.19. Over
-$\mathbf{Q}$ it is returned as a positive integer.
+Return the level of the Eichler order $O$ of a quaternion algebra $A$ with
+center $K$: the ideal $M$ of the ring of integers of $K$, coprime to the
+discriminant $D$ of $A$, with $\operatorname{discrd}(O) = DM$ [Voi21](@cite),
+23.4.19. Over $\mathbf{Q}$ it is returned as a positive integer.
+
+The algebra may be given in any presentation, as for
+[`right_class_set`](@ref). If the center of $A$ is larger than its base field,
+the level is an ideal of the ring of integers of a number field isomorphic to
+the center, the same field for every order of $A$.
 
 An `ArgumentError` is thrown if $O$ is not an Eichler order, see
 [`is_eichler`](@ref).
@@ -1035,13 +1028,20 @@ julia> eichler_level(maximal_order(A))
 1
 ```
 """
+function eichler_level(O::Union{AlgAssAbsOrd, AlgAssRelOrd})
+  # Any other presentation: the level of the model, carried back.
+  OQ, _, level = _quaternion_model(O)
+  return level(eichler_level(OQ))
+end
+
 function eichler_level(O::AlgAssAbsOrd{<:QuaternionAlgebra})
   f = _eichler_level_factors(O)
   @req f !== nothing "Order must be an Eichler order"
   return prod((p^e for (p, e) in f); init = one(ZZ))
 end
 
-function eichler_level(O::AlgAssRelOrd{<:Any, <:Any, <:QuaternionAlgebra})
+function eichler_level(
+    O::AlgAssRelOrd{AbsSimpleNumFieldElem, <:Any, <:QuaternionAlgebra})
   f = _eichler_level_factors(O)
   @req f !== nothing "Order must be an Eichler order"
   return prod((p^e for (p, e) in f); init = 1 * base_ring(O))

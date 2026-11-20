@@ -80,6 +80,10 @@ function ramified_infinite_places(
   return inf_plc
 end
 
+function ramified_infinite_places(A::CyclicAlgebra{AbsSimpleNumFieldElem})
+  return ramified_infinite_places(structure_constant_algebra(A))
+end
+
 function ramified_infinite_places_of_center(A::AbstractAssociativeAlgebra)
   dec = decompose(A)
   C, = center(A)

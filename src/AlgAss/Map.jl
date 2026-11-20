@@ -244,26 +244,31 @@ end
 #end
 
 function has_preimage_with_preimage(m::AbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
-  if isdefined(m, :imat)
-    return true, preimage(m, a)
+  A = domain(m)
+  if isdefined(m.header, :preimage)
+    b = m.header.preimage(a)::elem_type(A)
+    @assert parent(b) === A
+    return true, b
   end
 
-  A = parent(a)
-  t = matrix(base_ring(A), 1, dim(A), coefficients(a))
-  b, p = can_solve_with_solution(m.mat, t, side = :left)
-  if b
-    return true, domain(m)([ p[1, i] for i = 1:nrows(m.mat) ])
-  else
-    return false, zero(domain(m))
+  isdefined(m, :mat) || error("No preimage function known")
+  B = codomain(m)
+  @req parent(a) === B "The element does not belong to the codomain"
+  if isdefined(m, :imat)
+    return true, A(coefficients(a; copy = false)*m.imat)
   end
+
+  t = matrix(base_ring(B), 1, dim(B), coefficients(a))
+  ok, p = can_solve_with_solution(m.mat, t; side = :left)
+  ok || return false, zero(A)
+  return true, A([p[1, i] for i in 1:nrows(m.mat)])
 end
 
-#function preimage(m::AbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
-#  @assert parent(a) === codomain(m)
-#  fl, b = has_preimage_with_preimage(m, a)
-#  !fl && error("Element has no preimage")
-#  return b
-#end
+function preimage(m::AbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
+  ok, b = has_preimage_with_preimage(m, a)
+  @req ok "Element has no preimage"
+  return b
+end
 
 # inverse
 

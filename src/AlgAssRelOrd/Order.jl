@@ -946,8 +946,13 @@ end
 function representatives_of_maximal_orders(O::AlgAssRelOrd)
   A = algebra(O)
   @req is_simple(A) "Algebra must be simple"
+  d = dimension_over_center(A)
+  @req d == 4 || d == 1 || is_central(A) (
+    "Algebra must be central, a field or a quaternion algebra over its center")
   @req is_maximal(O) "Order must be maximal"
-  is_eichler(A) || return _types_via_quaternion_algebra(O)
+  d == 4 && return type_set(O)
+  # a number field has one maximal order, its ring of integers
+  d == 1 && return typeof(O)[ O ]
   K = base_ring(A)
   OK = base_ring(O)
   n2 = dim(A)
