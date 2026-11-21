@@ -778,8 +778,12 @@ end
 #   `basis`        linearly independent points whose scalar products have
 #                  been used to split cells, on the way to the node and at
 #                  it; every other point used for this lies in their span
-#   `span`         their span
+#   `span`         their span, modulo `SPAN_PRIME`
 #   `dependent`    points which are known to lie in this span
+#
+# If the walk is not planned, every point which is alone in its cell lies in
+# the span, and the span and the points of the partition together span the
+# space, see (S) at `advance!`.
 mutable struct Node
   partition::Partition
   branch::Int
@@ -809,8 +813,8 @@ Node(N::Int) = Node(Partition(), 0, Int[], Span(), point_set(N))
 #   `position`     the number of entries of the trace seen at this node
 #   `improved`     in the mode `:minimize`, the depth of the node on the
 #                  current path whose trace replaced that of the reference,
-#                  until a leaf below it is reached; otherwise
-#                  `typemax(Int)`
+#                  until a leaf below it is reached, and -1 as long as no
+#                  leaf has been reached at all; otherwise `typemax(Int)`
 #
 # The nodes of all depths are kept, so backtracking needs no undo step.
 mutable struct Walk
@@ -859,10 +863,15 @@ function observe!(walk::Walk, depth::Int, value::Int)
   if walk.mode == :follow
     return position <= length(trace) && trace[position] == value
   end
-  position <= length(trace) && value == trace[position] && return true
-  position <= length(trace) && value > trace[position] && return false
-  # The trace is smaller than that of the reference, or the reference has
-  # none here: the current path replaces the reference from here on.
+  if walk.improved > depth
+    # The trace is compared with that of the reference, which is complete.
+    # If that one is the beginning of this one, it is smaller.
+    position > length(trace) && return false
+    value == trace[position] && return true
+    value > trace[position] && return false
+  end
+  # The trace is smaller than that of the reference, or it replaced that of
+  # the reference before: the current path is the reference from here on.
   resize!(trace, position)
   trace[position] = value
   replace_reference!(walk, depth)
@@ -978,6 +987,26 @@ function split_all!(walk::Walk, depth::Int, out::Partition, P::Partition,
   return true
 end
 
+# Use the points which are alone in their cell of the partition
+# `walk.scratch` like x in step 1 of `advance!`, as long as they enlarge the
+# span of the node. Returns `false` if the node is abandoned. Otherwise every
+# point which is alone in its cell lies in the span of the node afterwards.
+function split_by_fixed_points!(walk::Walk, depth::Int)
+  S = walk.target
+  node = walk.path[depth + 1]
+  while length(node.span.pivots) < dim(S)
+    P = walk.scratch
+    i = next_fixed_point!(node, S, P)
+    i == 0 && break
+    push!(node.basis, point(S, i))
+    # If every point is alone in its cell, there is nothing to split.
+    length(P.elements) > number_of_cells(P) || continue
+    split_all!(walk, depth, walk.spare, P, i) || return false
+    walk.scratch, walk.spare = walk.spare, P
+  end
+  return true
+end
+
 # Step 1 of `advance!`. Returns the partition, or `nothing` if the node is
 # abandoned.
 function split_cells!(walk::Walk, depth::Int, x::Int)
@@ -1019,17 +1048,8 @@ function split_cells!(walk::Walk, depth::Int, x::Int)
   # Points which are alone in their cell are fixed. Use them like x, unless
   # the walk is planned: there this costs more than it saves. A fixed point
   # in the span of those used before splits no cell.
-  while !walk.planned && length(node.span.pivots) < dim(S)
-    i = next_fixed_point!(node, S, P)
-    i == 0 && break
-    push!(node.basis, point(S, i))
-    # If every point is alone in its cell, there is nothing to split.
-    length(P.elements) > number_of_cells(P) || continue
-    split_all!(walk, depth, spare, P, i) || return nothing
-    P, spare = spare, P
-  end
-  walk.scratch, walk.spare = P, spare
-  return P
+  walk.planned || split_by_fixed_points!(walk, depth) || return nothing
+  return walk.scratch
 end
 
 # Counting scalar products is only done for cells of at most this size.
@@ -1051,7 +1071,8 @@ const COUNT_LIMIT = 512
 #   2. One cell C is split further: by an invariant of its points p which
 #      combines the numbers of points q of C with <q, p> = c, for all c. An
 #      isometry mapping this node to another one maps C to the corresponding
-#      cell, so it preserves this invariant.
+#      cell, so it preserves this invariant. If the walk is not planned, the
+#      points which are alone in their cell now are used as in step 1.
 #   3. The scalar products of the sums of the cells are reported, see
 #      `sums_match!`.
 #   4. Cells which are not needed are dropped.
@@ -1060,8 +1081,27 @@ const COUNT_LIMIT = 512
 # and the cell to branch on are the first among the smallest cells with more
 # than one point. The node is a leaf if the points which have been used to
 # split cells span the space; otherwise only the cells which are needed to
-# span it are kept, see `keep_spanning!`. These rules only depend on the
-# node up to isometry.
+# span it are kept, see `keep_spanning!`. The size of the cell to branch on,
+# 0 at a leaf, is the last entry of the trace.
+#
+# A walk which is not planned has two properties on which `canonical_form`
+# rests; `minimize!` continues the argument.
+#
+#   (T) The tree only depends on the set of points up to isomorphism (an
+#       isometry of all forms which respects the colours): the steps use
+#       cells in their order, scalar products, colours and linear dependence
+#       modulo `SPAN_PRIME`, never the order of the points in a cell. So an
+#       isomorphism maps a node to a node with the same trace, `basis` to
+#       `basis` entry by entry. Hashing (`search_form`, `mix`), wrap-around
+#       and the prime are invariant too: a collision or a prime dividing a
+#       minor makes the trace weaker and the tree larger, nothing else.
+#   (S) At every node the points which are alone in their cell lie in
+#       `span`, and `span` and the points of the partition span the space
+#       modulo the prime: steps 1 and 2 keep all points and end with
+#       `split_by_fixed_points!`; `keep_spanning!` drops points of `span`
+#       and cells not needed for this. So a node without a cell to branch
+#       on has n independent points in `basis`. `compare_leaf!` checks
+#       this; it fails if the set does not span the space modulo the prime.
 #
 # A planned walk follows a reference path b_1, ..., b_m: C and the cell to
 # branch on are the cells which contain b_{depth+1} at the node (b_1, ...,
@@ -1134,10 +1174,16 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
       push!(Q, elements)
     end
   end
+  if !walk.planned
+    # Splitting C may have left points alone in their cell.
+    node.partition, walk.scratch = walk.scratch, node.partition
+    split_by_fixed_points!(walk, depth) || return false
+    node.partition, walk.scratch = walk.scratch, node.partition
+    Q = node.partition
+  end
 
   # Step 3
   sums_match!(walk, depth, Q) || return false
-  finish_trace!(walk, depth) || return false
 
   # Step 4 and the cell to branch on
   if !walk.planned
@@ -1149,8 +1195,12 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
       keep_spanning!(node, S, Q)
       node.branch = smallest_cell(Q)
     end
-    return true
+    # So nodes with the same trace are both leaves or both are not.
+    return observe!(walk, depth, node.branch == 0 ? 0 :
+                                   cell_size(Q, node.branch)) &&
+           finish_trace!(walk, depth)
   end
+  finish_trace!(walk, depth) || return false
   if recording
     kept = reference.kept[depth + 1] =
       Int[c for c in 1:number_of_cells(Q)
@@ -1221,7 +1271,8 @@ const KEEP_LIMIT = 2^12
 # Drop cells of `Q` which are not needed: the cells with more than one point
 # are taken in the order of their sizes, until their points and those of
 # `node.basis` span the space and there are at least `KEEP_LIMIT` of them.
-# The points which are alone in their cell are fixed and have been used.
+# The points which are alone in their cell are fixed and lie in the span of
+# `node.basis`, see `split_by_fixed_points!`.
 #
 # The cells which are kept are enough to tell the nodes apart which matter,
 # and the cost of a node is proportional to them. Keeping few cells weakens
@@ -1847,8 +1898,9 @@ end
 # with respect to this basis, and the labels of the points.
 #
 # Two sequences of points have the same key if and only if an automorphism
-# respecting their labels maps one to the other: it maps the basis of the one
-# to that of the other.
+# of the forms maps one to the other, entry by entry, and respects their
+# labels: it maps the basis of the one to that of the other. If the points do
+# not span the space, the basis is not determined by them.
 function canonical_basis(S::ShortVectors, points::Vector{Int})
   Q = zero_matrix(ZZ, length(points), dim(S))
   for (k, p) in enumerate(points)
@@ -1884,17 +1936,21 @@ end
 # The walk is at a leaf (x_1, ..., x_depth) whose traces are those of the
 # reference. Compare it with the leaf of the reference.
 #
-# If it has the same key, the map from one leaf to the other is an
-# automorphism g. Then the walk can go back to the last node which the two
-# leaves have in common: g maps the subtree which contains the leaf of the
-# reference, and which has been searched, onto the one being searched.
-# Returns the depth of that node, and otherwise `typemax(Int)`.
+# The key of a leaf is that of x_1, ..., x_depth followed by its basis. If
+# the two leaves have the same key, an automorphism g of the forms maps the
+# one sequence of points to the other; the leaves have the same depth, see
+# (O) at `minimize!`, so g maps the path of the reference to that of the
+# walk. If g respects the colours as well, the walk can go back to the last
+# node which the two leaves have in common, see (P) at `minimize!`. Returns
+# the depth of that node, and otherwise `typemax(Int)`.
 function compare_leaf!(state::Minimization, depth::Int)
   walk = state.walk
   S, best = walk.target, walk.reference
   node = walk.path[depth + 1]
+  length(node.span.pivots) == dim(S) ||
+    error("the points of a leaf do not span the space")
   sequence = walk.sequence[1:depth]
-  U, key = canonical_basis(S, node.basis)
+  U, key = canonical_basis(S, vcat(sequence, node.basis))
   if isempty(state.base)
     state.first = copy(sequence)
     state.base = generating_base(walk, depth)
@@ -1911,8 +1967,7 @@ function compare_leaf!(state::Minimization, depth::Int)
   M = Matrix{Int}(inv(state.basis) * U)
   (S.complete || respects_colours(S, M)) || return typemax(Int)
   push!(state.automorphisms, Generator(M))
-  return something(findfirst(d -> sequence[d] != best.sequence[d],
-                             1:min(depth, length(best.sequence))), 1) - 1
+  return findfirst(d -> sequence[d] != best.sequence[d], 1:depth)::Int - 1
 end
 
 # A base for the stabilizer chain along the path to the leaf (x_1, ...,
@@ -1951,6 +2006,25 @@ end
 # found at leaves; of the latter, the first `seen` have been looked at.
 # Returns `typemax(Int)`, or the depth of the node to go back to, see
 # `compare_leaf!`.
+#
+# Why the result is canonical, given (T) and (S) at `advance!`:
+#
+#   (O) Leaves are ordered by their traces t_0, ..., t_d, as sequences of
+#       integers of which a proper beginning is smaller, then by their keys:
+#       a total preorder. A trace ends with 0 exactly at a leaf, so leaves
+#       with equal traces have equal depth. `observe!` and `finish_trace!`
+#       compare in this order; the reference is the smallest leaf met.
+#   (P) A subtree which is left out has no leaf smaller than the result:
+#       either the trace of its root is larger than that of the reference,
+#       or a known automorphism of the set of points fixes x_1, ...,
+#       x_depth and maps a child which has been dealt with to its root; by
+#       (T) it maps leaves to leaves with equal traces and keys. The one of
+#       `compare_leaf!` maps the path of the reference to that of the walk,
+#       so this applies at their last common node. Automorphisms are exact:
+#       for the forms by the key or `is_isometry`, for the set of points by
+#       `respects_colours` or since the set is complete.
+#   (K) The result is the basis of the smallest leaf; the forms in it are
+#       part of the key, which by (T) is the same for isomorphic sets.
 function minimize!(state::Minimization, depth::Int,
                    inherited::Vector{Generator} = Generator[],
                    seen::Int = 0)
@@ -2046,6 +2120,7 @@ function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
                    zero_matrix(ZZ, 0, n), zero_matrix(ZZ, n, 0), Int[], true,
                    true)
   walk = Walk(S, best, :minimize, false)
+  walk.improved = -1
   advance!(walk, 0)
   state = Minimization(walk, ZZRingElem[], zero_matrix(ZZ, n, n), Generator[],
                        Int[], Int[], Vector{Generator}[], Int[])

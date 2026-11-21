@@ -248,6 +248,79 @@ import Random
   @test PB.canonical_form([H], [(v, 0) for v in V2], labels2)[1] == canonical
   @test T * D4 * transpose(T) == canonical[1]
 
+  # canonical forms of labelled sets of vectors which are not closed under
+  # negation: counting scalar products leaves points alone in their cell, and
+  # the points of a leaf have to span the space nevertheless
+  function canonical_in_basis(W, G, vectors, labels)
+    X = [(Int.(vec(collect(matrix(ZZ, 1, nrows(G), v) * inv(W)))), 0)
+         for v in vectors]
+    forms, T = PB.canonical_form([W * G * transpose(W)], X, labels)
+    @test T * W * G * transpose(T * W) == forms[1]
+    return forms
+  end
+  G = ZZ[3 1 1 0 0; 1 3 0 0 0; 1 0 3 0 0; 0 0 0 3 0; 0 0 0 0 3]
+  scalene = block_diagonal_matrix([ZZ[10 1 2; 1 10 3; 2 3 10],
+                                   ZZ[10 1 2; 1 10 4; 2 4 10]])
+  for (G, labels) in [(G, [-2, -2, 2, 2, -2]), (scalene, [2, 2, 2, 1, 1, 1])]
+    n = nrows(G)
+    units = [Int[i == j for j in 1:n] for i in 1:n]
+    canonical = canonical_in_basis(identity_matrix(ZZ, n), G, units, labels)
+    @test all(canonical_in_basis(another_basis(n), G, units, labels) ==
+              canonical for _ in 1:5)
+  end
+
+  # a set which does not span the space is an error
+  @test_throws "span the space" PB.canonical_form(
+    [identity_matrix(ZZ, 2)], [([1, 0], 0)], [0])
+
+  # counting leaves points alone in their cell without labels as well
+  G = matrix(ZZ, 17, 17, [
+      2, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, -1, 1, -1, 0, -1, 0, 0, 2, -1, -1,
+      0, 0, 0, 0, 0, 1, 0, -1, 1, -1, 1, 1, 0, 0, -1, 2, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 0, 1, -1, -1, 0, 0, -1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0,
+      0, 0, 0, -1, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0,
+      0, 0, 2, -1, 1, -1, 1, -1, 1, -1, 1, 0, -1, -1, 0, 0, 0, 0, 0, -1, 2,
+      -1, 1, 0, 1, 0, 0, -1, 0, 1, 1, 0, 0, 0, 0, 0, 1, -1, 2, -1, 1, -1, 1,
+      -1, 0, 0, -1, -1, 0, 0, 0, 0, 0, -1, 1, -1, 2, -1, 1, -1, 0, -1, 0, 1,
+      1, -1, 1, 0, 0, 1, 1, 0, 1, -1, 4, -1, 1, -1, 0, 1, 0, -1, 0, 0, 0, 0,
+      0, -1, 1, -1, 1, -1, 2, -1, 1, 0, 0, 1, 1, -1, -1, 1, 0, 1, 1, 0, 1,
+      -1, 1, -1, 4, -2, 1, -1, -1, -1, 1, 1, 0, -1, 0, -1, 0, -1, 0, -1, 1,
+      -2, 4, 0, 0, 1, 1, -1, -1, 1, 0, 1, 1, -1, 0, -1, 0, 0, 1, 0, 4, -1,
+      0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 1, 0, -1, 0, -1, 2, 0, 0, -1, 1, -1,
+      0, 1, -1, 1, -1, 1, 0, 1, -1, 1, 0, 0, 4, 1, 0, 0, 0, 0, 0, -1, 1, -1,
+      1, -1, 1, -1, 1, 0, 0, 1, 4])
+  canonical = PB.canonical_form([G])[1]
+  for _ in 1:3
+    W = another_basis(17)
+    @test PB.canonical_form([lll_gram(W * G * transpose(W))])[1] == canonical
+  end
+
+  # canonical forms of random lattices of small rank in two bases, without
+  # labels and with the labels v -> v * transpose(w) for a random w on the
+  # vectors up to the largest norm of a basis vector
+  for trial in 1:60
+    n = rand(rng, 2:6)
+    if isodd(trial)
+      R = matrix(ZZ, n, n, rand(rng, -2:2, n, n))
+      is_zero(det(R)) && continue
+      G = lll_gram(R * transpose(R))
+    else
+      # many vectors of the same norm and few automorphisms
+      G = rand(rng, 3:5) * identity_matrix(ZZ, n)
+      for i in 1:(n - 1)
+        G[i, i + 1] = G[i + 1, i] = rand(rng, -1:1)
+      end
+    end
+    W = another_basis(n)
+    @test PB.canonical_form([lll_gram(W * G * transpose(W))])[1] ==
+          PB.canonical_form([G])[1]
+    vectors = PB.enumerate_vectors(G)
+    weights = rand(rng, -2:2, n)
+    labels = Int[sum(v .* weights) for v in vectors]
+    @test canonical_in_basis(W, G, vectors, labels) ==
+          canonical_in_basis(identity_matrix(ZZ, n), G, vectors, labels)
+  end
+
   # the search can be chosen where Hecke computes automorphism groups and
   # isometries of lattices; both searches agree
   L = root_lattice(:E, 6)
