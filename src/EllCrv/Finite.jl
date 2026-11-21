@@ -83,6 +83,15 @@ function _point_order_from_multiple(P::EllipticCurvePoint{<:FinFieldElem}, M::ZZ
   return ord
 end
 
+# Heuristic field-size threshold for BSGS.
+# Up to this field size, `order(E)` counts points with BSGS
+#   (unless a special-case method applies) and with Schoof otherwise.
+# If the curve order is not cached, order(P) uses point BSGS up to this threshold;
+# above it, it computes and factors the curve order.
+# NOTE: this is same threshold that PARI/GP uses, but they have SEA implemented,
+#   so this threshold is still conservative
+const _BSGS_MAX_FIELD_SIZE = 2^56
+
 # d is known divisor of the *group* order
 function _point_order_bsgs(P_in::EllipticCurvePoint{<:FinFieldElem}, d::ZZRingElem)
   is_infinite(P_in) && return ZZ(1)
@@ -144,9 +153,8 @@ function _point_order_bsgs(P_in::EllipticCurvePoint{<:FinFieldElem}, d::ZZRingEl
   H = stride*P
   M = ZZ(0)
 
+  Snew = Q - m*H
   for k in -m:m
-    Snew = Q + k*H
-
     j = get(baby, Snew, -1)
     if j >= 0
       M = center + stride*k - j
@@ -158,6 +166,8 @@ function _point_order_bsgs(P_in::EllipticCurvePoint{<:FinFieldElem}, d::ZZRingEl
       M = center + stride*k + j
       !is_zero(M) && break # non-trivial multiple of order
     end
+
+    Snew = Snew + H
   end
 
   @assert !is_zero(M) "BSGS failed to find a multiple of the order"
@@ -206,12 +216,18 @@ julia> order(P, fac)
 ```
 """
 function order(P::EllipticCurvePoint{T}) where T<:FinFieldElem
-  # TODO: should we maybe check if order was factored already?
-  #   in this case _point_order_from_multiple should be faster
+  is_infinite(P) && return ZZ(1)
+
+  E = parent(P)
+  if has_attribute(E, :order) || order(base_field(E)) > _BSGS_MAX_FIELD_SIZE
+    return _order_elem_via_fac(P)
+  end
   return elem_order_bsgs(P)
 end
 
 function order(P::EllipticCurvePoint{T}, fac::Fac{ZZRingElem}) where T<:FinFieldElem
+  is_infinite(P) && return ZZ(1)
+
   return _point_order_from_multiple(P, evaluate(fac), fac)
 end
 
