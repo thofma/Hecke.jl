@@ -484,9 +484,7 @@ julia> order(E)
   j_invariant(E) == R(1728) && return _order_j_1728(E)
 
   # BSGS for medium sized field
-  # TODO: 10^5 is very safe threshold, can be higher
-  # TODO: when/if we add p-adic methods this will need to be tweaked
-  q < 100000 && return order_via_bsgs(E)
+  q <= _BSGS_MAX_FIELD_SIZE && return order_via_bsgs(E)
 
   return order_via_schoof(E)
 end
