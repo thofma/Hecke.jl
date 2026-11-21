@@ -144,9 +144,8 @@ function _point_order_bsgs(P_in::EllipticCurvePoint{<:FinFieldElem}, d::ZZRingEl
   H = stride*P
   M = ZZ(0)
 
+  Snew = Q - m*H
   for k in -m:m
-    Snew = Q + k*H
-
     j = get(baby, Snew, -1)
     if j >= 0
       M = center + stride*k - j
@@ -158,6 +157,8 @@ function _point_order_bsgs(P_in::EllipticCurvePoint{<:FinFieldElem}, d::ZZRingEl
       M = center + stride*k + j
       !is_zero(M) && break # non-trivial multiple of order
     end
+
+    Snew = Snew + H
   end
 
   @assert !is_zero(M) "BSGS failed to find a multiple of the order"
