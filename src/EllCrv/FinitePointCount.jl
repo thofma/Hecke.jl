@@ -126,7 +126,6 @@ function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
 
   E1, E2 = E, quadratic_twist(E)
   q1 = q + 1
-  ML = 4*isqrt(q) + ZZ(isodd(absolute_degree(R)) ? 4 : 0)
 
   # E1 = E, E2 = quadratic twist of E: |E1| + |E2| = 2(q+1)
   # |E1| = q + 1 - t, we maintain t = a mod M
@@ -153,14 +152,18 @@ function order_via_bsgs(E::EllipticCurve{T}) where T<:FinFieldElem
     return a, M, N
   end
 
-  # when M >= 4*sqrt(q) we have unique remainder in Hasse interval
-  # if a > 2*sqrt(q), then a - M is the correct value
-  while M < ML
+  # In "On a Theorem of Mestre and Schoof" by Cremona, Sutherland, Theorem 2 proves
+  #   for q > 49 that there is a unique representative t with |t| <= 2*sqrt(q)
+  B = isqrt(4*q)
+  # for t = a (mod M), mod(a + B, M) - B is the smallest representative >= -B.
+  #   and it is the only one in [-B, B] iff the next one exceeds B
+  while mod(a + B, M) + M <= 2*B
     a, M, N1 = _add_point(rand(E1),  q1, N1, a, M)
-    M >= ML && break
+    mod(a + B, M) + M > 2*B && break
     a, M, N2 = _add_point(rand(E2), -q1, N2, a, M)
   end
 
+  # if a > 2*sqrt(q), then a - M is the correct value
   if a^2 > 4*q
     return q1 - (a - M)
   else
