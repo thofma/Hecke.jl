@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="no-js ie6"><![endif]-->
+<!--[if IE 7 ]><html class="no-js ie7"><![endif]-->
+<!--[if IE 8 ]><html class="no-js ie8"><![endif]-->
+<!--[if IE 9 ]><html class="no-js ie9"><![endif]-->
+<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js"> <!--<![endif]-->
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
+    
+      
+        <title>Orders - Hecke.jl</title>
+      
+      
+      
+      
+        <meta name="author" content="Tommy Hofmann">
+      
+    
+    <meta property="og:url" content="None">
+    <meta property="og:title" content="Hecke.jl">
+    <meta property="og:image" content="None/../../">
+    <meta name="apple-mobile-web-app-title" content="Hecke.jl">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
+    <style>
+      @font-face {
+      	font-family: 'Icon';
+      	src: url('../../assets/fonts/icon.eot?52m981');
+      	src: url('../../assets/fonts/icon.eot?#iefix52m981')
+               format('embedded-opentype'),
+      		   url('../../assets/fonts/icon.woff?52m981')
+               format('woff'),
+      		   url('../../assets/fonts/icon.ttf?52m981')
+               format('truetype'),
+      		   url('../../assets/fonts/icon.svg?52m981#icon')
+               format('svg');
+      	font-weight: normal;
+      	font-style: normal;
+      }
+    </style>
+    <link rel="stylesheet" href="../../assets/stylesheets/application-a422ff04cc.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/palettes-05ab2406df.css">
+    
+    
+      
+      
+      
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
+      <style>
+        body, input {
+          font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
+        }
+        pre, code {
+          font-family: 'Ubuntu Mono', 'Courier New', 'Courier', monospace;
+        }
+      </style>
+    
+    
+      <link rel="stylesheet" href="../../assets/Documenter.css">
+    
+    <script src="../../assets/javascripts/modernizr-4ab42b99fd.js"></script>
+    
+  <script data-outdated-warner="">function maybeAddWarning () {
+    const head = document.getElementsByTagName('head')[0];
+
+    // Add a noindex meta tag (unless one exists) so that search engines don't index this version of the docs.
+    if (document.body.querySelector('meta[name="robots"]') === null) {
+        const meta = document.createElement('meta');
+        meta.name = 'robots';
+        meta.content = 'noindex';
+
+        head.appendChild(meta);
+    };
+
+    // Add a stylesheet to avoid inline styling
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.appendChild(document.createTextNode('.outdated-warning-overlay {  position: fixed;  top: 0;  left: 0;  right: 0;  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);  z-index: 999;  background-color: #ffaba7;  color: rgba(0, 0, 0, 0.7);  border-bottom: 3px solid #da0b00;  padding: 10px 35px;  text-align: center;  font-size: 15px; }  .outdated-warning-overlay .outdated-warning-closer {    position: absolute;    top: calc(50% - 10px);    right: 18px;    cursor: pointer;    width: 12px; }  .outdated-warning-overlay a {    color: #2e63b8; }    .outdated-warning-overlay a:hover {      color: #363636; }'));
+    head.appendChild(style);
+
+    const div = document.createElement('div');
+    div.classList.add('outdated-warning-overlay');
+    const closer = document.createElement('div');
+    closer.classList.add('outdated-warning-closer');
+
+    // Icon by font-awesome (license: https://fontawesome.com/license, link: https://fontawesome.com/icons/times?style=solid)
+    closer.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="times" class="svg-inline--fa fa-times fa-w-11" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 352 512"><path fill="currentColor" d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"></path></svg>';
+    closer.addEventListener('click', function () {
+        document.body.removeChild(div);
+    });
+    let href = '/stable';
+    if (window.documenterBaseURL) {
+        href = window.documenterBaseURL + '/../stable';
+    }
+    div.innerHTML = 'This documentation is not for the latest version. <br> <a href="' + href + '" target="_self">Go to the latest documentation</a>.';
+    div.appendChild(closer);
+    document.body.appendChild(div);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', maybeAddWarning);
+} else {
+    maybeAddWarning();
+};
+</script>
+</head>
+  
+  
+  
+  <body class="palette-primary-indigo palette-accent-blue">
+    
+      
+      
+    
+    <div class="backdrop">
+      <div class="backdrop-paper"></div>
+    </div>
+    <input class="toggle" type="checkbox" id="toggle-drawer">
+    <input class="toggle" type="checkbox" id="toggle-search">
+    <label class="toggle-button overlay" for="toggle-drawer"></label>
+    <header class="header">
+      <nav aria-label="Header">
+  <div class="bar default">
+    <div class="button button-menu" role="button" aria-label="Menu">
+      <label class="toggle-button icon icon-menu" for="toggle-drawer">
+        <span></span>
+      </label>
+    </div>
+    <div class="stretch">
+      <div class="title">
+        
+          <span class="path">
+            
+              
+                Number fields <i class="icon icon-link"></i>
+              
+            
+          </span>
+        
+        Orders
+      </div>
+    </div>
+    
+    
+    <div class="button button-search" role="button" aria-label="Search">
+      <label class="toggle-button icon icon-search" title="Search" for="toggle-search"></label>
+    </div>
+  </div>
+  <div class="bar search">
+    <div class="button button-close" role="button" aria-label="Close">
+      <label class="toggle-button icon icon-back" for="toggle-search"></label>
+    </div>
+    <div class="stretch">
+      <div class="field">
+        <input class="query" type="text" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck>
+      </div>
+    </div>
+    <div class="button button-reset" role="button" aria-label="Search">
+      <button class="toggle-button icon icon-close" id="reset-search"></button>
+    </div>
+  </div>
+</nav>
+    </header>
+    <main class="main">
+      
+      <div class="drawer">
+        <nav aria-label="Navigation">
+  
+  <a href="https://github.com/thofma/Hecke.jl" class="project">
+    <div class="banner">
+      
+      <div class="name">
+        <strong>
+          Hecke.jl
+          <span class="version">
+            
+          </span>
+        </strong>
+        
+          <br>
+          thofma/Hecke.jl
+        
+      </div>
+    </div>
+  </a>
+  <div class="scrollable">
+    <div class="wrapper">
+      
+        <ul class="repo">
+          <li class="repo-download">
+            
+            <a href="https://github.com/thofma/Hecke.jl/archive/master.zip" target="_blank" title="Download" data-action="download">
+              <i class="icon icon-download"></i> Download
+            </a>
+          </li>
+          <li class="repo-stars">
+            <a href="https://github.com/thofma/Hecke.jl/stargazers" target="_blank" title="Stargazers" data-action="star">
+              <i class="icon icon-star"></i> Stars
+              <span class="count">&ndash;</span>
+            </a>
+          </li>
+        </ul>
+        <hr>
+      
+      <div class="toc">
+        <ul>
+          
+            
+  <li>
+    <a class="" title="Getting Started" href="../..">
+      Getting Started
+    </a>
+    
+  </li>
+
+          
+            
+  <li>
+    <span class="section">Number fields</span>
+    <ul>
+      
+        
+  <li>
+    <a class="" title="Introduction" href="../introduction/">
+      Introduction
+    </a>
+    
+  </li>
+
+      
+        
+  <li>
+    <a class="current" title="Orders" href="./">
+      Orders
+    </a>
+    
+      
+      
+        <ul>
+          
+            <li class="anchor">
+              <a title="Creation" href="#creation">
+                Creation
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Basic properties" href="#basic-properties">
+                Basic properties
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Elements" href="#elements">
+                Elements
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Ideals" href="#ideals">
+                Ideals
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Fractional ideals" href="#fractional-ideals">
+                Fractional ideals
+              </a>
+            </li>
+          
+        </ul>
+      
+    
+  </li>
+
+      
+        
+  <li>
+    <a class="" title="Maximal Orders" href="../maximalorders/">
+      Maximal Orders
+    </a>
+    
+  </li>
+
+      
+    </ul>
+  </li>
+
+          
+        </ul>
+        
+      </div>
+    </div>
+  </div>
+</nav>
+      </div>
+      <article class="article">
+        <div class="wrapper">
+          
+            <h1>Orders</h1>
+          
+          <p><a id='Creation-1'></a></p>
+<h2 id="creation">Creation</h2>
+<div class="codehilite"><pre><span></span>Order(B::Array{nf_elem, 1}, check::Bool = true) -&gt; NfOrd
+</pre></div>
+
+
+<blockquote>
+<p>Returns the order with <script type="math/tex">\mathbf Z</script>-basis <script type="math/tex">B</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">B</script> defines an order.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>Order(K::AnticNumberField, A::FakeFmpqMat, check::Bool = true) -&gt; NfOrd
+</pre></div>
+
+
+<blockquote>
+<p>Returns the order which has basis matrix <script type="math/tex">A</script> with respect to the power basis of <script type="math/tex">K</script>. If <code>check</code> is set, it is checked whether <script type="math/tex">A</script> defines an order.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>EquationOrder(K::AnticNumberField) -&gt; NfOrd
+</pre></div>
+
+
+<blockquote>
+<p>Returns the equation of the number field <script type="math/tex">K</script>.</p>
+</blockquote>
+<p><a id='Example-1'></a></p>
+<h3 id="example">Example</h3>
+<div class="codehilite"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="s">&quot;x&quot;</span><span class="p">);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">O</span> <span class="o">=</span> <span class="n">EquationOrder</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="n">Order</span> <span class="n">of</span> <span class="n">Number</span> <span class="n">field</span> <span class="n">over</span> <span class="n">Rational</span> <span class="n">Field</span> <span class="n">with</span> <span class="n">defining</span> <span class="n">polynomial</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>
+<span class="n">with</span> <span class="n">Z</span><span class="o">-</span><span class="n">basis</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">a</span><span class="p">]</span>
+</pre></div>
+
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Internally there is a difference between arbitary orders and maximal orders.     An order will be treated as a maximal order, that is, as the ring of integers,     if it was computed in the following way.</p>
+</div>
+<hr />
+<div class="codehilite"><pre><span></span>maximal_order(K::AnticNumberField) -&gt; NfMaxOrd
+ring_of_integers(K::AnticNumberField) -&gt; NfMaxOrd
+</pre></div>
+
+
+<blockquote>
+<p>Returns the maximal order of <script type="math/tex">K</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>maximal_order(K::AnticNumberField, primes::Array{fmpz, 1}) -&gt; NfMaxOrd
+maximal_order(K::AnticNumberField, primes::Array{Integer, 1}) -&gt; NfMaxOrd
+ring_of_integers(K::AnticNumberField, primes::Array{fmpz, 1}) -&gt; NfMaxOrd
+ring_of_integers(K::AnticNumberField, primes::Array{Integer, 1}) -&gt; NfMaxOrd
+</pre></div>
+
+
+<blockquote>
+<p>Assuming that <code>primes</code> contains all the prime numbers at which the equation order <script type="math/tex">\mathbf{Z}[\alpha]</script> of <script type="math/tex">K = \mathbf{Q}(\alpha)</script> is not maximal (e.g. <code>primes</code> may contain all prime divisors of the discriminant of <script type="math/tex">\mathbf Z[\alpha]</script>), this function returns the maximal order of <script type="math/tex">K</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>make_maximal(O::NfOrd) -&gt; NfMaxOrd
+</pre></div>
+
+
+<blockquote>
+<p>Assuming that <script type="math/tex">\mathcal O</script> is an order, this function returns the same order as a maximal order.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span><span class="n">julia</span><span class="o">&gt;</span> <span class="n">Qx</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">PolynomialRing</span><span class="p">(</span><span class="n">QQ</span><span class="p">,</span> <span class="s">&quot;x&quot;</span><span class="p">);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">K</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">NumberField</span><span class="p">(</span><span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">);</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">R</span> <span class="o">=</span> <span class="n">EquationOrder</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="n">Order</span> <span class="n">of</span> <span class="n">Number</span> <span class="n">field</span> <span class="n">over</span> <span class="n">Rational</span> <span class="n">Field</span> <span class="n">with</span> <span class="n">defining</span> <span class="n">polynomial</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>
+<span class="n">with</span> <span class="n">Z</span><span class="o">-</span><span class="n">basis</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">a</span><span class="p">]</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">S</span> <span class="o">=</span> <span class="n">make_maximal</span><span class="p">(</span><span class="n">R</span><span class="p">)</span>
+<span class="n">Maximal</span> <span class="n">order</span> <span class="n">of</span> <span class="n">Number</span> <span class="n">field</span> <span class="n">over</span> <span class="n">Rational</span> <span class="n">Field</span> <span class="n">with</span> <span class="n">defining</span> <span class="n">polynomial</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>
+<span class="n">with</span> <span class="n">basis</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">a</span><span class="p">]</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">T</span> <span class="o">=</span> <span class="n">maximal_order</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
+<span class="n">Maximal</span> <span class="n">order</span> <span class="n">of</span> <span class="n">Number</span> <span class="n">field</span> <span class="n">over</span> <span class="n">Rational</span> <span class="n">Field</span> <span class="n">with</span> <span class="n">defining</span> <span class="n">polynomial</span> <span class="n">x</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>
+<span class="n">with</span> <span class="n">basis</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">a</span><span class="p">]</span>
+
+<span class="n">julia</span><span class="o">&gt;</span> <span class="n">basis_mat</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">==</span> <span class="n">basis_mat</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+<span class="n">true</span>
+</pre></div>
+
+
+<p><a id='Basic-properties-1'></a></p>
+<h2 id="basic-properties">Basic properties</h2>
+<div class="codehilite"><pre><span></span>signature(O::NfOrd) -&gt; Tuple{Int, Int}
+</pre></div>
+
+
+<blockquote>
+<p>Returns the signature of the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>degree(O::NfOrd) -&gt; Int
+</pre></div>
+
+
+<blockquote>
+<p>Returns the degree of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>norm_change_const(O::NfOrd) -&gt; (Float64, Float64)
+</pre></div>
+
+
+<blockquote>
+<p>Returns <script type="math/tex">(c_1, c_2) \in \mathbf R_{>0}^2</script> such that for all <script type="math/tex">x = \sum_{i=1}^d x_i \omega_i \in \mathcal O</script> we have <script type="math/tex">T_2(x) \leq c_1 \cdot \sum_i^d x_i^2</script> and <script type="math/tex">\sum_i^d x_i^2 \leq c_2 \cdot T_2(x)</script>, where <script type="math/tex">(\omega_i)_i</script> is the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>isequationorder(O::NfOrd) -&gt; Bool
+</pre></div>
+
+
+<blockquote>
+<p>Returns whether <script type="math/tex">\mathcal O</script> is the equation order.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>nf(O::NfOrd) -&gt; AnticNumberField
+</pre></div>
+
+
+<blockquote>
+<p>Returns the ambient number field of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>basis(O::NfOrd) -&gt; Array{NfOrdElem, 1}
+</pre></div>
+
+
+<blockquote>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>basis_mat(O::NfOrd) -&gt; FakeFmpqMat
+</pre></div>
+
+
+<blockquote>
+<p>Returns the basis matrix of <script type="math/tex">\mathcal O</script> with respect to the power basis of the ambient number field.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>basis_mat_inv(O::NfOrd) -&gt; FakeFmpqMat
+</pre></div>
+
+
+<blockquote>
+<p>Returns the inverse of the basis matrix of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>discriminant(O::NfOrd) -&gt; fmpz
+</pre></div>
+
+
+<blockquote>
+<p>Returns the discriminant of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>gen_index(O::NfOrd) -&gt; fmpq
+</pre></div>
+
+
+<blockquote>
+<p>Generalized index of <script type="math/tex">\mathcal O</script> with respect to the ambient equation order <script type="math/tex">\mathbf Z[\alpha]</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>index(O::NfOrd) -&gt; fmpz
+</pre></div>
+
+
+<blockquote>
+<p>Assuming that the order <script type="math/tex">\mathcal O</script> contains the ambient equation order <script type="math/tex">\mathbf Z[\alpha]</script>, this function returns the index <script type="math/tex">[ \mathcal O : \mathbf ZZ]</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>is_index_divisor(O::NfOrd, d::fmpz) -&gt; Bool
+is_index_divisor(O::NfOrd, d::Int) -&gt; Bool
+</pre></div>
+
+
+<blockquote>
+<p>Returns whether <script type="math/tex">d</script> is a divisor of the index of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>minkowski_mat(O::NfOrd, abs_tol::Int = 64) -&gt; arb_mat
+</pre></div>
+
+
+<blockquote>
+<p>Returns the Minkowski matrix of <script type="math/tex">\mathcal O</script>. Thus if <script type="math/tex">\mathcal O</script> has degree <script type="math/tex">d</script>, then the result is a matrix in <script type="math/tex">\operatorname{Mat}_{d\times d}(\mathbf R)</script>. The entries of the matrix are real balls of type <code>arb</code> with radius less then <code>2^-abs_tol</code>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>in(a::nf_elem, O::NfOrd) -&gt; Bool
+</pre></div>
+
+
+<blockquote>
+<p>Checks whether <script type="math/tex">a</script> lies in <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>den(a::nf_elem, O::NfOrd) -&gt; fmpz
+</pre></div>
+
+
+<blockquote>
+<p>Returns the smallest positive integer <script type="math/tex">k</script> such that <script type="math/tex">k \cdot a</script> lies in O.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>+(R::NfOrd, S::NfOrd) -&gt; NfOrd
+</pre></div>
+
+
+<blockquote>
+<p>Given two orders <script type="math/tex">R</script>, <script type="math/tex">S</script> of <script type="math/tex">K</script>, this function returns the smallest order containing both <script type="math/tex">R</script> and <script type="math/tex">S</script>. It is assumed that <script type="math/tex">R</script>, <script type="math/tex">S</script> contain the ambient equation order and have coprime index.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>poverorder(O::NfOrd, p::fmpz) -&gt; NfOrd
+poverorder(O::NfOrd, p::Integer) -&gt; NfOrd
+</pre></div>
+
+
+<blockquote>
+<p>This function tries to find an order that is locally larger than <script type="math/tex">\mathcal O</script> at the prime <script type="math/tex">p</script>: If <script type="math/tex">p</script> divides the index <script type="math/tex">[ \mathcal O_K : \mathcal O]</script>, this function will return an order <script type="math/tex">\tilde{\mathcal O}</script> such that <script type="math/tex">v_p([ \mathcal O_K : \tilde{\mathcal O}]) < v_p([ \mathcal O_K : \mathcal O])</script>. Otherwise <script type="math/tex">\mathcal O</script> is returned.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>pmaximal_overorder(O::NfOrd, p::fmpz) -&gt; NfOrd
+pmaximal_overorder(O::NfOrd, p::Integer) -&gt; NfOrd
+</pre></div>
+
+
+<blockquote>
+<p>This function finds a <script type="math/tex">p</script>-maximal order <script type="math/tex">\tilde{\mathcal O}</script> containing <script type="math/tex">\mathcal O</script>. That is, the index <script type="math/tex">[ \mathcal O_K : \tilde{\mathcal O}]</script> is not dividible by <script type="math/tex">p</script>.</p>
+</blockquote>
+<p><a id='Elements-1'></a></p>
+<h2 id="elements">Elements</h2>
+<p><a id='Creation-2'></a></p>
+<h3 id="creation_1">Creation</h3>
+<hr />
+<div class="codehilite"><pre><span></span>  call(O::NfOrd, a::nf_elem, check::Bool = true) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Given an element <script type="math/tex">a</script> of the ambient number field of <script type="math/tex">\mathcal O</script>, this function coerces the element into <script type="math/tex">\mathcal O</script>. It will be checked that <script type="math/tex">a</script> is contained in <script type="math/tex">\mathcal O</script> if and only if <code>check</code> is <code>true</code>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>  call(O::NfOrd, a::Union{fmpz, Integer}) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Given an element <script type="math/tex">a</script> of type <code>fmpz</code> or <code>Integer</code>, this function coerces the element into <script type="math/tex">\mathcal O</script>. It will be checked that <script type="math/tex">a</script> is contained in <script type="math/tex">\mathcal O</script> if and only if <code>check</code> is <code>true</code>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>  call(O::NfOrd, arr::Array{fmpz, 1})
+</pre></div>
+
+
+<blockquote>
+<p>Returns the element of <script type="math/tex">\mathcal O</script> with coefficient vector <code>arr</code>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>  call{T &lt;: Integer}(O::NfOrd, arr::Array{T, 1})
+</pre></div>
+
+
+<blockquote>
+<p>Returns the element of <script type="math/tex">\mathcal O</script> with coefficient vector <code>arr</code>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>  call(O::NfOrd) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>This function constructs a new element of <script type="math/tex">\mathcal O</script> which is set to <script type="math/tex">0</script>.</p>
+</blockquote>
+<p><a id='Basic-properties-2'></a></p>
+<h3 id="basic-properties_1">Basic properties</h3>
+<hr />
+<div class="codehilite"><pre><span></span>parent(a::NfOrdElem) -&gt; NfOrd
+</pre></div>
+
+
+<blockquote>
+<p>Returns the order of which <script type="math/tex">a</script> is an element.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>elem_in_nf(a::NfOrdElem) -&gt; nf_elem
+</pre></div>
+
+
+<blockquote>
+<p>Returns the element <script type="math/tex">a</script> considered as an element of the ambient number field.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>elem_in_basis(a::NfOrdElem) -&gt; Array{fmpz, 1}
+</pre></div>
+
+
+<blockquote>
+<p>Returns the coefficient vector of <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>discriminant(B::Array{NfOrdElem, 1}) -&gt; fmpz
+</pre></div>
+
+
+<blockquote>
+<p>Returns the discriminant of the family <script type="math/tex">B</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>==(x::NfOrdElem, y::NfOrdElem) -&gt; Bool
+</pre></div>
+
+
+<blockquote>
+<p>Returns whether <script type="math/tex">x</script> and <script type="math/tex">y</script> are equal.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>zero(O::NfOrd) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Returns the zero element of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>one(O::NfOrd) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Returns the zero element of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>iszero(a::NfOrd) -&gt; Bool
+</pre></div>
+
+
+<blockquote>
+<p>Tests if <script type="math/tex">a</script> is one.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>isone(a::NfOrd) -&gt; Bool
+</pre></div>
+
+
+<blockquote>
+<p>Tests if <script type="math/tex">a</script> is one.</p>
+</blockquote>
+<p><a id='Arithmetic-1'></a></p>
+<h3 id="arithmetic">Arithmetic</h3>
+<hr />
+<div class="codehilite"><pre><span></span>-(x::NfOrdElem) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Returns the additive inverse of <script type="math/tex">x</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>+(x::NfOrdElem, y::NfOrdElem) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Returns <script type="math/tex">x + y</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>-(x::NfOrdElem, y::NfOrdElem) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Returns <script type="math/tex">x - y</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>*(x::NfOrdElem, y::NfOrdElem) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Returns <script type="math/tex">x \cdot y</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>^(x::NfOrdElem, y::Union{fmpz, Int})
+</pre></div>
+
+
+<blockquote>
+<p>Returns <script type="math/tex">x^y</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>mod(a::NfOrdElem, m::Union{fmpz, Int}) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Reduces the coefficient vector of <script type="math/tex">a</script> modulo <script type="math/tex">m</script> and returns the corresponding element. The coefficient vector of the result will have entries <script type="math/tex">x</script> with  <script type="math/tex">0 \leq x \leq m</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>powermod(a::NfOrdElem, i::fmpz, m::Integer) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Returns the element <script type="math/tex">a^i</script> modulo <script type="math/tex">m</script>.</p>
+</blockquote>
+<p><a id='Miscallenous-1'></a></p>
+<h3 id="miscallenous">Miscallenous</h3>
+<hr />
+<div class="codehilite"><pre><span></span>representation_mat(a::NfOrdElem) -&gt; fmpz_mat
+</pre></div>
+
+
+<blockquote>
+<p>Returns the representation matrix of the element <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>representation_mat(a::NfOrdElem, K::AnticNumberField) -&gt; FakeFmpqMat
+</pre></div>
+
+
+<blockquote>
+<p>Returns the representation matrix of the element <script type="math/tex">a</script> considered as an element of the ambient number field <script type="math/tex">K</script>. It is assumed that <script type="math/tex">K</script> is the ambient number field of the order of <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>trace(a::NfOrdElem) -&gt; fmpz
+</pre></div>
+
+
+<blockquote>
+<p>Returns the trace of <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>norm(a::NfOrdElem) -&gt; fmpz
+</pre></div>
+
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>rand(O::NfOrd, n::Union{Integer, fmpz}) -&gt; NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Computes a coefficient vector with entries uniformly distributed in <script type="math/tex">\{-n,\dotsc,-1,0,1,\dotsc,n\}</script> and returns the corresponding element of the order <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>minkowski_map(a::NfOrdElem, abs_tol::Int) -&gt; Array{arb, 1}
+</pre></div>
+
+
+<blockquote>
+<p>Returns the image of <script type="math/tex">a</script> under the Minkowski embedding. Every entry of the array returned is of type <code>arb</code> with radius less then <code>2^-abs_tol</code>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>conjugates_arb(x::NfOrdElem, abs_tol::Int) -&gt; Array{acb, 1}
+</pre></div>
+
+
+<blockquote>
+<p>Compute the the conjugates of <code>x</code> as elements of type <code>acb</code>. Recall that we order the complex conjugates <script type="math/tex">\sigma_{r+1}(x),...,\sigma_{r+2s}(x)</script> such that <script type="math/tex">\sigma_{i}(x) = \overline{\sigma_{i + s}(x)}</script> for <script type="math/tex">r + 2 \leq i \leq r + s</script>.</p>
+<p>Every entry <code>y</code> of the array returned satisfies <code>radius(real(y)) &lt; 2^-abs_tol</code>, <code>radius(imag(y)) &lt; 2^-abs_tol</code> respectively.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>conjugates_arb_log(x::NfOrdElem, abs_tol::Int) -&gt; Array{arb, 1}
+</pre></div>
+
+
+<blockquote>
+<p>Returns the elements <script type="math/tex">(\log(\lvert \sigma_1(x) \rvert),\dotsc,\log(\lvert\sigma_r(x) \rvert), \dotsc,2\log(\lvert \sigma_{r+1}(x) \rvert),\dotsc, 2\log(\lvert \sigma_{r+s}(x)\rvert))</script> as elements of type <code>arb</code> radius less then <code>2^-abs_tol</code>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>t2(x::NfOrdElem, abs_tol::Int = 32) -&gt; arb
+</pre></div>
+
+
+<blockquote>
+<p>Return the <script type="math/tex">T_2</script>-norm of <script type="math/tex">x</script>. The radius of the result will be less than <code>2^-abs_tol</code>.</p>
+</blockquote>
+<p><a id='Ideals-1'></a></p>
+<h2 id="ideals">Ideals</h2>
+<p><a id='Creation-3'></a></p>
+<h3 id="creation_2">Creation</h3>
+<hr />
+<div class="codehilite"><pre><span></span>ideal(O::NfOrd, a::Int) -&gt; NfOrdIdl
+</pre></div>
+
+
+<blockquote>
+<p>Returns the ideal of <script type="math/tex">\mathcal O</script> which is generated by <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>ideal(O::NfOrd, a::fmpz) -&gt; NfOrdIdl
+</pre></div>
+
+
+<blockquote>
+<p>Returns the ideal of <script type="math/tex">\mathcal O</script> which is generated by <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>ideal(O::NfOrd, A::fmpz_mat) -&gt; NfOrdIdl
+</pre></div>
+
+
+<blockquote>
+<p>Assuming that <script type="math/tex">A</script> is a <script type="math/tex">d \times d</script> nonsingular integer matrix, this function returns the ideal <script type="math/tex">I</script> given by <script type="math/tex">I = \bigoplus \mathbf Z \alpha_i</script>, where <script type="math/tex">(\alpha_1,\dotsc,\alpha_d) = (\omega_1,\dotsc,\omega_d) A^t</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>ideal(O::NfOrd, a::NfOrdElem) -&gt; NfOrdIdl
+</pre></div>
+
+
+<blockquote>
+<p>Returns the ideal of <script type="math/tex">\mathcal O</script> which is generated by <script type="math/tex">a</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>ring_of_multipliers(I::NfOrdIdl) -&gt; NfOrdGen
+</pre></div>
+
+
+<blockquote>
+<p>Computes the order <script type="math/tex">(I : I)</script>, which is the set of all <script type="math/tex">x \in K</script> with <script type="math/tex">xI \subseteq I</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>*(O::NfOrd, x::NfOrdElem) -&gt; NfOrdIdl
+*(x::NfOrdElem, O::NfOrd) -&gt; NfOrdIdl
+</pre></div>
+
+
+<blockquote>
+<p>Returns the principal ideal <script type="math/tex">(x)</script> of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<p><a id='Arithmetic-2'></a></p>
+<h3 id="arithmetic_1">Arithmetic</h3>
+<hr />
+<div class="codehilite"><pre><span></span>==(x::NfOrdIdl, y::NfOrdIdl)
+</pre></div>
+
+
+<blockquote>
+<p>Returns whether <script type="math/tex">x</script> and <script type="math/tex">y</script> are equal.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>+(x::NfOrdIdl, y::NfOrdIdl)
+</pre></div>
+
+
+<blockquote>
+<p>Returns <script type="math/tex">x + y</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>*(x::NfOrdIdl, y::NfOrdIdl)
+</pre></div>
+
+
+<blockquote>
+<p>Returns <script type="math/tex">x \cdot y</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>intersection(x::NfOrdIdl, y::NfOrdIdl) -&gt; NfOrdIdl
+lcm(x::NfOrdIdl, y::NfOrdIdl) -&gt; NfOrdIdl
+</pre></div>
+
+
+<blockquote>
+<p>Returns <script type="math/tex">x \cap y</script>.</p>
+</blockquote>
+<p><a id='Miscaellenous-1'></a></p>
+<h3 id="miscaellenous">Miscaellenous</h3>
+<hr />
+<div class="codehilite"><pre><span></span>parent(I::NfOrdIdl) -&gt; NfOrd
+</pre></div>
+
+
+<blockquote>
+<p>Returns the order of <script type="math/tex">I</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>basis(I::NfOrdIdl) -&gt; Array{NfOrdElem, 1}
+</pre></div>
+
+
+<blockquote>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">I</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>basis_mat(I::NfOrdIdl) -&gt; fmpz_mat
+</pre></div>
+
+
+<blockquote>
+<p>Returns the basis matrix of <script type="math/tex">I</script> with respect to the basis of the order.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>minimum(I::NfOrdIdl) -&gt; fmpz
+</pre></div>
+
+
+<blockquote>
+<p>Returns the minimum of <script type="math/tex">I</script>, that is, the minimum of <script type="math/tex">I \cap \mathbf Z_{\geq 0}</script>, where <script type="math/tex">\mathcal O</script> is the order of <script type="math/tex">I</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>norm(I::NfOrdIdl) -&gt; fmpz
+</pre></div>
+
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">I</script>, that is, the cardinality of <script type="math/tex">\mathcal O/I</script>, where <script type="math/tex">\mathcal O</script> is the order of <script type="math/tex">I</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>in(x::NfOrdElem, y::NfOrdIdl)
+</pre></div>
+
+
+<blockquote>
+<p>Returns whether <script type="math/tex">x</script> is contained in <script type="math/tex">y</script>.</p>
+</blockquote>
+<div class="codehilite"><pre><span></span>idempotents(x::NfOrdIdl, y::NfOrdIdl) -&gt; NfOrdElem, NfOrdElem
+</pre></div>
+
+
+<blockquote>
+<p>Returns a tuple <code>(e, f)</code> consisting of elements <code>e in x</code>, <code>f in y</code> such that <code>1 = e + f</code>.</p>
+<p>If the ideals are not coprime, an error is raised.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>mod(x::NfOrdElem, I::NfOrdIdl)
+</pre></div>
+
+
+<blockquote>
+<p>Returns the unique element <script type="math/tex">y</script> of the ambient order of <script type="math/tex">x</script> with <script type="math/tex">x \equiv y \bmod I</script> and the following property: If <script type="math/tex">a_1,\dotsc,a_d \in \Z_{\geq 1}</script> are the diagonal entries of the unique HNF basis matrix of <script type="math/tex">I</script> and <script type="math/tex">(b_1,\dotsc,b_d)</script> is the coefficient vector of <script type="math/tex">y</script>, then <script type="math/tex">0 \leq b_i < a_i</script> for <script type="math/tex">1 \leq i \leq d</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>pradical(O::NfOrd, p::fmpz) -&gt; NfOrdIdl
+</pre></div>
+
+
+<blockquote>
+<p>Given a prime number <script type="math/tex">p</script>, this function returns the <script type="math/tex">p</script>-radical <script type="math/tex">\sqrt{p\mathcal O}</script> of <script type="math/tex">\mathcal O</script>, which is  just <script type="math/tex">\{ x \in \mathcal O \mid \exists k \in \mathbf Z_{\geq 0} \colon x^k \in p\mathcal O \}</script>. It is not checked that <script type="math/tex">p</script> is prime.</p>
+</blockquote>
+<p><a id='Fractional-ideals-1'></a></p>
+<h2 id="fractional-ideals">Fractional ideals</h2>
+<p><a id='Creation-4'></a></p>
+<h3 id="creation_3">Creation</h3>
+<hr />
+<div class="codehilite"><pre><span></span>frac_ideal(O::NfOrd, A::fmpz_mat, b::fmpz) -&gt; NfOrdFracIdl
+</pre></div>
+
+
+<blockquote>
+<p>Creates the fractional ideal of <script type="math/tex">\mathcal O</script> with basis matrix <script type="math/tex">A/b</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>frac_ideal(O::NfOrd, A::FakeFmpqMat) -&gt; NfOrdFracIdl
+</pre></div>
+
+
+<blockquote>
+<p>Creates the fractional ideal of <script type="math/tex">\mathcal O</script> with basis matrix <script type="math/tex">A</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>frac_ideal(O::NfOrd, I::NfOrdIdl) -&gt; NfOrdFracIdl
+</pre></div>
+
+
+<blockquote>
+<p>Turns the ideal <script type="math/tex">I</script> into a fractional ideal of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>frac_ideal(O::NfOrd, I::NfOrdIdl, b::fmpz) -&gt; NfOrdFracIdl
+</pre></div>
+
+
+<blockquote>
+<p>Creates the fractional ideal <script type="math/tex">I/b</script> of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>frac_ideal(O::NfOrd, a::nf_elem) -&gt; NfOrdFracIdl
+</pre></div>
+
+
+<blockquote>
+<p>Creates the principal fractional ideal <script type="math/tex">(a)</script> of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>frac_ideal(O::NfOrd, a::NfOrdElem) -&gt; NfOrdFracIdl
+</pre></div>
+
+
+<blockquote>
+<p>Creates the principal fractional ideal <script type="math/tex">(a)</script> of <script type="math/tex">\mathcal O</script>.</p>
+</blockquote>
+<p><a id='Arithmetic-3'></a></p>
+<h3 id="arithmetic_2">Arithmetic</h3>
+<hr />
+<div class="codehilite"><pre><span></span>==(x::NfOrdFracIdl, y::NfOrdFracIdl) -&gt; Bool
+</pre></div>
+
+
+<blockquote>
+<p>Returns whether <script type="math/tex">x</script> and <script type="math/tex">y</script> are equal.</p>
+</blockquote>
+<p><a id='Miscaellenous-2'></a></p>
+<h3 id="miscaellenous_1">Miscaellenous</h3>
+<hr />
+<div class="codehilite"><pre><span></span>basis_mat(I::NfOrdFracIdl) -&gt; FakeFmpqMat
+</pre></div>
+
+
+<blockquote>
+<p>Returns the basis matrix of <script type="math/tex">I</script> with respect to the basis of the order.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>basis_mat_inv(I::NfOrdFracIdl) -&gt; FakeFmpqMat
+</pre></div>
+
+
+<blockquote>
+<p>Returns the inverse of the basis matrix of <script type="math/tex">I</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>basis(I::NfOrdFracIdl) -&gt; Array{nf_elem, 1}
+</pre></div>
+
+
+<blockquote>
+<p>Returns the <script type="math/tex">\mathbf Z</script>-basis of <script type="math/tex">I</script>.</p>
+</blockquote>
+<hr />
+<div class="codehilite"><pre><span></span>norm(I::NfOrdFracIdl) -&gt; fmpq
+</pre></div>
+
+
+<blockquote>
+<p>Returns the norm of <script type="math/tex">I</script>
+</p>
+</blockquote>
+          <aside class="copyright" role="note">
+            
+            Documentation built with
+            <a href="http://www.mkdocs.org" target="_blank">MkDocs</a>
+            using the
+            <a href="http://squidfunk.github.io/mkdocs-material/" target="_blank">
+              Material
+            </a>
+            theme.
+          </aside>
+          
+            <footer class="footer">
+              
+  <nav class="pagination" aria-label="Footer">
+    <div class="previous">
+      
+        <a href="../introduction/" title="Introduction">
+          <span class="direction">
+            Previous
+          </span>
+          <div class="page">
+            <div class="button button-previous" role="button" aria-label="Previous">
+              <i class="icon icon-back"></i>
+            </div>
+            <div class="stretch">
+              <div class="title">
+                Introduction
+              </div>
+            </div>
+          </div>
+        </a>
+      
+    </div>
+    <div class="next">
+      
+        <a href="../maximalorders/" title="Maximal Orders">
+          <span class="direction">
+            Next
+          </span>
+          <div class="page">
+            <div class="stretch">
+              <div class="title">
+                Maximal Orders
+              </div>
+            </div>
+            <div class="button button-next" role="button" aria-label="Next">
+              <i class="icon icon-forward"></i>
+            </div>
+          </div>
+        </a>
+      
+    </div>
+  </nav>
+
+            </footer>
+          
+        </div>
+      </article>
+      <div class="results" role="status" aria-live="polite">
+        <div class="scrollable">
+          <div class="wrapper">
+            <div class="meta"></div>
+            <div class="list"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      var base_url = '../..';
+      var repo_id  = 'thofma/Hecke.jl';
+    </script>
+    <script src="../../assets/javascripts/application-997097ee0c.js"></script>
+    
+      <script src="../../mathjaxhelper.js"></script>
+    
+      <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+    
+    
+  </body>
+</html>
