@@ -114,10 +114,38 @@ function __assert_has_automorphisms(
     compress = false
   end
   vector_set = []
+  # Make the Gram matrix small: Glll == T*GL*transpose(T)
+  Glll, T = GL, identity_matrix(ZZ, nrows(GL))
+  if do_lll && !get_attribute(L, :is_lll_reduced, false)
+    G1, T1 = lll_gram_with_transform(GL)
+    # The short vectors are enumerated up to the largest diagonal entry. LLL
+    # does not minimise that entry, so keep the given basis if it is at
+    # least as good.
+    if maximum(diagonal(G1)) < maximum(diagonal(GL))
+      Glll, T = G1, T1
+    end
+  end
+  if maximum(abs, Glll) > ZZ(2)^62
+    # temporary fix TODO to it in _short_vectors_with_condition
+    # The Weyl route needs the target enumeration, and the projections
+    # enumerate with Int: proceed as for big lattices above.
+    use_weyl = false
+    use_projections = false
+    use_target_enum = false
+    compress = false
+  end
+  use_weyl_route = use_weyl && use_projections && use_target_enum
+  # The vectors of norm at most 2, up to sign, serve for the norm one test and
+  # for the root system.
+  sv2 = Tuple{Vector{Int}, Int}[]
+  if use_norm_one || use_weyl_route
+    sv2 = __short_vectors(Glll, nothing, 2)
+  end
   # Split off norm 1 vectors, which needs an integral lattice: the one with
   # Gram matrix GL, in the basis of L
-  if use_norm_one && (LGL = integer_lattice(; gram = GL);
-                      sv = short_vectors(LGL, 0, Int(1)); length(sv) > 0)
+  if use_norm_one && any(x -> isone(x[2]), sv2)
+    LGL = integer_lattice(; gram = GL)
+    sv = short_vectors(LGL, 0, Int(1))
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(LGL, sv)
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
                                use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
@@ -140,35 +168,12 @@ function __assert_has_automorphisms(
   end
   invariants = (Int[],Int[])
   unsigned_invariants = (UInt[], UInt[])
-  res = ZZMatrix[GL]
-  is_lll = get_attribute(L, :is_lll_reduced, false)
-  do_lll = !is_lll && do_lll
-  if do_lll
-    # Make the Gram matrix small
-    Glll, T = lll_gram_with_transform(res[1])
-    # The short vectors are enumerated up to the largest diagonal entry. LLL
-    # does not minimise that entry, so keep the given basis if it is at
-    # least as good.
-    do_lll = maximum(diagonal(Glll)) < maximum(diagonal(GL))
-  end
-  if do_lll
+  if !isone(T)
     _L = integer_lattice(gram=Glll; cached=false)
-    res = [Glll]
-  else
-    Glll = GL
   end
-
-  if maximum(abs.(gram_matrix(_L)))>ZZ(2)^62
-    # temporary fix TODO to it in _short_vectors_with_condition
-    # The Weyl route needs the target enumeration, and the projections
-    # enumerate with Int: proceed as for big lattices above.
-    use_weyl = false
-    use_projections = false
-    use_target_enum = false
-    compress = false
-  end
-  if use_weyl && use_projections && use_target_enum
-    res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
+  res = ZZMatrix[Glll]
+  if use_weyl_route
+    res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L; sv2, force_direct=short_vectors_direct,
                                                                     search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct, use_multiset)
     use_projections = false # already added projections
   elseif use_weyl
@@ -248,25 +253,16 @@ function __assert_has_automorphisms(
   end
   @label search_done
 
+  number_reduced = length(gens)
   if use_weyl
-    reduced_gens = copy(gens)
-    _fundamental_roots = reduce(append!,[f[i:i,:] for i in 1:nrows(f)] for f in fundamental_roots; init=ZZMatrix[])
-    _orbit_rep_fundamental = _orbit_representatives(reduced_gens, _fundamental_roots)
-    _weyl_gens = _weyl_group_gens(Glll, fundamental_roots)
-    append!(gens, _weyl_gens)
+    append!(gens, _weyl_group_gens(Glll, fundamental_roots))
   end
 
   # Now translate back
-  if do_lll
+  if !isone(T)
     Tinv = inv(T)
     for i in 1:length(gens)
       gens[i] = Tinv * gens[i] * T
-    end
-
-    if use_weyl # translate reduced generators back
-      for i in 1:length(reduced_gens)
-        reduced_gens[i] = Tinv * reduced_gens[i] * T
-      end
     end
   end
 
@@ -293,7 +289,7 @@ function __assert_has_automorphisms(
     end
     L.reduced_automorphism_group_order = order_reduced
     L.automorphism_group_order = order_reduced*weyl_group_order
-    L.reduced_automorphism_group_generators = reduced_gens
+    L.reduced_automorphism_group_generators = gens[1:number_reduced]
   else
     L.automorphism_group_order = order
   end
@@ -309,12 +305,11 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
                                        use_dual::Bool=false,
                                        allow_short_vectors_direct::Bool=false,
                                        force_direct::Bool=false,
+                                       sv2=__short_vectors(_integral_split_gram(_L)[1], nothing, 2),
                                        use_multiset::Bool=true)
   tmp = ZZ()
   gramZZ, _ = _integral_split_gram(_L)
   gramInt = _int_matrix_with_overflow(gramZZ, tmp)
-  chol = CholeskyIntegralDenom(gramZZ)
-  sv2 = __short_vectors(gramZZ, nothing, 2; chol)
   n = rank(_L)
   fundamental_roots = [matrix(ZZ,1,n,i) for i in _fundamental_roots(sv2, gramInt)]
 
@@ -336,6 +331,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
     @vprintln :Lattice 2 "short vectors choosing direct=true"
     grams = ZZMatrix[]
     search_invariant_subspace=false
+    chol = CholeskyIntegralDenom(gramZZ)
     @vtime :Lattice 2 vector_set, grams, invariants  = __short_vectors_with_condition_direct(gramZZ, gramInt, grams,fixed_matrix, root_types, fundamental_roots, chol; search_fixed_vectors, search_invariant_subspace)
   end
   unsigned_invariants = (UInt[], UInt[])
