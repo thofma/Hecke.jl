@@ -207,12 +207,22 @@ julia> order(P, fac)
 ```
 """
 function order(P::EllipticCurvePoint{T}) where T<:FinFieldElem
-  # TODO: should we maybe check if order was factored already?
-  #   in this case _point_order_from_multiple should be faster
+  is_infinite(P) && return ZZ(1)
+
+  E = parent(P)
+  # NOTE: BSGS uses roughly q^(1/4) baby steps and as many giant steps.
+  # At q = 2^56, this means computing and storing about 2^14 points.
+  # Use the curve order if it is cached or q exceeds this heuristic threshold.
+  # The fallback computes and factors the curve order, then determines the point order from that factorization.
+  if has_attribute(E, :order) || order(base_field(E)) > ZZ(2)^56
+    return _order_elem_via_fac(P)
+  end
   return elem_order_bsgs(P)
 end
 
 function order(P::EllipticCurvePoint{T}, fac::Fac{ZZRingElem}) where T<:FinFieldElem
+  is_infinite(P) && return ZZ(1)
+
   return _point_order_from_multiple(P, evaluate(fac), fac)
 end
 
