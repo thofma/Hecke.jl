@@ -107,6 +107,21 @@ import Random
     @test all(g -> g * F * transpose(g) == F, gens)
   end
 
+  # a set with labels which is not invariant under the group of its basis
+  # vectors: the group is that of the set, five of the six roots of A3
+  A3 = ZZ[2 -1 0; -1 2 -1; 0 -1 2]
+  five = [([1, 0, 0], 0), ([0, 1, 0], 0), ([1, 1, 0], 0), ([0, 0, 1], 0),
+          ([1, 1, 1], 0)]
+  @test PB.automorphism_group([A3], five, zeros(Int, 5), ones(UInt, 5))[2] == 8
+
+  # a second form which makes the combined norm of every vector zero modulo
+  # 2^64: the second set is cut at the norm of the first one
+  H = ZZ[1 3; 3 11]
+  i = findfirst(i -> isodd(PB.mix(i)), 1:10)
+  forms = vcat([H], [zero_matrix(ZZ, 2, 2) for _ in 3:i],
+               [ZZ(-invmod(BigInt(PB.mix(i)), BigInt(2)^64)) * H])
+  @test PB.isometry(forms, forms)[1]
+
   # labels: the stabilizer of a vector, given by its scalar products with
   # the short vectors; -1 is not in the group
   labels = Int[Int((w * matrix(ZZ, 4, 1, v))[1, 1]) for v in V]
@@ -211,8 +226,10 @@ import Random
     return U
   end
   D4D4 = block_diagonal_matrix([D4, D4])
+  # norms which do not fit into a machine integer are refused
+  @test_throws ArgumentError PB.canonical_form([ZZ(2)^70 * A2])
   for forms in [[A2], [D4], [E8], [D4D4], [X29], [A2, r * A2],
-                [ZZ[2 1 0; 1 4 1; 0 1 6]], [ZZ(2)^70 * A2]]
+                [ZZ[2 1 0; 1 4 1; 0 1 6]]]
     canonical, T = PB.canonical_form(forms)
     @test abs(det(T)) == 1
     @test [T * F * transpose(T) for F in forms] == canonical

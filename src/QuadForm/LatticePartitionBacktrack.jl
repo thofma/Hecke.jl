@@ -118,8 +118,10 @@
 #  The search computes with `Int` and lets it wrap around, see `search_form`.
 #  All its tests remain necessary conditions for an isometry. In return every
 #  complete image is checked against (1) and against the labels in exact
-#  arithmetic before it is accepted, see `is_isometry`, so the search works
-#  for forms with entries of any size.
+#  arithmetic before it is accepted, see `is_isometry`, so the result is
+#  correct for forms with entries of any size. The search is only effective
+#  as long as the forms distinguish vectors modulo 2^64: on a sublattice where
+#  they vanish modulo 2^64 it tries everything.
 #
 #
 #  Reading map
@@ -426,6 +428,7 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
                       labels::Vector{Int} = zeros(Int, length(list)),
                       unsigned_labels::Vector{UInt} = zeros(UInt, length(list)),
                       source = nothing, everything::Bool = false,
+                      given::Bool = false,
                       cache_max_bytes::Int = CACHE_MAX_BYTES)
   form = search_form(exact_forms)
   n = size(form, 1)
@@ -493,7 +496,7 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
   return ShortVectors(exact_forms, form, all_vectors[:, keep],
                       all_form_vectors[:, keep], labels[keep],
                       unsigned_labels[keep], palette, colours, index,
-                      source === nothing && !everything && !labelled,
+                      source === nothing && !everything && !labelled && !given,
                       everything,
                       [Table(Int[], PointSet[]) for _ in 1:nv],
                       zeros(Int, nv), Ref(8 * cache_max_bytes), zeros(Int, n))
@@ -1427,8 +1430,10 @@ end
 # it is integral since `solver * B == 1`. It has to satisfy this equation and
 # equation (1) for all forms, generalised to an isometry from the source to
 # the target, and it has to map every standard basis vector to a vector with
-# the same label. If the set is `everything`, where source and target agree,
-# it has to map the set to itself and to respect the colours instead.
+# the same label. In the search for automorphisms of a set which is not
+# complete it moreover has to map the set to itself and to respect the
+# colours: so the group which is found is the group of the set with its
+# colours, whether the caller's set is invariant under more or not.
 function is_isometry(walk::Walk)
   reference = walk.reference
   source, target = reference.source, walk.target
@@ -1449,7 +1454,7 @@ function is_isometry(walk::Walk)
     p = find_point(target, Int[Int(M[i, j]) for j in 1:n])
     (p != 0 && label(target, p) == label(source, e)) || return false
   end
-  if target.everything
+  if source === target && !target.complete
     respects_colours(target, Matrix{Int}(M)) || return false
   end
   walk.isometry = M
@@ -1789,7 +1794,7 @@ function short_vectors(forms::Vector{ZZMatrix}, vector_set, labels,
                        unsigned_labels; kwargs...)
   list = Vector{Int}[v for (v, _) in vector_set]
   nv = length(list)
-  return ShortVectors(forms, list;
+  return ShortVectors(forms, list; given = true,
                       labels = isempty(labels) ? zeros(Int, nv) : labels,
                       unsigned_labels = isempty(unsigned_labels) ?
                                         zeros(UInt, nv) : unsigned_labels,
@@ -1810,10 +1815,11 @@ first form, for which they generate the lattice. Alternatively a set of
 vectors can be given, up to sign, which contains the standard basis vectors:
 `vector_set` is a list of tuples whose first entry is a vector, and `labels`
 and `unsigned_labels` are lists of integers, one for each vector, or empty.
-The label of `-v` is that of `v` with the signed part negated. Then exactly
-those `g` are returned which map every standard basis vector to a vector
-with the same label. The set and the labels have to be invariant under this
-group.
+The label of `-v` is that of `v` with the signed part negated. Of a set
+with labels the vectors with the norms and the label of a standard basis
+vector are kept, of a set without labels those up to the smallest norm for
+which they generate. Then exactly those `g` are returned which map the kept
+set to itself and respect norms and labels.
 
 The second entries of the tuples are not used. In the output of the targeted
 enumeration they are the norms of the vector with respect to the forms, which
@@ -1822,6 +1828,7 @@ are recomputed here.
 function automorphism_group(forms::Vector{ZZMatrix}, vector_set = (),
                             labels = Int[], unsigned_labels = UInt[];
                             kwargs...)
+  @req is_symmetric(forms[1]) "The first form must be symmetric"
   if nrows(forms[1]) == 0
     return ZZMatrix[identity_matrix(ZZ, 0)], one(ZZRingElem)
   end
@@ -1846,6 +1853,7 @@ label. The second set must contain every such image.
 function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
                   vector_set1 = (), vector_set2 = (), labels1 = Int[],
                   labels2 = Int[]; kwargs...)
+  @req is_symmetric(forms1[1]) "The first form must be symmetric"
   n = nrows(forms1[1])
   no = false, zero_matrix(ZZ, 0, 0)
   if n != nrows(forms2[1]) || length(forms1) != length(forms2) ||
@@ -1858,10 +1866,18 @@ function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
   # determinants agree.
   det(forms1[1]) == det(forms2[1]) || return no
   if isempty(vector_set1)
-    # An isometry maps the vectors of the first lattice of norm at most
-    # `bound` onto those of the second.
+    # An isometry maps the vectors of the first lattice of norm at most N
+    # onto those of the second. The first set consists of the vectors up to
+    # some N <= `bound`, which is their largest norm if the norms fit into an
+    # `Int`. Then the second set is cut at N exactly, not by hashed colours.
     list, bound = generating_vectors(forms1[1])
     S1 = ShortVectors(forms1, list; kwargs...)
+    if fits(Int, bound)
+      V = S1.vectors
+      GV = search_form(forms1[1:1]) * V
+      bound = ZZ(maximum(j -> sum(V[i, j] * GV[i, j] for i in 1:n),
+                         1:number_of_vectors(S1)))
+    end
     S2 = ShortVectors(forms2, enumerate_vectors(forms2[1], bound);
                       source = S1, kwargs...)
   else
@@ -2036,11 +2052,17 @@ end
 #       x_depth and maps a child which has been dealt with to its root; by
 #       (T) it maps leaves to leaves with equal traces and keys. The one of
 #       `compare_leaf!` maps the path of the reference to that of the walk,
-#       so this applies at their last common node. Automorphisms are exact:
+#       so this applies at their last common node: the subtree of the child
+#       of that node on the path of the reference has been searched to the
+#       end, since an early return leaves a subtree only if the reference is
+#       outside it, and the walk does not come back. Automorphisms are exact:
 #       for the forms by the key or `is_isometry`, for the set of points by
 #       `respects_colours` or since the set is complete.
 #   (K) The result is the basis of the smallest leaf; the forms in it are
 #       part of the key, which by (T) is the same for isomorphic sets.
+#       Isometric forms have isomorphic sets: a given set by assumption, and
+#       the vectors up to the smallest norm for which they generate if the
+#       norms fit into an `Int`, which `canonical_form` requires.
 function minimize!(state::Minimization, depth::Int,
                    inherited::Vector{Generator} = Generator[],
                    seen::Int = 0)
@@ -2132,8 +2154,12 @@ leaf have a coordinate matrix in column Hermite normal form.
 """
 function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
                         labels = Int[], unsigned_labels = UInt[]; kwargs...)
+  @req is_symmetric(forms[1]) "The first form must be symmetric"
   n = nrows(forms[1])
   n == 0 && return forms, identity_matrix(ZZ, 0), ZZMatrix[], one(ZZRingElem)
+  # The vectors are sorted by their norms as machine integers.
+  @req !isempty(vector_set) || all(x -> fits(Int, x), diagonal(forms[1])) (
+    "The diagonal entries of the first form must fit into an Int")
   S = isempty(vector_set) ? ShortVectors(forms; kwargs...) :
         short_vectors(forms, vector_set, labels, unsigned_labels;
                       everything = true, kwargs...)
