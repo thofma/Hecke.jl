@@ -99,9 +99,21 @@ end
              root_lattice(:A, 6), direct_sum(E8, rescale(D4, 3))[1]]
   for L in Ls
     n = rank(L)
-    C, T = Hecke._canonical_gram_matrix(L)
+    C, T, gens, order = Hecke._canonical_gram_matrix(L)
     @test T * gram_matrix(L) * transpose(T) == C
     @test is_unit(det(T))
+    @test order == automorphism_group_order(L)
+    @test all(g -> g * gram_matrix(L) * transpose(g) == gram_matrix(L), gens)
+    if order <= 200
+      # the generators generate a group of this order
+      group = Set(gens)
+      while true
+        new = setdiff(Set(g * h for g in group for h in gens), group)
+        isempty(new) && break
+        union!(group, new)
+      end
+      @test length(group) == order
+    end
     for _ in 1:3
       U = identity_matrix(ZZ, n)
       for _ in 1:(3 * n)
