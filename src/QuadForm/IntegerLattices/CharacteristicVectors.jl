@@ -36,7 +36,7 @@ function _characteristic_vectors(L::ZZLat)
   end
   proj2 = orthogonal_projection(ambient_space(L), basis_matrix(P1); check=false)
   # a reduced basis speeds up the closest vector problems in the recursion
-  L2 = lll(proj2(L))
+  L2 = lll(proj2(L); _is_definite = true)
   # `L2` spans the orthogonal complement of `P1`, so the projection onto the
   # orthogonal complement of `L2` is the projection complementary to `proj2`
   pr1 = one(proj2.matrix) - proj2.matrix
@@ -353,7 +353,9 @@ function _reduced_characteristic_vectors_without_1(L::ZZLat)
   # the matrix of a generating system of `L2`.
   L0 = lattice(rational_span(L))
   pr = identity_matrix(QQ, n) - change_base_ring(QQ, gram_roots*dweights)*QQ(1, dd)
-  L2 = lll(lattice(ambient_space(L0), pr; is_basis=false, check=false)) # the hnf basis can be badly conditioned
+  # the hnf basis can be badly conditioned
+  L2 = lll(lattice(ambient_space(L0), pr; is_basis=false, check=false);
+           _is_definite = is_definite(L))
   PZ = change_base_ring(ZZ, solve(basis_matrix(L2), pr; side=:left))
   cv2 = _characteristic_vectors(L2)
   # `_characteristic_vectors` returns the characteristic vectors only up to
@@ -463,6 +465,7 @@ function _canonical_gram_matrix(L::ZZLat)
   s = sign(G[1, 1]) * scale(L)
   G1, T1 = lll_gram_with_transform(change_base_ring(ZZ, G * inv(s)))
   M = integer_lattice(; gram = G1, cached = false)
+  set_attribute!(M, :is_definite, true)
   if !iseven(M) && (sv = short_vectors(M, 0, 1); !isempty(sv))
     # The vectors of norm 1 span a sublattice S = ZZ^k, and M is the
     # orthogonal sum of S and its complement K. Both are determined by M, so

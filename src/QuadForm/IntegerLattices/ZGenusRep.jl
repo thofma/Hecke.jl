@@ -380,7 +380,7 @@ function _neighbours(
       push!(lifts, w0)
     end
     for v in lifts
-      LL = lll(neighbour(L, v, p))
+      LL = lll(neighbour(L, v, p); _is_definite = is_definite(L))
       @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
       if mode == :isometry_classes
@@ -975,7 +975,7 @@ function spinor_genera_in_genus(L::ZZLat)
     N = only(_neighbours(L, p; mode=:spinor_generators))
     for i in 1:length(res)
       M = res[i]
-      LL = lll(intersect(p*M+N, 1//p*M))
+      LL = lll(intersect(p*M+N, 1//p*M); _is_definite = is_definite(L))
       push!(res, LL)
     end
   end

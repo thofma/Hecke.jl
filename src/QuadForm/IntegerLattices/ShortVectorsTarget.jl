@@ -426,8 +426,11 @@ function _short_vectors_with_condition(::Type{CoeffType},
     tmp_s = __zeros_array(CoeffType, ncols(Gi))
     @vprintln :ShortVec 5 "gram=$Gi"
     number = 0
-    # The iterator reuses s; it is copied whenever it is stored.
-    for (s, q) in __short_vectors_it(Gi, mi, ma)
+    # Only the iterator can be given up, the list is faster. The iterator
+    # reuses s; it is copied whenever it is stored.
+    vectors = max_enum == typemax(Int) ? __short_vectors(Gi, mi, ma) :
+                                         __short_vectors_it(Gi, mi, ma)
+    for (s, q) in vectors
       # This is the innermost loop - do as little as possible here
       number > max_enum && return nothing
       target_norm_q = get(target_norm, q, nothing)

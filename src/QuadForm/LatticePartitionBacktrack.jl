@@ -183,7 +183,8 @@ import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
                 fits, hnf, hnf_with_transform, inv, is_symmetric,
                 lll_gram_with_transform, matrix, mul!, nbits, nrows, rank,
                 sub, zero_matrix,
-                __short_vectors, _short_vectors_gram_integral
+                __short_vectors, _int_matrix_with_overflow,
+                _short_vectors_gram_integral
 
 ################################################################################
 #
@@ -319,11 +320,10 @@ end
 # arithmetic, see `is_isometry`. Only the coordinates of the short vectors
 # have to fit into an `Int`.
 function search_form(exact_forms::Vector{ZZMatrix})
-  n = nrows(exact_forms[1])
-  modulo_word(F) = Int[BigInt(F[i, j]) % Int for i in 1:n, j in 1:n]
-  form = modulo_word(exact_forms[1])
+  tmp = ZZ()
+  form = _int_matrix_with_overflow(exact_forms[1], tmp)
   for i in 2:length(exact_forms)
-    F = modulo_word(exact_forms[i])
+    F = _int_matrix_with_overflow(exact_forms[i], tmp)
     form += mix(i) * F
     if !is_symmetric(exact_forms[i])
       form += mix(-i) * transpose(F)
@@ -505,7 +505,7 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
                       source === nothing && !everything &&
                         (invariant || (!labelled && !given)),
                       everything,
-                      [Table(Int[], PointSet[]) for _ in 1:nv],
+                      fill(Table(Int[], PointSet[]), nv),
                       zeros(Int, nv), Ref(8 * cache_max_bytes), zeros(Int, n))
 end
 
@@ -1362,8 +1362,12 @@ function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
     B[k, :] = coordinates(S, reference.sequence[k])
   end
   reference.matrix = B
-  # The Hermite normal form of B is the identity matrix on top of zero rows.
-  reference.solver = sub(hnf_with_transform(B)[2], 1:n, 1:m)
+  # A left inverse of B: its transpose if B is a signed permutation matrix,
+  # as for the standard basis. In general the Hermite normal form of B is
+  # the identity matrix on top of zero rows.
+  Bt = transpose(B)
+  reference.solver = m == n && isone(B * Bt) ? Bt :
+                       sub(hnf_with_transform(B)[2], 1:n, 1:m)
   # -1 respects the colours if and only if -v has the colour of v for all v.
   reference.negation = all(iszero, S.labels)
   return walk

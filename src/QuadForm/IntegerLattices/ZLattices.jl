@@ -1494,6 +1494,7 @@ function lll(
   end
   set_attribute!(Llll, :_integral_split_gram=>(G2, d))
   set_attribute!(Llll, :is_lll_reduced, true)
+  def && set_attribute!(Llll, :is_definite, true)
   return Llll
 end
 
@@ -1509,7 +1510,11 @@ is_positive_definite(L::ZZLat) = _is_spd(_integral_split_gram(L)[1])
 
 is_negative_definite(L::ZZLat) = _is_spd(-_integral_split_gram(L)[1])
 
-@attr Bool is_definite(L::ZZLat) = is_positive_definite(L) || is_negative_definite(L)
+# The sign of a diagonal entry tells which of the two is to be tested.
+@attr Bool function is_definite(L::ZZLat)
+  G = _integral_split_gram(L)[1]
+  return _is_spd(nrows(G) > 0 && is_negative(G[1, 1]) ? -G : G)
+end
 
 ###############################################################################
 #

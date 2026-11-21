@@ -11,6 +11,7 @@ function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector; doauto=tr
   S = lattice(V, M; is_basis = true, check = false)
   s = rank(S)
   T = orthogonal_submodule(lattice(V), S)
+  set_attribute!(T, :is_definite, true) # as L is
   gensOS = ZZMatrix[]
   if doauto
     push!(gensOS, diagonal_matrix(ZZ, append!([-1], (1 for _ in 1:s-1)))) # diag(-1,1,...,1)
@@ -149,7 +150,7 @@ function __assert_has_automorphisms(
   # Gram matrix GL, in the basis of L
   if use_norm_one && any(x -> isone(x[2]), sv2)
     LGL = integer_lattice(; gram = GL)
-    sv = short_vectors(LGL, 0, Int(1))
+    sv = short_vectors(LGL, 0, Int(1); check = false)
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(LGL, sv)
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
                                use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
@@ -773,8 +774,8 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     _L1 = integer_lattice(gram=G1[1];cached=false)
     _L2 = integer_lattice(gram=G2[1];cached=false)
     if use_norm_one
-      sv1 = short_vectors(_L1, 0, Int(1))
-      sv2 = short_vectors(_L2, 0, Int(1))
+      sv1 = short_vectors(_L1, 0, Int(1); check = false)
+      sv2 = short_vectors(_L2, 0, Int(1); check = false)
       length(sv1) == length(sv2) || return false, zero_matrix(QQ,0,0)
       if length(sv1)>0
         S1, T1, _, _ = _norm_one_sublattice_automorphism_group(_L1, sv1; doauto=false)
