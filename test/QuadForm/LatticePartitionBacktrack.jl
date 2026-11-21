@@ -248,6 +248,27 @@ import Random
   @test PB.canonical_form([H], [(v, 0) for v in V2], labels2)[1] == canonical
   @test T * D4 * transpose(T) == canonical[1]
 
+  # the canonical search returns the automorphism group as well: of the
+  # forms, or of the forms together with the labelled set, which need not be
+  # closed under negation
+  for forms in [[A2], [D4], [E8], [X29], [A2, r * A2]]
+    _, _, gens, order = PB.canonical_form(forms)
+    @test order == PB.automorphism_group(forms)[2]
+    @test all(g -> all(F -> g * F * transpose(g) == F, forms), gens)
+  end
+  _, _, gens, order = PB.canonical_form([D4], [(v, 0) for v in V], labels1)
+  @test order == 48
+  @test all(g -> g * D4 * transpose(g) == D4, gens)
+  @test all(g -> ZZ[1 0 0 0] * g == ZZ[1 0 0 0], gens)
+  # the triangle e_1, e_2, -e_1 - e_2 in A2 with Gram matrix [2 -1; -1 2]
+  triangle = [([1, 0], 0), ([0, 1], 0), ([1, 1], 0)]
+  _, _, gens, order = PB.canonical_form([ZZ[2 -1; -1 2]], triangle, [1, 1, -1])
+  @test order == 6
+  @test !(-identity_matrix(ZZ, 2) in gens)
+  @test PB.canonical_form([ZZ[2 -1; -1 2]], triangle, [0, 0, 0])[4] == 12
+  @test PB.canonical_form([ZZ[2 -1; -1 2]], triangle, [1, 1, 1])[4] == 2
+  @test PB.canonical_form([zero_matrix(ZZ, 0, 0)])[3:4] == (ZZMatrix[], 1)
+
   # canonical forms of labelled sets of vectors which are not closed under
   # negation: counting scalar products leaves points alone in their cell, and
   # the points of a leaf have to span the space nevertheless

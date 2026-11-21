@@ -220,6 +220,11 @@ import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
 # the norm alone. Then every isometry of the forms which maps the given set
 # to itself maps this set to itself and respects the colours.
 #
+# `everything` tells whether the set is the one given by the caller, with
+# nothing dropped. Then an automorphism is an isometry of the forms which
+# maps the set to itself and respects the colours; this is checked for every
+# automorphism which is found, see `is_isometry`.
+#
 # `tables[j]` caches the scalar products of all points with v_j, see
 # `tabulate!`.
 # A set of points, by their indices: the point with index i is in the set if
@@ -267,6 +272,7 @@ struct ShortVectors
   colours::Vector{Int}
   index::Dict{Vector{Int}, Int}         # v_j => j or -v_j => -j
   complete::Bool
+  everything::Bool
   tables::Vector{Table}
   work::Vector{Int}
   budget::Base.RefValue{Int}
@@ -488,6 +494,7 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
                       all_form_vectors[:, keep], labels[keep],
                       unsigned_labels[keep], palette, colours, index,
                       source === nothing && !everything && !labelled,
+                      everything,
                       [Table(Int[], PointSet[]) for _ in 1:nv],
                       zeros(Int, nv), Ref(8 * cache_max_bytes), zeros(Int, n))
 end
@@ -1364,10 +1371,15 @@ function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
   reference.matrix = B
   # The Hermite normal form of B is the identity matrix on top of zero rows.
   reference.solver = sub(hnf_with_transform(B)[2], 1:n, 1:m)
-  if any(!iszero, S.labels) || any(!iszero, S.unsigned_labels)
-    reference.basis = basis_points(S)
+  if S.everything
+    # -v has the colour of v for all v
+    reference.negation = all(iszero, S.labels)
+  else
+    if any(!iszero, S.labels) || any(!iszero, S.unsigned_labels)
+      reference.basis = basis_points(S)
+    end
+    reference.negation = all(p -> label(S, p) == label(S, -p), reference.basis)
   end
-  reference.negation = all(p -> label(S, p) == label(S, -p), reference.basis)
   return walk
 end
 
@@ -1415,7 +1427,8 @@ end
 # it is integral since `solver * B == 1`. It has to satisfy this equation and
 # equation (1) for all forms, generalised to an isometry from the source to
 # the target, and it has to map every standard basis vector to a vector with
-# the same label.
+# the same label. If the set is `everything`, where source and target agree,
+# it has to map the set to itself and to respect the colours instead.
 function is_isometry(walk::Walk)
   reference = walk.reference
   source, target = reference.source, walk.target
@@ -1435,6 +1448,9 @@ function is_isometry(walk::Walk)
     all(x -> fits(Int, x), view(M, i:i, :)) || return false
     p = find_point(target, Int[Int(M[i, j]) for j in 1:n])
     (p != 0 && label(target, p) == label(source, e)) || return false
+  end
+  if target.everything
+    respects_colours(target, Matrix{Int}(M)) || return false
   end
   walk.isometry = M
   return true
@@ -2071,12 +2087,12 @@ end
 # ..., x_depth, so that below such a node only one child of each of their
 # orbits has to be searched; the walk need not find them leaf by leaf.
 #
-# This is only done if the set of short vectors is complete: then the group
-# of `stabilizer_chain` is the group of all automorphisms.
+# The group of `stabilizer_chain` is the group of all automorphisms of the
+# set of points: every isometry is one if the set is complete, and otherwise
+# the set is `everything` and `is_isometry` checks it.
 function on_first_path(state::Minimization, depth::Int)
   walk = state.walk
   S = walk.target
-  S.complete || return false
   if isempty(state.levels)
     chain = stabilizer_chain(S, state.base)
     state.levels = chain.levels
@@ -2088,17 +2104,22 @@ end
 
 @doc raw"""
     canonical_form(forms::Vector{ZZMatrix}, [vector_set, labels,
-                   unsigned_labels]) -> Vector{ZZMatrix}, ZZMatrix
+                   unsigned_labels])
+      -> Vector{ZZMatrix}, ZZMatrix, Vector{ZZMatrix}, ZZRingElem
 
 Given square integer matrices `forms` as in `automorphism_group`, return
 matrices `canonical` and a unimodular matrix `T` with
 `T*forms[i]*transpose(T) == canonical[i]`, such that `canonical` only depends
 on the isometry class: two lists of forms have the same canonical forms if
-and only if `isometry` finds an isometry between them.
+and only if `isometry` finds an isometry between them. Generators and the
+order of the automorphism group are returned as well, as by
+`automorphism_group`; the search computes them in any case.
 
 If a set of vectors with labels is given as in `automorphism_group`, it has to
 generate the lattice, and the canonical forms depend on the lattice together
-with the labelled set. All its vectors are used.
+with the labelled set. All its vectors are used, they need not contain the
+standard basis vectors, and the group consists of the isometries of the
+forms which map the set to itself and respect the labels.
 
 # Algorithm
 
@@ -2112,7 +2133,7 @@ leaf have a coordinate matrix in column Hermite normal form.
 function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
                         labels = Int[], unsigned_labels = UInt[]; kwargs...)
   n = nrows(forms[1])
-  n == 0 && return forms, identity_matrix(ZZ, 0)
+  n == 0 && return forms, identity_matrix(ZZ, 0), ZZMatrix[], one(ZZRingElem)
   S = isempty(vector_set) ? ShortVectors(forms; kwargs...) :
         short_vectors(forms, vector_set, labels, unsigned_labels;
                       everything = true, kwargs...)
@@ -2126,7 +2147,11 @@ function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
                        Int[], Int[], Vector{Generator}[], Int[])
   minimize!(state, 0)
   T = state.basis
-  return ZZMatrix[T * F * transpose(T) for F in forms], T
+  # There is no chain if the root is a leaf; then the group is trivial.
+  generators = ZZMatrix[matrix(ZZ, g.matrix) for level in state.levels
+                        for g in level]
+  order = prod(ZZRingElem.(state.orbit_lengths); init = one(ZZRingElem))
+  return ZZMatrix[T * F * transpose(T) for F in forms], T, generators, order
 end
 
 @doc raw"""
