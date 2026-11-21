@@ -1501,6 +1501,16 @@ end
   return integral_split(gram_matrix(L), ZZ)
 end
 
+# Definiteness by fmpz_mat_is_spd: it tries a numerical LDL^T decomposition
+# in ball arithmetic and falls back to an exact one.
+_is_spd(G::ZZMatrix) = Bool(@ccall libflint.fmpz_mat_is_spd(G::Ref{ZZMatrix})::Cint)
+
+is_positive_definite(L::ZZLat) = _is_spd(_integral_split_gram(L)[1])
+
+is_negative_definite(L::ZZLat) = _is_spd(-_integral_split_gram(L)[1])
+
+@attr Bool is_definite(L::ZZLat) = is_positive_definite(L) || is_negative_definite(L)
+
 ###############################################################################
 #
 #  Decomposition of definite lattices
