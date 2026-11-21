@@ -408,3 +408,55 @@ function _reduced_characteristic_vectors(L::ZZLat)
   end
   return _reduced_characteristic_vectors_without_1(L)
 end
+
+################################################################################
+#
+#  Canonical Gram matrix
+#
+################################################################################
+
+# The reduced characteristic vectors of `L` as a labelled set for the
+# partition backtrack. They are not closed under negation: a vector is listed
+# up to sign, with the label 1 if only it belongs to the set, -1 if only its
+# negative does, and 0 if both do.
+function _labelled_reduced_characteristic_vectors(L::ZZLat)
+  labels = Dict{Vector{Int}, Int}()
+  for m in _reduced_characteristic_vectors(L)
+    v = vec(m)
+    s = v[findfirst(!is_zero, v)] < 0 ? -1 : 1
+    v = s * v
+    labels[v] = get(labels, v, s) == s ? s : 0
+  end
+  vectors = collect(keys(labels))
+  return [(v, 0) for v in vectors], Int[labels[v] for v in vectors]
+end
+
+@doc raw"""
+    _canonical_gram_matrix(L::ZZLat) -> QQMatrix, ZZMatrix
+
+Given a definite lattice `L` with Gram matrix `G`, return a matrix `C` and a
+unimodular matrix `T` with `T*G*transpose(T) == C`, such that `C` only depends
+on the isometry class of `L`: two definite lattices are isometric if and only
+if their matrices `C` are equal.
+
+Write `G = s*G1` with `G1` integral, primitive and positive definite. Then
+`C = s*C1`, where `C1` is the canonical form of `G1` together with its
+reduced characteristic vectors [BH, Section 7], which are determined by the
+lattice up to its Weyl group; see `LatticePartitionBacktrack.canonical_form`.
+
+!!! note
+    The matrix `C` may change between different versions of Hecke.
+"""
+function _canonical_gram_matrix(L::ZZLat)
+  @req is_definite(L) "Lattice must be definite"
+  G = gram_matrix(L)
+  n = rank(L)
+  # in rank one, G1 = (1)
+  n <= 1 && return G, identity_matrix(ZZ, n)
+  s = sign(G[1, 1]) * scale(L)
+  G1, T1 = lll_gram_with_transform(change_base_ring(ZZ, G * inv(s)))
+  vectors, labels = _labelled_reduced_characteristic_vectors(
+                      integer_lattice(; gram = G1, cached = false))
+  C1, T = LatticePartitionBacktrack.canonical_form(ZZMatrix[G1], vectors, labels)
+  return s * change_base_ring(QQ, C1[1]), T * T1
+end
