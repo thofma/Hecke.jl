@@ -218,9 +218,10 @@ import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
 # `colours` gives for every point, by its index, the position of its colour
 # in the palette. An isometry maps every point to a point of the same colour.
 #
-# `complete` tells whether there are no labels and the set was cut down by
-# the norm alone. Then every isometry of the forms which maps the given set
-# to itself maps this set to itself and respects the colours.
+# `complete` tells whether every isometry of the forms which maps the points
+# of a base to points of the same colour maps the set to itself and respects
+# the colours. This holds if there are no labels and the set was cut down by
+# the norm alone, and the caller may assert it, see `automorphism_group`.
 #
 # `everything` tells whether the set is the one given by the caller, with
 # nothing dropped. Then an automorphism is an isometry of the forms which
@@ -433,7 +434,7 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
                       labels::Vector{Int} = zeros(Int, length(list)),
                       unsigned_labels::Vector{UInt} = zeros(UInt, length(list)),
                       source = nothing, everything::Bool = false,
-                      given::Bool = false,
+                      given::Bool = false, invariant::Bool = false,
                       cache_max_bytes::Int = CACHE_MAX_BYTES)
   form = search_form(exact_forms)
   n = size(form, 1)
@@ -501,7 +502,8 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
   return ShortVectors(exact_forms, form, all_vectors[:, keep],
                       all_form_vectors[:, keep], labels[keep],
                       unsigned_labels[keep], palette, colours, index,
-                      source === nothing && !everything && !labelled && !given,
+                      source === nothing && !everything &&
+                        (invariant || (!labelled && !given)),
                       everything,
                       [Table(Int[], PointSet[]) for _ in 1:nv],
                       zeros(Int, nv), Ref(8 * cache_max_bytes), zeros(Int, n))
@@ -1799,6 +1801,11 @@ without labels those up to the smallest norm for which they generate. The
 kept vectors have to generate the lattice, as they do if the set contains the
 standard basis. Then exactly those `g` are returned which map the kept set to
 itself and respect norms and labels.
+
+With `invariant = true` the caller asserts that every `g` which preserves the
+forms and maps generators of the lattice among the kept vectors to vectors
+with the same norms and labels maps the kept set to itself and respects norms
+and labels. This is then not verified for the automorphisms which are found.
 
 The second entries of the tuples are not used. In the output of the targeted
 enumeration they are the norms of the vector with respect to the forms, which

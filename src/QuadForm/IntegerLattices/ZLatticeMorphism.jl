@@ -220,8 +220,11 @@ function __assert_has_automorphisms(
     end
   end
   if algorithm == :partition_backtrack
+    # The vector set and its labels are invariant under the group, which the
+    # algorithm of Plesken and Souvignier below relies on as well.
     gens, order = LatticePartitionBacktrack.automorphism_group(
-                    res, vector_set, invariants[1], unsigned_invariants[1])
+                    res, vector_set, invariants[1], unsigned_invariants[1];
+                    invariant = true)
     fl = true
     @goto search_done
   end
