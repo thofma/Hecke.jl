@@ -1,5 +1,39 @@
 @testset "Clgp" begin
   Qx, x = polynomial_ring(QQ, "x")
+  # Pair partial relations at the same large prime, keeping conjugates apart.
+  @testset "Single-large-prime relations" begin
+    K, a = number_field(x^2 - 5; cached = false)
+    O = maximal_order(K)
+    c = Hecke.class_group_init(Hecke.NfFactorBase(O, 7); add_rels = false)
+    c.B2 = 100
+    for b in (4 + a, 4 - a)
+      Hecke.class_group_add_relation(c, b)
+    end
+    @test length(c.largePrime) == 2
+    @test all(p == 11 for (p, _) in keys(c.largePrime))
+    @test c.rel_cnt == 0
+    @test c.largePrime_success == 0
+    for (j, (b, scalar)) in enumerate(((4 + a, 2), (4 - a, 3)))
+      Hecke.class_group_add_relation(c, scalar*b)
+      @test c.largePrime_success == j
+      @test c.rel_cnt == j
+      elt = evaluate(c.R_gen[j])
+      @test elt == scalar
+      row = c.M.bas_gens[j]
+      @test all(row[k] == valuation(elt, P)
+                for (k, P) in enumerate(c.FB.ideals))
+      @test prod(P^Int(row[k]) for (k, P) in enumerate(c.FB.ideals)) ==
+            ideal(O, elt)
+    end
+    @test c.largePrimeCnt == 4
+    @test c.largePrime_no_success == 0
+    Hecke.class_group_add_relation(c, 4 + a)
+    @test c.largePrime_success == 3
+    @test c.rel_cnt == 3
+    @test evaluate(c.R_rel[end]) == 1
+    @test isempty(c.M.rel_gens[nrows(c.M.rel_gens)].pos)
+  end
+
   # Compare gcd-based prime selection with independent ideal valuations.
   @testset "Single-prime factor-base gcd" begin
     for (f, p) in ((x^4 + x^3 + x^2 + x + 1, 11), (x^4 + x + 2, 2))

@@ -1598,7 +1598,8 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either ZZMatrix or S
 
   largePrimeCnt::Int
   B2::Int
-  largePrime::Dict{ZZPolyRingElem, Tuple{AbsSimpleNumFieldElem, QQFieldElem}}
+  largePrime::Dict{Tuple{ZZRingElem, ZZPolyRingElem},
+                   Tuple{AbsSimpleNumFieldElem, QQFieldElem}}
   largePrime_success::Int
   largePrime_no_success::Int
 
@@ -1632,7 +1633,8 @@ mutable struct ClassGrpCtx{T}  # T should be a matrix type: either ZZMatrix or S
     r.R_rel = Vector{nf_elem_or_fac_elem}()
     r.RS = Set{UInt}()
     r.largePrimeCnt = 0
-    r.largePrime = Dict{ZZPolyRingElem, Tuple{AbsSimpleNumFieldElem, QQFieldElem}}()
+    r.largePrime = Dict{Tuple{ZZRingElem, ZZPolyRingElem},
+                       Tuple{AbsSimpleNumFieldElem, QQFieldElem}}()
     r.largePrime_success = 0
     r.largePrime_no_success = 0
     r.normStat = Dict{Int, Int}()
