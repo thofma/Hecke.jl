@@ -252,7 +252,13 @@ function _short_vectors_with_condition(::Type{CoeffType},
                                                 grams::Vector{ZZMatrix};
                                                 search_fixed_vectors::Bool=true,
                                                 search_invariant_subspace::Bool=false,
-                                                mode::Symbol=:auto) where {CoeffType <: Union{Int, ZZRingElem}}
+                                                mode::Symbol=:auto,
+                                                targets::AbstractVector{Int}=1:rank(L),
+                                                max_enum::Int=typemax(Int)) where {CoeffType <: Union{Int, ZZRingElem}}
+  # The vectors which look like one of the basis vectors with index in
+  # `targets` are returned, or `nothing` as soon as there are more than
+  # `max_enum` of them at one of the stages below.
+  #
   # Let L_i := proj[i](L)
   # We lll reduce each L_i and work throughout with the basis
   # M = L_1 + L_2 + ... + L_n
@@ -290,8 +296,8 @@ function _short_vectors_with_condition(::Type{CoeffType},
   normalized_targets = Vector{CoeffType}[]  # needed for _vector_sums
   target_invariants = Vector{KeyType}()
   n1 = rkLL[1]
-  signs = Vector{Int}(undef, rank(L))
-  for i in 1:rkL
+  signs = Int[]
+  for i in targets
     norms = target_norms[i]
     _v1, _v1_weyl = target_fixed_part[i]
     v1 = CoeffType.(_v1)
@@ -306,7 +312,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     elseif v1_weyl == 0
       v1, _sign = _canonicalize_with_data!(v1)
     end
-    signs[i] = _sign
+    push!(signs, _sign)
     _key = (norms, CoeffType[], v1_weyl, v1, CoeffType[])
     push!(target_invariants, _key)
     if mode==:auto
@@ -419,8 +425,11 @@ function _short_vectors_with_condition(::Type{CoeffType},
     Gi = projL_gram[i] # already lll reduced
     tmp_s = __zeros_array(CoeffType, ncols(Gi))
     @vprintln :ShortVec 5 "gram=$Gi"
-    for (s, q) in __short_vectors(Gi, mi, ma)
+    number = 0
+    # The iterator reuses s; it is copied whenever it is stored.
+    for (s, q) in __short_vectors_it(Gi, mi, ma)
       # This is the innermost loop - do as little as possible here
+      number > max_enum && return nothing
       target_norm_q = get(target_norm, q, nothing)
       isnothing(target_norm_q) && continue
       if CoeffType===ZZRingElem
@@ -442,6 +451,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
             #push!(sv2t, __vcat(b, -tmp_s))
             push!(sv2t, __vcat_neg(b, tmp_s))
           end
+          number += length(Dt)
           pop!(t[1])
         end
       end
@@ -464,10 +474,12 @@ function _short_vectors_with_condition(::Type{CoeffType},
             #@assert !(__vcat(b, tmp_s) in reduce(vcat,values(short_vectors2)))
             push!(sv2t, __vcat(b, __copy_before_vcat(tmp_s)))
           end
+          number += length(Dt)
           pop!(t[1])
         end
       end
     end
+    number > max_enum && return nothing
 
     if search_fixed_vectors
       vs = _vector_sums(short_vectors2, projection_ranges[1:i], successive_grams) # with overflow
@@ -486,7 +498,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
   if search_invariant_subspace
     invariant_gram = _add_invariant_subspace_data!(CoeffType, grams, target_invariants,
                                                    short_vectors1, projection_ranges,
-                                                   projL_gram, Binv)
+                                                   projL_gram, Binv, targets)
   end
 
   output, invariants, target_invariants_output = _postprocess_short_vectors_with_condition(CoeffType, B, denoms, gramZZ, grams, signs, target_invariants, short_vectors1)
@@ -509,7 +521,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     # This test makes sense only in automorphism mode
     if mode == :auto
       E = CoeffType.(identity_matrix(ZZ, n))
-      for i in 1:n
+      for i in targets
         ei = E[i,:]
         @assert any(ei==j[1] ||-ei==j[1] for j in output) "Basis vector e_$i is missing"
         j = findfirst(==(ei), first.(output))
@@ -521,7 +533,9 @@ function _short_vectors_with_condition(::Type{CoeffType},
   return output, grams, (invariants, target_invariants_output)
 end
 
-function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matrix{Int}})
+# `invariants[2][i]` belongs to the basis vector with index `targets[i]`.
+function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matrix{Int}},
+                                  targets::AbstractVector{Int}=1:length(invariants[2]))
   @assert length(sv) == length(invariants[1])
   l = length(sv)
   invs, target_invs = invariants
@@ -558,7 +572,7 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
       w = wbuf[j]
       nr = nrows(R)
       for k in 1:nr
-        @inbounds w[k] = R[k, i]
+        @inbounds w[k] = R[k, targets[i]]
       end
       _fill_mset_counts!(ms, w)
       _fill_negated_mset_counts!(ms_neg, ms)
@@ -682,7 +696,8 @@ function _add_invariant_subspace_data!(::Type{CoeffType},
                                        short_vectors,
                                        projection_ranges::Vector{UnitRange{Int}},
                                        projL_gram::Vector{ZZMatrix},
-                                       Binv::ZZMatrix) where {CoeffType}
+                                       Binv::ZZMatrix,
+                                       targets::AbstractVector{Int}=1:nrows(Binv)) where {CoeffType}
   m = length(projection_ranges)
   rkL = nrows(Binv)
   G = zero_matrix(ZZ, rkL, rkL)
@@ -731,9 +746,9 @@ function _add_invariant_subspace_data!(::Type{CoeffType},
   end
 
   push!(grams, G)
-  for i in 1:rkL
+  for (i, t) in enumerate(targets)
     k0 = target_invariants[i]
-    target_invariants[i] = (k0[1], push!(copy(k0[2]), CoeffType(G[i,i])), k0[3], k0[4], k0[5])
+    target_invariants[i] = (k0[1], push!(copy(k0[2]), CoeffType(G[t,t])), k0[3], k0[4], k0[5])
   end
   invariant_gram = CoeffType === ZZRingElem ? G_work : _int_matrix_with_overflow(G_work, tmpZZ)
   _refine_short_vectors_by_gram!(CoeffType, short_vectors, invariant_gram)

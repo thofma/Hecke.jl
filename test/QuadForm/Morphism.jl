@@ -155,6 +155,20 @@
     end
   end
 
+  # The partition backtrack with the vectors which look like a short basis
+  # vector: with the limit 0 they are used whenever the basis vectors have
+  # different norms. They generate the lattice for the first norm, for the
+  # second one, and only for the last one, respectively.
+  let
+    for (G, o) in [(ZZ[3 1 -2; 1 3 0; -2 0 4], 12), (ZZ[3 0 3; 0 4 0; 3 0 7], 16),
+                   (ZZ[2 -1 0; -1 2 0; 0 0 3], 24)]
+      L = integer_lattice(; gram = G)
+      Hecke.__assert_has_automorphisms(L; do_lll = false, target_enum_limit = 0)
+      @test automorphism_group_order(L) == o
+      @test all(g -> g * G * transpose(g) == G, L.automorphism_group_generators)
+    end
+  end
+
   @testset "Gram matrix compression bounds" begin
     # Seed 2 produces a 50-bit invariant form in twisted_34.lattices#1034.
     G = matrix(ZZ, [

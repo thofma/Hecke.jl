@@ -53,6 +53,7 @@ function __assert_has_automorphisms(
   do_lll::Bool=true,
   use_dual::Bool=false,
   algorithm::Symbol=:partition_backtrack,
+  target_enum_limit::Int=4000,
 )
   @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
 
@@ -153,7 +154,7 @@ function __assert_has_automorphisms(
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
                                use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
                                compress, use_target_enum, allow_short_vectors_direct,
-                               algorithm)
+                               algorithm, target_enum_limit)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
@@ -176,8 +177,31 @@ function __assert_has_automorphisms(
   end
   res = ZZMatrix[Glll]
   if use_weyl_route
-    res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L; sv2, force_direct=short_vectors_direct,
-                                                                    search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct, use_multiset)
+    kw = (; sv2, force_direct=short_vectors_direct, search_fixed_vectors, search_invariant_subspace,
+          use_dual, allow_short_vectors_direct, use_multiset)
+    # The targeted enumeration returns the vectors which look like a basis
+    # vector. The partition backtrack only needs vectors which generate the
+    # lattice [BH, Section 3.2]. So if there are more than
+    # `target_enum_limit`, it takes those which look like a basis vector of
+    # norm at most N, for the smallest N for which they generate the lattice.
+    # Their number does not depend on the long basis vectors. Up to the limit
+    # the enumeration costs less than what is done for every lattice, and if
+    # all basis vectors have the same norm there is nothing to leave out.
+    d = diagonal(Glll)
+    limit = typemax(Int)
+    if algorithm == :partition_backtrack && !allequal(d)
+      limit = target_enum_limit
+    end
+    out = _get_weyl_proj_and_vector_set(_L; max_enum=limit, kw...)
+    if out === nothing
+      for N in sort!(unique(d))
+        out = _get_weyl_proj_and_vector_set(_L; targets=findall(<=(N), d), kw...)
+        N == maximum(d) && break
+        LatticePartitionBacktrack.generate(LatticePartitionBacktrack.short_vectors(
+          out[1], out[2], out[3][1], out[4][1])) && break
+      end
+    end
+    res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = out
     use_projections = false # already added projections
   elseif use_weyl
     error("not implemented")
@@ -307,12 +331,17 @@ function __assert_has_automorphisms(
   end
 end
 
+# The vector set consists of the vectors which look like a basis vector with
+# index in `targets`. Returns `nothing` if the targeted enumeration yields
+# more than `max_enum` vectors at one of its stages.
 function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
                                        search_invariant_subspace::Bool=false,
                                        use_dual::Bool=false,
                                        allow_short_vectors_direct::Bool=false,
                                        force_direct::Bool=false,
                                        sv2=__short_vectors(_integral_split_gram(_L)[1], nothing, 2),
+                                       targets::AbstractVector{Int}=1:rank(_L),
+                                       max_enum::Int=typemax(Int),
                                        use_multiset::Bool=true)
   tmp = ZZ()
   gramZZ, _ = _integral_split_gram(_L)
@@ -333,7 +362,9 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   if !do_direct
     @vprintln :Lattice 2 "short vectors choosing target=true"
     T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
-    @vtime :Lattice 2 vector_set, grams, invariants  = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace)
+    @vtime :Lattice 2 out = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace, targets, max_enum)
+    out === nothing && return nothing
+    vector_set, grams, invariants = out
     grams = T[end]
   else
     @vprintln :Lattice 2 "short vectors choosing direct=true"
@@ -345,7 +376,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   unsigned_invariants = (UInt[], UInt[])
   if use_multiset
     dual_root_orbits = [M*gramInt for M in root_orbits]
-    vector_set, invariants, unsigned_invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits)
+    vector_set, invariants, unsigned_invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits, targets)
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set

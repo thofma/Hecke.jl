@@ -51,8 +51,8 @@
 #  scalar product <x, y> below stands for a fixed combination of all the
 #  F_i(x, y) and F_i(y, x), see `ShortVectors`. The caller may also supply
 #  the set V itself together with a label for every vector; then an
-#  automorphism has to map every basis vector to a vector with the same
-#  label. The norm and the label of a point make up its *colour*.
+#  automorphism has to map every vector to a vector with the same label. The
+#  norm and the label of a point make up its *colour*.
 #
 #
 #  The search tree
@@ -380,6 +380,10 @@ function enlarge!(L::Generated, vectors::Matrix{Int}, indices)
   return true
 end
 
+# Whether the vectors of `S` generate the lattice, as they have to.
+generate(S::ShortVectors) =
+  generate(Vector{Int}[S.vectors[:, j] for j in 1:number_of_vectors(S)], dim(S))
+
 # Whether the given vectors generate Z^n.
 function generate(list::Vector{Vector{Int}}, n::Int)
   L = Generated(n)
@@ -409,10 +413,11 @@ end
 # by default it is `generating_vectors` of the first form. Not all of it is
 # kept, unless `everything` is set:
 #
-#   * If there are labels, the standard basis vectors have to be in `list`.
-#     The vectors with the colour of a standard basis vector are kept; they
-#     contain the image of the standard basis under any isometry respecting
-#     the labels.
+#   * If there are labels, the vectors with the colour of a standard basis
+#     vector in `list` are kept; they contain the images of these basis
+#     vectors under any isometry respecting the labels. They have to generate
+#     the lattice, see `generate`, as they do if `list` contains the standard
+#     basis.
 #   * If there are no labels, the vectors up to the smallest norm for which
 #     they generate the lattice are kept.
 #   * If an isometry from `source` onto this lattice is sought, the vectors
@@ -535,7 +540,7 @@ function shortest_generating(vectors::Matrix{Int}, gram_vectors::Matrix{Int})
     end
     return findall(<=(norms[last(chunk)]), norms)
   end
-  upper < typemax(Int) || error("the vectors do not generate the lattice")
+  # All of them. Whether they generate the lattice is checked in `generators`.
   return findall(<=(upper), norms)
 end
 
@@ -557,20 +562,6 @@ function starts_negative(w::AbstractVector{Int})
     x != 0 && return x < 0
   end
   return false
-end
-
-# The points e_1, ..., e_n.
-function basis_points(S::ShortVectors)
-  n = dim(S)
-  basis = zeros(Int, n)
-  e = zeros(Int, n)
-  for i in 1:n
-    e[i] = 1
-    basis[i] = find_point(S, e)
-    basis[i] != 0 || error("basis vector is not among the short vectors")
-    e[i] = 0
-  end
-  return basis
 end
 
 # The coordinate vector of the point `p`.
@@ -746,10 +737,8 @@ end
 #   `solver`      an integer matrix with `solver * matrix == 1`, which exists
 #                 because the sequence generates the lattice; see
 #                 `is_isometry`
-#   `basis`       the standard basis vectors as points of the source if
-#                 there are labels, otherwise empty
-#   `negation`    whether -e_i has the label of e_i for all i; then -1 is
-#                 an automorphism
+#   `negation`    whether -v has the label of v for all points v; then -1
+#                 is an automorphism
 #   `ordered`     whether the order of the sequence is prescribed, see
 #                 `record`
 mutable struct Reference
@@ -761,7 +750,6 @@ mutable struct Reference
   branch::Vector{Int}
   matrix::ZZMatrix
   solver::ZZMatrix
-  basis::Vector{Int}
   negation::Bool
   ordered::Bool
 end
@@ -1359,7 +1347,7 @@ function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
   n = dim(S)
   reference = Reference(S, copy(sequence), Vector{Int}[], Int[],
                         Vector{Int}[], Int[], zero_matrix(ZZ, 0, n),
-                        zero_matrix(ZZ, n, 0), Int[], true, ordered)
+                        zero_matrix(ZZ, n, 0), true, ordered)
   walk = Walk(S, reference, :record, true)
   advance!(walk, 0)
   for d in 1:length(sequence)
@@ -1374,15 +1362,8 @@ function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
   reference.matrix = B
   # The Hermite normal form of B is the identity matrix on top of zero rows.
   reference.solver = sub(hnf_with_transform(B)[2], 1:n, 1:m)
-  if S.everything
-    # -v has the colour of v for all v
-    reference.negation = all(iszero, S.labels)
-  else
-    if any(!iszero, S.labels) || any(!iszero, S.unsigned_labels)
-      reference.basis = basis_points(S)
-    end
-    reference.negation = all(p -> label(S, p) == label(S, -p), reference.basis)
-  end
+  # -1 respects the colours if and only if -v has the colour of v for all v.
+  reference.negation = all(iszero, S.labels)
   return walk
 end
 
@@ -1429,11 +1410,11 @@ end
 # candidate is the matrix M with B * M = X, whose row i is the image of e_i;
 # it is integral since `solver * B == 1`. It has to satisfy this equation and
 # equation (1) for all forms, generalised to an isometry from the source to
-# the target, and it has to map every standard basis vector to a vector with
-# the same label. In the search for automorphisms of a set which is not
-# complete it moreover has to map the set to itself and to respect the
-# colours: so the group which is found is the group of the set with its
-# colours, whether the caller's set is invariant under more or not.
+# the target, and x_k has to have the label of b_k. In the search for
+# automorphisms of a set which is not complete it moreover has to map the set
+# to itself and to respect the colours: so the group which is found is the
+# group of the set with its colours, whether the caller's set is invariant
+# under more or not.
 function is_isometry(walk::Walk)
   reference = walk.reference
   source, target = reference.source, walk.target
@@ -1449,11 +1430,8 @@ function is_isometry(walk::Walk)
   P = walk.product
   all(mul!(P, mul!(P, M, T), Mt) == F for (F, T) in
       zip(source.exact_forms, target.exact_forms)) || return false
-  for (i, e) in enumerate(reference.basis)
-    all(x -> fits(Int, x), view(M, i:i, :)) || return false
-    p = find_point(target, Int[Int(M[i, j]) for j in 1:n])
-    (p != 0 && label(target, p) == label(source, e)) || return false
-  end
+  all(k -> label(target, walk.sequence[k]) ==
+           label(source, reference.sequence[k]), 1:m) || return false
   if source === target && !target.complete
     respects_colours(target, Matrix{Int}(M)) || return false
   end
@@ -1670,8 +1648,8 @@ end
     stabilizer_chain(S::ShortVectors, [base::Vector{Int}])
 
 Compute the group of all matrices `M` which preserve all forms of `S`, that
-is, `M*F*transpose(M) == F`, and which map every basis vector to a point of
-`S` of the same colour, by partition backtracking. Return a named tuple with
+is, `M*F*transpose(M) == F`, and which map every point of `S` to a point of
+the same colour, by partition backtracking. Return a named tuple with
 
 - `generators`: matrices generating the group;
 - `order`: the order of the group;
@@ -1812,14 +1790,15 @@ For good performance the first form should be LLL reduced.
 
 The group acts on the vectors up to the smallest norm, with respect to the
 first form, for which they generate the lattice. Alternatively a set of
-vectors can be given, up to sign, which contains the standard basis vectors:
-`vector_set` is a list of tuples whose first entry is a vector, and `labels`
-and `unsigned_labels` are lists of integers, one for each vector, or empty.
-The label of `-v` is that of `v` with the signed part negated. Of a set
-with labels the vectors with the norms and the label of a standard basis
-vector are kept, of a set without labels those up to the smallest norm for
-which they generate. Then exactly those `g` are returned which map the kept
-set to itself and respect norms and labels.
+vectors can be given, up to sign: `vector_set` is a list of tuples whose
+first entry is a vector, and `labels` and `unsigned_labels` are lists of
+integers, one for each vector, or empty. The label of `-v` is that of `v`
+with the signed part negated. Of a set with labels the vectors with the norms
+and the label of a standard basis vector in the set are kept, of a set
+without labels those up to the smallest norm for which they generate. The
+kept vectors have to generate the lattice, as they do if the set contains the
+standard basis. Then exactly those `g` are returned which map the kept set to
+itself and respect norms and labels.
 
 The second entries of the tuples are not used. In the output of the targeted
 enumeration they are the norms of the vector with respect to the forms, which
@@ -1847,8 +1826,10 @@ whether there is an integer matrix `g` with `g*forms2[i]*transpose(g) ==
 forms1[i]` for all `i`, and return such a matrix if it exists.
 
 If sets of vectors with labels are given, then `g` is moreover required to
-map every standard basis vector to a vector in `vector_set2` with the same
-label. The second set must contain every such image.
+map vectors of `vector_set1` which generate the lattice to vectors in
+`vector_set2` with the same labels: the standard basis vectors in the set
+and, if some are missing, further vectors of it. The second set must contain
+every such image.
 """
 function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
                   vector_set1 = (), vector_set2 = (), labels1 = Int[],
@@ -2164,8 +2145,7 @@ function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
         short_vectors(forms, vector_set, labels, unsigned_labels;
                       everything = true, kwargs...)
   best = Reference(S, Int[], Vector{Int}[], Int[], Vector{Int}[], Int[],
-                   zero_matrix(ZZ, 0, n), zero_matrix(ZZ, n, 0), Int[], true,
-                   true)
+                   zero_matrix(ZZ, 0, n), zero_matrix(ZZ, n, 0), true, true)
   walk = Walk(S, best, :minimize, false)
   walk.improved = -1
   advance!(walk, 0)
