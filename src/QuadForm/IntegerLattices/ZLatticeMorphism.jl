@@ -107,6 +107,9 @@ function __assert_has_automorphisms(
   end
   # disable everything for big lattices
   if !(all(fits(Int,i) for i in GL))
+    # The partition backtrack computes modulo 2^64, which need not tell the
+    # vectors of such a lattice apart.
+    algorithm = :plesken_souvignier
     use_weyl = false
     use_projections = false
     use_target_enum = false
@@ -766,9 +769,9 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     end
     fl, CLsmall, CMsmall = _try_iso_setup_small(grams1, grams2, depth = depth, bacher_depth = bacher_depth; vector_set1=V1, vector_set2=V2, invariants1, invariants2)
   end
-  if algorithm == :partition_backtrack
-    b, T = LatticePartitionBacktrack.isometry(G1, G2)
-  elseif fl
+  # The partition backtrack is not used if an entry does not fit into an
+  # Int: it computes modulo 2^64, which need not tell the vectors apart.
+  if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(ZZ, _T)
   else

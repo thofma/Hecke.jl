@@ -1423,7 +1423,7 @@ end
 # if ambient_representation = true, they are given with respect to the coordinate
 # space/ambient space
 function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0,
-                                  algorithm::Symbol = :partition_backtrack)
+                                  algorithm::Symbol = :plesken_souvignier)
   @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
 
   if !redo && isdefined(L, :automorphism_group_generators)
@@ -1608,10 +1608,10 @@ Setting the parameters `depth` and `bacher_depth` to a positive value may improv
 performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 
-By default a partition backtrack search is used. With
-`algorithm = :plesken_souvignier` the algorithm of Plesken and Souvignier
-[PS97](@cite) is used instead; `depth` and `bacher_depth` only affect the
-latter.
+The keyword `algorithm` selects the search: `:partition_backtrack`, the
+default for integer lattices, or `:plesken_souvignier`, the algorithm of
+Plesken and Souvignier [PS97](@cite) and the default for lattices over number
+fields. The parameters `depth` and `bacher_depth` only affect the latter.
 """
 automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
 
@@ -1669,17 +1669,17 @@ Setting the parameters `depth` and `bacher_depth` to a positive value may improv
 performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 
-By default a partition backtrack search is used. With
-`algorithm = :plesken_souvignier` the algorithm of Plesken and Souvignier
-[PS97](@cite) is used instead; `depth` and `bacher_depth` only affect the
-latter.
+The keyword `algorithm` selects the search: `:partition_backtrack`, the
+default for integer lattices, or `:plesken_souvignier`, the algorithm of
+Plesken and Souvignier [PS97](@cite) and the default for lattices over number
+fields. The parameters `depth` and `bacher_depth` only affect the latter.
 """
 is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = throw(NotImplemented())
 
 
 function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{<: NumField};
                                     depth::Int = -1, bacher_depth::Int = 0,
-                                    algorithm::Symbol = :partition_backtrack)
+                                    algorithm::Symbol = :plesken_souvignier)
   @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
   V = ambient_space(L)
   W = ambient_space(M)
