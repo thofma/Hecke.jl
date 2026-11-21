@@ -136,6 +136,25 @@
     @test red_after_order(rescale(L, 3//2)) == red(rescale(L, 3//2)) == 4
   end
 
+  # Roots of norm greater than 2 are used for the Weyl group: the order is
+  # that of the search for the whole group.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    D4 = ZZ[2 0 -1 0; 0 2 -1 0; -1 -1 2 -1; 0 0 -1 2]
+    for (G, o) in [(diagonal_matrix(A2, 3 * A2, ZZ[5;]), 288),
+                   (diagonal_matrix(2 * A2, 3 * A2), 144),
+                   (diagonal_matrix(ZZ[2;], 3 * D4, 3 * D4), 5308416),
+                   (ZZ[2 1 0; 1 2 0; 0 0 6], 24), (ZZ[4 2; 2 10], 4)]
+      L = integer_lattice(; gram = G)
+      @test automorphism_group_order(L) == o
+      @test all(g -> g * G * transpose(g) == G, L.automorphism_group_generators)
+      M = integer_lattice(; gram = G)
+      Hecke.__assert_has_automorphisms(M; use_everything = false,
+                                       use_weyl = false)
+      @test automorphism_group_order(M) == o
+    end
+  end
+
   @testset "Gram matrix compression bounds" begin
     # Seed 2 produces a 50-bit invariant form in twisted_34.lattices#1034.
     G = matrix(ZZ, [

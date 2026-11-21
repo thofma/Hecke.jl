@@ -709,7 +709,38 @@ function _fundamental_roots(sv::Vector{Tuple{Vector{S},S}}, gram::Matrix{S}) whe
     end
   end
   weyl_dual = gram*weyl
-  return Vector{S}[i for (i,_) in sv if dot(i, weyl_dual)==2]
+  return Vector{S}[i for (i,q) in sv if dot(i, weyl_dual)==max(q, 2)]
+end
+
+# Roots of norm greater than 2. Let L be the lattice with Gram matrix G. For
+# a sublattice K which is mapped to itself by O(L) and m > 0, the vectors v
+# of K of norm m with 2 b(v, L) in m ZZ are permuted by O(L) and by their own
+# reflections, which preserve L. Having the same norm, they form a root system
+# of type ADE rescaled by m/2. Here K is the orthogonal complement of the
+# roots found so far, so the systems are orthogonal to each other, and m is
+# the smallest diagonal entry of a reduced Gram matrix of K. If v is
+# primitive then 2 v/m lies in the dual and has order m or m/2 modulo L, so m
+# divides 2 det(L); otherwise this norm is not looked at.
+function _append_long_roots!(fundamental_roots::Vector{ZZMatrix}, G::ZZMatrix, GInt::Matrix{Int})
+  n = nrows(G)
+  d = 2*det(G)
+  while true
+    R = reduce(vcat, fundamental_roots; init=zero_matrix(ZZ, 0, n))
+    K = nrows(R) == 0 ? identity_matrix(ZZ, n) : kernel(G*transpose(R); side=:left)
+    nrows(K) == 0 && break
+    GK, T = lll_gram_with_transform(K*G*transpose(K))
+    m = Int(minimum(diagonal(GK)))
+    is_divisible_by(d, m) || break
+    KInt = _int_matrix_with_overflow(T*K, ZZ())
+    roots = Tuple{Vector{Int}, Int}[]
+    for (v, _) in __short_vectors(GK, m, m)
+      w = transpose(KInt)*v
+      all(x -> iszero(mod(2*x, m)), GInt*w) && push!(roots, (w, m))
+    end
+    isempty(roots) && break
+    append!(fundamental_roots, (matrix(ZZ, 1, n, r) for r in _fundamental_roots(roots, GInt)))
+  end
+  return fundamental_roots
 end
 
 
@@ -723,6 +754,7 @@ function _root_lattice_recognition_fundamental(L::ZZLat, fundamental_roots::Vect
   basis_matrices = ZZMatrix[]
   for c in comp
     g = c*G*transpose(c)
+    g[1,1] > 2 && (g = divexact(2*g, g[1,1])) # roots of norm > 2
     ADE, perm = find_permutaton_and_ADE_type(g)
     push!(types, (ADE, nrows(c)))
     push!(basis_matrices, c[perm,:])

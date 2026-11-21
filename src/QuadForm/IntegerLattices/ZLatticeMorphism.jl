@@ -287,9 +287,13 @@ function __assert_has_automorphisms(
       # when rho is trivial
       order_reduced = order
     end
-    L.reduced_automorphism_group_order = order_reduced
     L.automorphism_group_order = order_reduced*weyl_group_order
-    L.reduced_automorphism_group_generators = gens[1:number_reduced]
+    # The reduced group refers to the roots of norm 1 and 2, see
+    # `reduced_automorphism_group_order`.
+    if all(f -> (f[1:1, :]*Glll*transpose(f[1:1, :]))[1, 1] <= 2, fundamental_roots)
+      L.reduced_automorphism_group_order = order_reduced
+      L.reduced_automorphism_group_generators = gens[1:number_reduced]
+    end
   else
     L.automorphism_group_order = order
   end
@@ -312,6 +316,7 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   gramInt = _int_matrix_with_overflow(gramZZ, tmp)
   n = rank(_L)
   fundamental_roots = [matrix(ZZ,1,n,i) for i in _fundamental_roots(sv2, gramInt)]
+  _append_long_roots!(fundamental_roots, gramZZ, gramInt)
 
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L, fundamental_roots)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector, root_orbits = _weyl_group(_L, root_types, fundamental_roots)
@@ -1012,7 +1017,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     #d = denominator(view(D,:,r))
     C = F[rows,:]
     ed = filter!(!isone, elementary_divisors(C))
-    push!(glue_indices, ed)
+    push!(glue_indices, pushfirst!(ed, (f[1:1, :]*GZ*transpose(f[1:1, :]))[1, 1]))
     j = k
   end
   KeyType = Tuple{Tuple{Symbol, Int}, Vector{ZZRingElem}}
@@ -1098,7 +1103,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   end
 
   fixed_matrix = reduce(vcat, invariant_vectors)
-  @hassert :Lattice 1 all(all(isone,i*GZ*weyl_vector) for i in fundamental_roots)
+  @hassert :Lattice 1 all(2 .* (i*GZ*weyl_vector) == max.(diagonal(i*GZ*transpose(i)), 2) for i in fundamental_roots)
   return fixed_matrix, isotypic_cofix_spaces, weyl_vector, root_orbits
 end
 
