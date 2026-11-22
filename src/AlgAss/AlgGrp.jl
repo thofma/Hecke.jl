@@ -67,6 +67,9 @@ _op(G::AbstractAlgebra.AdditiveGroup) = +
 _op(G::Group) = *
 _op(A::GroupAlgebra) = _op(group(A))
 
+_op!(z::AbstractAlgebra.AdditiveGroupElem, x, y) = add!(z, x, y)
+_op!(z::GroupElem, x, y) = mul!(z, x, y)
+
 _is_identity_elem(x::AbstractAlgebra.AdditiveGroupElem) = iszero(x)
 _is_identity_elem(x::GroupElem) = isone(x)
 
