@@ -427,7 +427,7 @@ function _enumerate(E::EnumCtxArb, c::ArbFieldElem, i::Int, x::ZZMatrix)
     ccall((:arb_get_abs_ubound_arf, libflint), Nothing, (Ref{arf_struct}, Ref{ArbFieldElem}), tm, C)
     ccall((:arb_set_arf, libflint), Nothing, (Ref{ArbFieldElem}, Ref{arf_struct}), C, tm)
 
-    ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), tm)
+    Nemo._arf_clear_fn(tm)
 
     @hassert :LatEnum !contains_zero(C)
   end
@@ -443,9 +443,9 @@ function _enumerate(E::EnumCtxArb, c::ArbFieldElem, i::Int, x::ZZMatrix)
   lb = -CC - C
   ub = -CC + C
 
-  tr_ptr = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ref{ArbFieldElem}, ), lb)
+  tr_ptr = Nemo._rad_ptr(lb)
 
-  tm_ptr = ccall((:arb_mid_ptr, libflint), Ptr{arf_struct}, (Ref{ArbFieldElem}, ), lb)
+  tm_ptr = Nemo._mid_ptr(lb)
   u = arf_struct(0, 0, 0, 0)
   ccall((:arf_init, libflint), Nothing, (Ref{arf_struct}, ), u)
 
@@ -454,15 +454,15 @@ function _enumerate(E::EnumCtxArb, c::ArbFieldElem, i::Int, x::ZZMatrix)
   lbfmpz = ZZRingElem()
   ccall((:arf_get_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{arf_struct}, Cint), lbfmpz, u, 4)
 
-  tr = ccall((:arb_rad_ptr, libflint), Ptr{Nemo.mag_struct}, (Ref{ArbFieldElem}, ), ub)
-  tm = ccall((:arb_mid_ptr, libflint), Ptr{arf_struct}, (Ref{ArbFieldElem}, ), ub)
+  tr = Nemo._rad_ptr(ub)
+  tm = Nemo._mid_ptr(ub)
 
   ccall((:arf_set_mag, libflint), Nothing, (Ref{arf_struct}, Ptr{Nemo.mag_struct}), u, tr)
   ccall((:arf_sub, libflint), Nothing, (Ref{arf_struct}, Ptr{arf_struct}, Ref{arf_struct}, Int, Cint), u, tm, u, p, 3) # 3 is round to +infty
   ubfmpz = ZZRingElem()
   ccall((:arf_get_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{arf_struct}, Cint), ubfmpz, u, 3)
 
-  ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), u)
+  Nemo._arf_clear_fn(u)
 
   @vprintln :LatEnum "$(recprint(n - i)) Coordinate $i between $lbfmpz and $ubfmpz"
 

@@ -335,12 +335,12 @@ end
 function line_orbits(G::Vector{FqMatrix})
   isempty(G) && throw(ArgumentError("Generators must be non-empty"))
   F = base_ring(G[1])
-  if order(F) != 2 
+  if order(F) != 2
     return _line_orbits(G)
-  else 
+  else
     n = ncols(G[1])
     if n < 32
-      T = UInt32 
+      T = UInt32
     elseif n<64
       T = UInt64
     else
@@ -348,9 +348,9 @@ function line_orbits(G::Vector{FqMatrix})
       error("Cannot compute line orbits over F2 for n >= 64")
     end
     sizes_and_orbits = line_orbits_mod_2(T, G)
-    # convert to the output format 
+    # convert to the output format
     return Tuple{Vector{FqFieldElem},Int}[(F.(i[2]),Int(i[1])) for i in sizes_and_orbits]
-  end 
+  end
 end
 
 function _line_orbits(G::Vector)
