@@ -270,12 +270,13 @@ end
 function _mul_sparse(a::GroupAlgebraElem{T}, b::GroupAlgebraElem{T}) where {T}
   A = parent(a)
   op = _op(A)
+  bterms = collect(_coeffs_sparse(b)) # iterating can allocate coefficients, do that just once
   slot = Dict{Int, Int}()
   pos = Int[]
   vals = T[]
   for (i, ci) in _coeffs_sparse(a)
     gi = A.base_to_group[i]
-    for (j, cj) in _coeffs_sparse(b)
+    for (j, cj) in bterms
       gj = A.base_to_group[j]
       k = __elem_index(A, op(gi, gj))
       s = get(slot, k, 0)
