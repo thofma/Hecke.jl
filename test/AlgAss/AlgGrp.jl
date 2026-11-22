@@ -282,6 +282,20 @@
     # Compact printing
     @test sprint(show, x; context = :compact => true) isa String
     @test sprint(show, Dict(x => 1)) isa String
+
+    # In-place operations
+    z = A(g3)
+    @test add!(z, x, y) == A(g1) + A(g2)
+    @test x == A(g1) && y == A(g2)
+    @test add!(z, z, x) == 2*A(g1) + A(g2)
+    @test addmul!(z, x, y) == 2*A(g1) + A(g2) + A(g1 + g2)
+    @test mul!(z, x, ZZ(3)) == 3*A(g1)
+    @test mul!(z, z, 2) == 6*A(g1)
+    @test iszero(zero!(z))
+    R = residue_ring(ZZ, 6)[1]
+    B = group_algebra(R, G; sparse = true, cached = false)
+    u = 2*B(g1) + 3*B(g2)
+    @test mul!(u, u, R(3)) == 3*B(g2)
   end
 
   let
