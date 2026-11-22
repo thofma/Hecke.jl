@@ -205,6 +205,7 @@
       @test bb * aa == dd
       @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
       @test aa - bb == aa + (-bb)
+      @test inv(aa) == QG(inv(a))
     end
   end
 
@@ -300,6 +301,16 @@
     # Characteristic
     @test characteristic(A) == 0
     @test characteristic(B) == 6
+
+    # Inverses
+    @test inv(A(g1)) == A(-g1)
+    @test inv(-A(g1 - g2)) == -A(g2 - g1)
+    Q = group_algebra(QQ, G; sparse = true, cached = false)
+    @test inv(2*Q(g1)) == Q(-g1) * QQ(1, 2)
+    @test !is_invertible(2*A(g1))[1]
+    @test !is_invertible(A(g1) + A(g2))[1]
+    @test !is_invertible(zero(A))[1]
+    @test_throws ErrorException inv(A(g1) + A(g2))
   end
 
   let

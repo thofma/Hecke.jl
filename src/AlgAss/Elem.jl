@@ -627,8 +627,32 @@ end
     is_invertible(a::AbstractAssociativeAlgebraElem) -> Bool, AbstractAssociativeAlgebraElem
 
 Returns `true` and $a^{-1}$ if $a$ is a unit and `false` and $0$ otherwise.
+
+For sparse group algebras, this is only implemented for monomials and for
+elements whose coefficient sum is not a unit.
 """
-is_invertible(a::AbstractAssociativeAlgebraElem) = is_divisible(one(parent(a)), a, :right)
+function is_invertible(a::AbstractAssociativeAlgebraElem)
+  if _is_sparse(a)
+    return _is_invertible_sparse(a)
+  else
+    return is_divisible(one(parent(a)), a, :right)
+  end
+end
+
+# Units map to units under the augmentation R[G] -> R, sum c_g g -> sum c_g.
+# Beyond that, only monomials are decided.
+function _is_invertible_sparse(a::GroupAlgebraElem)
+  A = parent(a)
+  fl, j, c = _is_group_algebra_monomial(a)
+  if fl && is_unit(c)
+    return true, A(_inv_group_elem(A.base_to_group[j])) * inv(c)
+  end
+  e = sum(ci for (_, ci) in _coeffs_sparse(a); init = zero(base_ring(A)))
+  if is_unit(e)
+    throw(NotImplementedError(:is_invertible, a))
+  end
+  return false, zero(A)
+end
 
 @doc raw"""
     inv(a::AbstractAssociativeAlgebraElem) -> AbstractAssociativeAlgebraElem

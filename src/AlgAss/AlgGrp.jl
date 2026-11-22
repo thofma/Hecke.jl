@@ -73,6 +73,9 @@ _is_identity_elem(x::GroupElem) = isone(x)
 _identity_elem(G::AbstractAlgebra.AdditiveGroup) = zero(G)
 _identity_elem(G::Group) = one(G)
 
+_inv_group_elem(x::AbstractAlgebra.AdditiveGroupElem) = -x
+_inv_group_elem(x::GroupElem) = inv(x)
+
 ################################################################################
 #
 #  Construction
