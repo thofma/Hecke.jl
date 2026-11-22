@@ -113,6 +113,7 @@ end
 
 function zero!(a::MatAlgebraElem)
   a.matrix = zero!(a.matrix)
+  a.has_coeffs = false
   return a
 end
 
@@ -129,13 +130,6 @@ end
 
 function mul!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
-  A = parent(a)
-
-  if c === a || c === b
-    d = parent(a)()
-    mul!(d, a, b)
-    return d
-  end
 
   c.matrix = mul!(c.matrix, a.matrix, b.matrix)
   c.has_coeffs = false
@@ -143,7 +137,7 @@ function mul!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   return c
 end
 
-function mul!(c::MatAlgebraElem{T}, a::MatAlgebraElem{T}, b::T) where {T}
+function mul!(c::MatAlgebraElem{T}, a::MatAlgebraElem{T}, b::Union{T, Int, ZZRingElem}) where {T}
   parent(c) !== parent(a) && error("Parents don't match.")
   A = parent(a)
 
