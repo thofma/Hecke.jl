@@ -296,6 +296,10 @@
     B = group_algebra(R, G; sparse = true, cached = false)
     u = 2*B(g1) + 3*B(g2)
     @test mul!(u, u, R(3)) == 3*B(g2)
+
+    # Characteristic
+    @test characteristic(A) == 0
+    @test characteristic(B) == 6
   end
 
   let
