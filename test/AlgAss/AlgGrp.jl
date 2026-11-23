@@ -48,7 +48,7 @@
   end
 
   @testset "Sparse, finite group" begin
-    # Sparse elements agree with dense ones on the finite-dimensional API.
+    # Sparse elements support the finite-dimensional API of dense ones.
     local G = small_group(6, 1)
     for R in (QQ, residue_ring(ZZ, 4)[1])
       D = group_algebra(R, G; sparse = false, cached = false)
@@ -57,6 +57,12 @@
         x = 3 * D(g) + D(one(G))
         y = 3 * B(g) + B(one(G))
         @test tr(y) == tr(x)
+      end
+      a = 2 * B(gens(G)[1]) + B(gens(G)[2])
+      for g in G
+        h = 3 * B(g)
+        @test divexact(a * h, h, :right) == a
+        @test divexact(h * a, h, :left) == a
       end
     end
   end
@@ -330,6 +336,11 @@
     @test denominator(Q(g1) * QQ(1, 2) + Q(g2) * QQ(1, 3)) == 6
     @test denominator(zero(Q)) == 1
     @test denominator(A(g1)) == 1
+
+    # Division by invertible elements
+    x = A(g1) + 2 * A(g2)
+    @test x / A(g3) == A(g1 - g3) + 2 * A(g2 - g3)
+    @test (-A(g3)) \ x == -A(g1 - g3) - 2 * A(g2 - g3)
   end
 
   let
