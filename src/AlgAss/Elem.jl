@@ -1359,7 +1359,13 @@ end
 ################################################################################
 
 function denominator(x::AbstractAssociativeAlgebraElem)
-  return lcm([ denominator(y) for y in coefficients(x, copy = false) ])
+  if _is_sparse(x)
+    d = [ denominator(y) for (_, y) in _coeffs_sparse(x) ]
+    # `lcm` rejects an empty vector, which the zero element gives.
+    return isempty(d) ? one(ZZ) : lcm(d)
+  else
+    return lcm([ denominator(y) for y in coefficients(x, copy = false) ])
+  end
 end
 
 ################################################################################

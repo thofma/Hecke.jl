@@ -311,6 +311,11 @@
     @test !is_invertible(A(g1) + A(g2))[1]
     @test !is_invertible(zero(A))[1]
     @test_throws ErrorException inv(A(g1) + A(g2))
+
+    # Denominator
+    @test denominator(Q(g1) * QQ(1, 2) + Q(g2) * QQ(1, 3)) == 6
+    @test denominator(zero(Q)) == 1
+    @test denominator(A(g1)) == 1
   end
 
   let
