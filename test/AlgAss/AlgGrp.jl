@@ -47,6 +47,20 @@
     @test (row * col)[1, 1] == b + b
   end
 
+  @testset "Sparse, finite group" begin
+    # Sparse elements agree with dense ones on the finite-dimensional API.
+    local G = small_group(6, 1)
+    for R in (QQ, residue_ring(ZZ, 4)[1])
+      D = group_algebra(R, G; sparse = false, cached = false)
+      B = group_algebra(R, G; sparse = true, cached = false)
+      for g in G
+        x = 3 * D(g) + D(one(G))
+        y = 3 * B(g) + B(one(G))
+        @test tr(y) == tr(x)
+      end
+    end
+  end
+
   @testset "Multiplication by group elements" begin
     local G, A
     G = small_group(6, 1)
