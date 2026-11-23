@@ -156,6 +156,64 @@
     end
   end
 
+  # Mutating arithmetic agrees with the non-mutating one, also if the
+  # output is one of the inputs.
+  @testset "Mutating arithmetic" begin
+    H = quaternion_algebra(QQ, -1, -1)
+    M = matrix_algebra(QQ, 2)
+    G = small_group(6, 1)
+    elems = [(H([2, 3, 4, 5]), H([1, -1, 2, 7])),
+             (M(QQ[1 2; 3 4]), M(QQ[0 1; 1 1]))]
+    for sparse in (false, true)
+      QG = Hecke._group_algebra(QQ, G; sparse = sparse)
+      push!(elems, (QG(G[1]) + 2*QG(G[2]), 3*QG(G[1]*G[2]) - QG(one(G))))
+    end
+    amul = (x, y, z) -> x + y*z
+    for (a, b) in elems
+      E = typeof(a)
+      ConformanceTests.test_mutating_op_like_zero(zero, zero!, a)
+      ConformanceTests.test_mutating_op_like_neg(-, neg!, a)
+      ConformanceTests.test_mutating_op_like_add(+, add!, a, b)
+      ConformanceTests.test_mutating_op_like_add(-, sub!, a, b)
+      ConformanceTests.test_mutating_op_like_add(*, mul!, a, b)
+      ConformanceTests.test_mutating_op_like_addmul(amul, addmul!, b, a, b)
+      for s in (QQ(3), ZZ(3), 3)
+        ConformanceTests.test_mutating_op_like_add(*, mul!, a, s, E)
+        ConformanceTests.test_mutating_op_like_add(*, mul!, s, a, E)
+        ConformanceTests.test_mutating_op_like_addmul(amul, addmul!, b, a, s, E)
+        ConformanceTests.test_mutating_op_like_addmul(amul, addmul!, b, s, a, E)
+      end
+    end
+
+    # == compares matrices, so check the cached coefficients separately
+    c = M(QQ[1 2; 3 4])
+    @test !iszero(coefficients(c))
+    @test iszero(coefficients(zero!(c)))
+  end
+
+  # coeff for dense, sparse group algebra and lazily expanded matrix algebra
+  # elements
+  @testset "coeff" begin
+    A = quaternion_algebra(QQ, -1, -2)
+    a = A([1, 2, 3, 4])
+    @test [coeff(a, i) for i in 1:4] == QQ.([1, 2, 3, 4])
+
+    G = abelian_group([2, 2])
+    g = G([0, 1])
+    for sparse in (false, true)
+      QG = group_algebra(QQ, G; sparse, cached = false)
+      x = 2 * QG(g) + QG(zero(G))
+      c = [coeff(x, i) for i in 1:dim(QG)]
+      @test sort(c) == QQ.([0, 0, 1, 2])
+      @test c[QG.group_to_base[g]] == 2
+    end
+
+    B = matrix_algebra(QQ, 2)
+    b = B(QQ[1 2; 3 4])
+    c = [coeff(b, i) for i in 1:dim(B)]
+    @test sum(c[i] * basis(B)[i] for i in 1:dim(B)) == b
+  end
+
   # add! for matrix algebra elements
   # 1547
   let

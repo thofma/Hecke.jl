@@ -116,7 +116,7 @@ function StructureConstantAlgebra(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, I::U
         addmul!(z, l, BO[basis_elts[i]], temp)
       end
       return z
-      #return sum(lift(coefficients(a, copy = false)[i])*BO[basis_elts[i]] for i = 1:r)
+      #return sum(lift(coeff(a, i))*BO[basis_elts[i]] for i in 1:r)
     end
   end
 

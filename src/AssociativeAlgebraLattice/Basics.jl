@@ -60,7 +60,7 @@ function coordinates!(M::MatrixElem{T}, A::Vector{<:AbstractAssociativeAlgebraEl
   for i = 1:n
     elem_to_mat_row!(M, i, A[i])
     #for j = 1:d
-    #  M[i, j] = deepcopy(coefficients(A[i], copy = false)[j])
+    #  M[i, j] = deepcopy(coeff(A[i], j))
     #end
   end
   return M

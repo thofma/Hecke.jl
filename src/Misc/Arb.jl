@@ -1,5 +1,5 @@
 function _arb_get_fmpq(x::ArbFieldElem)
-  mid = ccall((:arb_mid_ptr, libflint), Ptr{arf_struct}, (Ref{ArbFieldElem}, ), x)
+  mid = Nemo._mid_ptr(x)
   e = ZZRingElem()
   m = ZZRingElem()
   b = ccall((:arf_get_fmpz_2exp, libflint), Cint, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{arf_struct}), m, e, mid)

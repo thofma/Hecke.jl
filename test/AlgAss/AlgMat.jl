@@ -295,4 +295,13 @@
     QR = matrix_algebra(QQ, [b1,b2]);
     @test is_one(Hecke.denominator_of_structure_constant_table(QR) )
   end
+
+  # All coordinates of number field entries, including the constant one
+  let
+    K, a = quadratic_field(2)
+    A = matrix_algebra(QQ, K, [matrix(K, 1, 1, [a])])
+    @test dim(A) == 2
+    b = A(matrix(K, 1, 1, [1 + a]))
+    @test sum(coefficients(b)[i] * basis(A)[i] for i in 1:dim(A)) == b
+  end
 end

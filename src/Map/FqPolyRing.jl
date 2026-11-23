@@ -34,14 +34,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       Fp = Native.GF(p; cached = false)
     end
     Fpx = polynomial_ring(Fp, "x", cached = false)[1]
-    g = Fpx()
-    if isnmod
-      pt = ccall((:fq_nmod_ctx_modulus, libflint), Ptr{zzModPolyRingElem}, (Ref{fqPolyRepField}, ), Fq)
-      ccall((:nmod_poly_set, libflint), Nothing, (Ref{fpPolyRingElem}, Ptr{zzModPolyRingElem}), g, pt)
-    else
-      pt = ccall((:fq_ctx_modulus, libflint), Ptr{ZZModPolyRingElem}, (Ref{FqPolyRepField}, ), Fq)
-      ccall((:fmpz_mod_poly_set, libflint), Nothing, (Ref{FpPolyRingElem}, Ptr{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), g, pt, base_ring(parent(g)).ninv)
-    end
+    g = defining_polynomial(Fpx, Fq)
     n = degree(Fq)
     @assert n == degree(g)
     m = degree(h)
@@ -104,11 +97,7 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       x_mat = M*x_mat
       t = parent(g)([ x_mat[k, 1] for k = 1:n*m ])
       x = Fqm()
-      if isnmod
-        ccall((:fq_nmod_set, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), x, t, Fqm)
-      else
-        ccall((:fq_set, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}), x, t, Fqm)
-      end
+      set!(x, t)
       return x
     end
 
@@ -120,14 +109,10 @@ mutable struct FqPolyRingToFqMor{S, T, PolyType, MatType} <: Map{S, T, HeckeMap,
       end
       y_mat = invM*x_mat
       f = parent(h)()
-      t = Fqm()
+      t = Fq()
       for j = 0:m - 1
         tt = parent(g)([ y_mat[i + n*j + 1, 1] for i = 0:n - 1 ])
-        if isnmod
-          ccall((:fq_nmod_set, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fpPolyRingElem}, Ref{fqPolyRepField}), t, tt, Fq)
-        else
-          ccall((:fq_set, libflint), Nothing, (Ref{FqPolyRepFieldElem}, Ref{FpPolyRingElem}, Ref{FqPolyRepField}), t, tt, Fq)
-        end
+        set!(t, tt)
         setcoeff!(f, j, t)
       end
       return f

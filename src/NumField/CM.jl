@@ -5,9 +5,7 @@
 ################################################################################
 
 function _isimag(x::AcbFieldElem)
-  z = ArbFieldElem()
-  ccall((:acb_get_real, libflint), Cvoid, (Ref{ArbFieldElem}, Ref{AcbFieldElem}), z, x)
-  return iszero(z)
+  return iszero(real(x))
 end
 
 function _print_acb_neatly(io, x::AcbFieldElem)

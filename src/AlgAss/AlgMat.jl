@@ -132,8 +132,9 @@ function assure_has_basis_matrix(A::MatAlgebra)
       N = matrix(A[i])
       for (j, n) in enumerate(N)
         jj = (j - 1)*dcr
+        cn = coefficients(n; copy = false)
         for k = 1:dcr
-          M[i, jj + k] = coefficients(n, copy = false)[k]
+          M[i, jj + k] = cn[k]
         end
       end
     end
@@ -443,8 +444,9 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; is_basis::B
     @assert length(span[i]) == d2
     for (j, s) in enumerate(span[i])
       jj = (j - 1)*dcr
+      cs = coefficients(s; copy = false)
       for k = 1:dcr
-        v[jj + k] = coefficients(s, copy = false)[k]
+        v[jj + k] = cs[k]
       end
     end
     new_elt = _add_row_to_rref!(M, deepcopy(v), pivot_rows, cur_rank + 1)
@@ -468,8 +470,9 @@ function matrix_algebra(R::Ring, S::NCRing, gens::Vector{<:MatElem}; is_basis::B
         @assert length(t) == d2
         for (j, s) in enumerate(t)
           jj = (j - 1)*dcr
+          cs = coefficients(s; copy = false)
           for k = 1:dcr
-            v[jj + k] = coefficients(s, copy = false)[k]
+            v[jj + k] = cs[k]
           end
         end
         new_elt = _add_row_to_rref!(M, deepcopy(v), pivot_rows, cur_rank + 1)
@@ -619,9 +622,10 @@ function _check_matrix_in_algebra(M::S, A::MatAlgebra{T, S}, ::Val{short} = Val(
     @assert length(M) == d2
     for (i, m) in enumerate(M)
       ii = (i - 1)*dcr
+      cm = coefficients(m; copy = false)
       for j = 1:dcr
-        t[ii + j] = coefficients(m, copy = false)[j]
-        #tt[1, ii + j] = coefficients(m, copy = false)[j]
+        t[ii + j] = cm[j]
+        #tt[1, ii + j] = cm[j]
       end
     end
   end

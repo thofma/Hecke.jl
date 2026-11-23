@@ -419,6 +419,49 @@ end
     @test issetequal(conductor(E), [(t, 5), (t^2 + t + 1, 1), (1//t, 1)])
   end
 
+  @testset "Bad primes of non-integral models" begin
+    # a minimal model with v_p(disc) = 12 rescaled by u = p:
+    # not integral at p, v_p(disc) = 0, but p is still bad prime
+
+    let E = elliptic_curve([1, 0, 0, 0, 5^12])
+      F = transform_rstu(E, [0, 0, 0, 5])[1]
+      @assert valuation(discriminant(F), 5) == 0
+      @assert 5 in bad_primes(E)
+
+      @test @inferred(bad_primes(F)) == @inferred(bad_primes(E))
+      @test @inferred(conductor(F)) == @inferred(conductor(E))
+      @test @inferred(tamagawa_numbers(F)) == @inferred(tamagawa_numbers(E))
+      @test @inferred(minimal_discriminant(F)) == @inferred(minimal_discriminant(E))
+    end
+
+    let x = gen(Hecke.Globals.Qx),
+        (K, a) = number_field(x^2 - 2; cached = false),
+        OK = ring_of_integers(K),
+        E = elliptic_curve(K, [1, 0, 0, 0, 5^12])
+      F = transform_rstu(E, [0, 0, 0, 5])[1]
+      P = 5*OK
+      @assert valuation(discriminant(F), P) == 0
+      @assert P in bad_primes(E)
+
+      @test @inferred(bad_primes(F)) == @inferred(bad_primes(E))
+      @test @inferred(conductor(F)) == @inferred(conductor(E))
+      @test @inferred(tamagawa_numbers(F)) == @inferred(tamagawa_numbers(E))
+      @test @inferred(minimal_discriminant(F)) == @inferred(minimal_discriminant(E))
+    end
+
+    let (K, t) = rational_function_field(QQ, :t; cached = false),
+        E = elliptic_curve(K, [1, 0, 0, 0, t^12])
+      F = transform_rstu(E, [0, 0, 0, t])[1]
+      @assert valuation(discriminant(F), numerator(t)) == 0
+      @assert t in bad_primes(E)
+
+      @test issetequal(@inferred(bad_primes(F)), @inferred(bad_primes(E)))
+      @test issetequal(@inferred(conductor(F)), @inferred(conductor(E)))
+      @test issetequal(@inferred(tamagawa_numbers(F)), @inferred(tamagawa_numbers(E)))
+      @test issetequal(@inferred(minimal_discriminant(F)), @inferred(minimal_discriminant(E)))
+    end
+  end
+
   @testset "LocalData caching" begin
     # check that good primes are not cached and that primes are ZZ for curves over Q
     let E = elliptic_curve([0, 0, 0, 1, 0])

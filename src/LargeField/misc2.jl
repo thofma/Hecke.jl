@@ -129,7 +129,7 @@ function local_norm!(n::ZZRingElem, ap::Vector{fqPolyRepFieldElem}, me::Hecke.mo
   np = UInt(1)
   for j=1:length(ap)
     ccall((:fq_nmod_norm, libflint), Nothing, (Ref{ZZRingElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), n, ap[j], parent(ap[j]))
-    nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, UInt(n), me.up, me.upinv)
+    nn = Nemo.mulmod(nn, UInt(n), me.up, me.upinv)
   end
   set!(n, nn)
   return n
@@ -217,7 +217,7 @@ function basis_rels_4(b::Vector{AbsSimpleNumFieldElem}, no_b::Int = 250, no_rel:
 #    println("lc: $lc")
     for j=1:length(lpx)
       for k=1:n
-        @inbounds ccall((:fq_nmod_set, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}), tmp[j, k], bp[j, lc[1], k])
+        @inbounds set!(tmp[j, k], bp[j, lc[1], k])
         for l = 2:no_coeff
 #          tmp[j][k] +=  bp[j][lc[l]][k]
           @inbounds add!(tmp[j, k], tmp[j, k], bp[j, lc[l], k])
@@ -256,7 +256,7 @@ function local_norm!(n::ZZRingElem, ap::fpMatrix, me::Hecke.modular_env)
   np = UInt(1)
   for j=1:nrows(ap)
     np = Nemo.getindex_raw(ap, j, 1)
-    nn = ccall((:n_mulmod2_preinv, libflint), UInt, (UInt, UInt, UInt, UInt), nn, np, me.up, me.upinv)
+    nn = Nemo.mulmod(nn, np, me.up, me.upinv)
   end
   set!(n, nn)
   return n
