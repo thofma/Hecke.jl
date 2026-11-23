@@ -191,6 +191,29 @@
     @test iszero(coefficients(zero!(c)))
   end
 
+  # coeff for dense, sparse group algebra and lazily expanded matrix algebra
+  # elements
+  @testset "coeff" begin
+    A = quaternion_algebra(QQ, -1, -2)
+    a = A([1, 2, 3, 4])
+    @test [coeff(a, i) for i in 1:4] == QQ.([1, 2, 3, 4])
+
+    G = abelian_group([2, 2])
+    g = G([0, 1])
+    for sparse in (false, true)
+      QG = group_algebra(QQ, G; sparse, cached = false)
+      x = 2 * QG(g) + QG(zero(G))
+      c = [coeff(x, i) for i in 1:dim(QG)]
+      @test sort(c) == QQ.([0, 0, 1, 2])
+      @test c[QG.group_to_base[g]] == 2
+    end
+
+    B = matrix_algebra(QQ, 2)
+    b = B(QQ[1 2; 3 4])
+    c = [coeff(b, i) for i in 1:dim(B)]
+    @test sum(c[i] * basis(B)[i] for i in 1:dim(B)) == b
+  end
+
   # add! for matrix algebra elements
   # 1547
   let

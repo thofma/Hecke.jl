@@ -30,7 +30,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
         zt = z.c_t_threaded[Threads.threadid()]
       end
       for i in 1:dim(A)
-        zt[1, i] = coefficients(a, copy = false)[i]
+        zt[1, i] = coeff(a, i)
       end
       s = Vector{elem_type(base_ring(B))}(undef, dim(B))
       #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
@@ -94,7 +94,7 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
       end
 
       for i in 1:dim(B)
-        zdt[1, i] = coefficients(a, copy = false)[i]
+        zdt[1, i] = coeff(a, i)
       end
       s = Vector{elem_type(base_ring(A))}(undef, dim(A))
       zct = zdt * N
@@ -307,7 +307,7 @@ mutable struct AbsAlgAssToNfAbsMor{S, T, U, V} <: Map{S, U, HeckeMap, AbsAlgAssT
 
     function _image(x::T)
       for i = 1:dim(A)
-        z.t[1, i] = coefficients(x, copy = false)[i]
+        z.t[1, i] = coeff(x, i)
       end
       s = z.t*M
       return K(parent(K.pol)([ s[1, i] for i = 1:degree(K) ]))
@@ -373,7 +373,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     function _image(x::AbstractAssociativeAlgebraElem)
       @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
-        z.t[1, i] = coefficients(x, copy = false)[i]
+        z.t[1, i] = coeff(x, i)
       end
       s = z.t*M
       sR = z.R([ s[1, i] for i = 1:dim(A) ])
@@ -413,7 +413,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     function _image(x::AbstractAssociativeAlgebraElem)
       @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
-        z.t[1, i] = coefficients(x, copy = false)[i]
+        z.t[1, i] = coeff(x, i)
       end
       s = z.t*M
       sR = z.R([ s[1, i] for i = 1:dim(A) ])
