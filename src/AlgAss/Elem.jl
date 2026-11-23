@@ -1320,12 +1320,15 @@ end
     coefficients(a::AbsAlgAbsElem; copy::Bool = true) -> Vector{RingElem}
 
 Returns the coefficients of $a$ in the basis of `algebra(a)`.
+
+Not implemented for sparse group algebras, which have no fixed basis order.
 """
 function coefficients(a::AbstractAssociativeAlgebraElem; copy::Bool = true)
-  if copy
-    return deepcopy(a.coeffs)
+  if _is_sparse(a)
+    throw(NotImplementedError(:coefficients, a))
+  else
+    return copy ? deepcopy(a.coeffs) : a.coeffs
   end
-  return a.coeffs
 end
 
 @doc raw"""
