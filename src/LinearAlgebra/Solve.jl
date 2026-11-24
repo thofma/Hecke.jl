@@ -32,29 +32,24 @@ rand(K::AbsSimpleNumField, U::AbstractArray) =
   rand(Random.default_rng(), K, U)
 
 @doc raw"""
-    rand!(A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray) -> Generic.Mat{AbsSimpleNumFieldElem}
+    rand!([rng::AbstractRNG], A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray) -> Generic.Mat{AbsSimpleNumFieldElem}
 
 Inplace, replace each element in $A$ by an element where the coefficients are
 selected at random in $U$.
 Returns $A$.
 """
-function rand!(A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray)
-  for i=1:nrows(A)
-    for j=1:ncols(A)
-      rand!(A[i,j], U)
+function rand!(rng::AbstractRNG, A::Generic.Mat{AbsSimpleNumFieldElem},
+               U::AbstractArray)
+  for i in 1:nrows(A)
+    for j in 1:ncols(A)
+      rand!(rng, A[i,j], U)
     end
   end
   return A
 end
 
-@doc raw"""
-    rand(A::Generic.MatSpace{AbsSimpleNumFieldElem}, U::AbstractArray) -> Generic.Mat{AbsSimpleNumFieldElem}
-
-Create a random matrix in $A$ where the coefficients are selected from $U$.
-"""
-function rand(A::Generic.MatSpace{AbsSimpleNumFieldElem}, U::AbstractArray)
-  return rand!(A(), U)
-end
+rand!(A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray) =
+  rand!(Random.default_rng(), A, U)
 
 @doc raw"""
     modular_lift(ap::Vector{fqPolyRepMatrix}, me::modular_env) -> Array
