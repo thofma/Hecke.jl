@@ -458,7 +458,7 @@ rand(rng::AbstractRNG, I::AbsNumFieldOrderIdeal, B::Int) = rand(rng, make(I, B))
 RandomExtensions.maketype(I::AbsSimpleNumFieldOrderFractionalIdeal, ::Int) = AbsSimpleNumFieldElem
 
 function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldElem,AbsSimpleNumFieldOrderFractionalIdeal,Int}})
-  I, B = sp[][1:2]
+  I, B = sp[][1:end]
   z = rand(rng, make(numerator(I), B))
   return divexact(elem_in_nf(z), denominator(I))::AbsSimpleNumFieldElem
   # type assert to help inference in Julia 1.0

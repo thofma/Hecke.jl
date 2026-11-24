@@ -507,7 +507,7 @@ RandomExtensions.maketype(O::AlgAssAbsOrd, R::AbstractUnitRange) = elem_type(O)
 
 function rand(rng::AbstractRNG,
               sp::SamplerTrivial{<:Make2{<:NCRingElem,<:AlgAssAbsOrd,<:AbstractUnitRange}})
-  O, R = sp[][1:2]
+  O, R = sp[][1:end]
   O(map(ZZRingElem, rand(rng, R, degree(O))))
 
 end

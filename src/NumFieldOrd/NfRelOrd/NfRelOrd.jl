@@ -1011,7 +1011,7 @@ end
 RandomExtensions.maketype(O::RelNumFieldOrder, ::Int) = elem_type(O)
 
 function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:RelNumFieldOrderElem,<:RelNumFieldOrder,Int}})
-  O, B = sp[][1:2]
+  O, B = sp[][1:end]
   pb = pseudo_basis(O, copy = false)
   z = nf(O)()
   for i = 1:degree(O)
