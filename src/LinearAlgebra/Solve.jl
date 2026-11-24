@@ -1,25 +1,35 @@
 @doc raw"""
-    rand!(a::AbsSimpleNumFieldElem, U::AbstractArray) -> AbsSimpleNumFieldElem
+    rand!([rng::AbstractRNG], a::AbsSimpleNumFieldElem, U::AbstractArray) -> AbsSimpleNumFieldElem
 
 Inplace, set the coefficients of $a$ to random elements in $U$.
 $a$ is returned.
 """
-function rand!(a::AbsSimpleNumFieldElem, U::AbstractArray)
-  for i=1:degree(parent(a))
-    _num_setcoeff!(a, i-1, rand(U))
+function rand!(rng::AbstractRNG, a::AbsSimpleNumFieldElem, U::AbstractArray)
+  for i in 1:degree(parent(a))
+    _num_setcoeff!(a, i-1, rand(rng, U))
   end
   return a
 end
 
+rand!(a::AbsSimpleNumFieldElem, U::AbstractArray) =
+  rand!(Random.default_rng(), a, U)
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldElem, AbsSimpleNumField, <:AbstractArray}})
+  K, U = sp[][1:end]
+  return rand!(rng, K(), U)
+end
+
 @doc raw"""
-    rand(K::AbsSimpleNumField, U::AbstractArray) -> AbsSimpleNumFieldElem
+    rand([rng::AbstractRNG], K::AbsSimpleNumField, U::AbstractArray) -> AbsSimpleNumFieldElem
 
 Find an element in $K$ where the coefficients are selected at random in $U$.
 """
-function rand(K::AbsSimpleNumField, U::AbstractArray)
-  a = K()
-  return rand!(a, U)
-end
+rand(rng::AbstractRNG, K::AbsSimpleNumField, U::AbstractArray) =
+  rand(rng, make(K, U))
+
+rand(K::AbsSimpleNumField, U::AbstractArray) =
+  rand(Random.default_rng(), K, U)
 
 @doc raw"""
     rand!(A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray) -> Generic.Mat{AbsSimpleNumFieldElem}
