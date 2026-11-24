@@ -1021,7 +1021,7 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:RelNumFieldOrderEle
   return O(z)
 end
 
-rand(O::RelNumFieldOrder, B::Int) = rand(GLOBAL_RNG, O, B)
+rand(O::RelNumFieldOrder, B::Int) = rand(Random.default_rng(), O, B)
 rand(rng::AbstractRNG, O::RelNumFieldOrder, B::Int) = rand(rng, make(O, B))
 
 ################################################################################

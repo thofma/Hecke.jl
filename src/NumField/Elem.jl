@@ -166,7 +166,7 @@ end
 
 A random linear combination of elements in `b`, with parent `F` and coefficients in `r`.
 """
-rand(b::Vector{<: NumFieldElem}, r::AbstractUnitRange) = rand(Random.GLOBAL_RNG, b, r)
+rand(b::Vector{<: NumFieldElem}, r::AbstractUnitRange) = rand(Random.default_rng(), b, r)
 
 function rand(rng::AbstractRNG, b::Vector{<: NumFieldElem}, r::AbstractUnitRange)
   length(b) == 0 && error("Array must not be empty")
@@ -191,7 +191,7 @@ A random linear combination (with repetitions) of `terms` elements of `b`
 with parent `F` and coefficients in `r`.
 """
 function rand(b::Vector{<: NumFieldElem}, r::AbstractUnitRange, terms::Int)
-  return rand(Random.GLOBAL_RNG, b, r, terms)
+  return rand(Random.default_rng(), b, r, terms)
 end
 
 function rand(rng::AbstractRNG, b::Vector{<: NumFieldElem}, r::AbstractUnitRange, terms::Int)
@@ -219,7 +219,7 @@ elements of `b` with coefficients in `r`. The element `c` is returned.
 In the second form, `F` must be the parent of `c`.
 """
 function rand!(c::T, b::Vector{T}, r::AbstractUnitRange, terms::Int) where {T <: NumFieldElem}
-  rand!(Random.GLOBAL_RNG, c, b, r, terms)
+  rand!(Random.default_rng(), c, b, r, terms)
 end
 
 function rand!(rng::AbstractRNG, c::T, b::Vector{T}, r::AbstractUnitRange, terms::Int) where {T <: NumFieldElem}
@@ -258,7 +258,7 @@ in `r`. The element `c` is returned.
 In the second form, `F` must be the parent of `c`.
 """
 function rand!(c::T, b::Vector{T}, r::AbstractUnitRange) where {T <: NumFieldElem}
-  return rand!(GLOBAL_RNG, c, b, r)
+  return rand!(Random.default_rng(), c, b, r)
 end
 
 function rand!(rng::AbstractRNG, c::T, b::Vector{T}, r::AbstractUnitRange) where {T <: NumFieldElem}

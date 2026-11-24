@@ -627,7 +627,7 @@ end
 
 rand(rng::AbstractRNG, a::AbsAlgAssIdl, v...) = rand(rng, make(a, v...))
 
-rand(a::AbsAlgAssIdl, v...) = rand(Random.GLOBAL_RNG, a, v...)
+rand(a::AbsAlgAssIdl, v...) = rand(Random.default_rng(), a, v...)
 
 ################################################################################
 #

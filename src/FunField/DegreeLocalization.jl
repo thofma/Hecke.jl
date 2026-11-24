@@ -387,7 +387,7 @@ end
 rand(rng::AbstractRNG, S::KInftyRing, v...) =
   rand(rng, make(S, v...))
 
-rand(S::KInftyRing, v...) = rand(GLOBAL_RNG, S, v...)
+rand(S::KInftyRing, v...) = rand(Random.default_rng(), S, v...)
 
 ###############################################################################
 #

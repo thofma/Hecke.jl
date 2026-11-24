@@ -520,15 +520,15 @@ RandomExtensions.make(O::AlgAssAbsOrd, n::IntegerUnion) =
 
 Returns a random element of $O$ whose coefficients lie in $R$.
 """
-rand(O::AlgAssAbsOrd, R::AbstractUnitRange) = rand(Random.GLOBAL_RNG, O, R)
+rand(O::AlgAssAbsOrd, R::AbstractUnitRange) = rand(Random.default_rng(), O, R)
 
 @doc raw"""
     rand(O::AlgAssAbsOrd, n::IntegerUnion) -> AlgAssAbsOrdElem
 
 Returns a random element of $O$ whose coefficients are bounded by $n$.
 """
-rand(O::AlgAssAbsOrd, n::ZZRingElem) = rand(Random.GLOBAL_RNG, O, n)
-rand(O::AlgAssAbsOrd, n::Integer) = rand(Random.GLOBAL_RNG, O, n)
+rand(O::AlgAssAbsOrd, n::ZZRingElem) = rand(Random.default_rng(), O, n)
+rand(O::AlgAssAbsOrd, n::Integer) = rand(Random.default_rng(), O, n)
 # these two methods can't be merged with a Union, because of ambiguities
 
 rand(rng::AbstractRNG, O::AlgAssAbsOrd, n::Union{ZZRingElem, <:AbstractUnitRange}) = rand(rng, make(O, n))

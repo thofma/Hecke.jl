@@ -312,7 +312,7 @@ function rand(rng::AbstractRNG, Asp::SamplerTrivial{S}) where {T, S <: AbstractA
   A = Asp[]
   c = [rand(rng, base_ring(A)) for i in 1:dim(A)]
 #  c = rand(rng, base_ring(A), dim(A))
-#  Using the above makes @inferred Random.rand(Random.GLOBAL_RNG, -1:1, 10) fail
+#  Using the above makes @inferred Random.rand(Random.default_rng(), -1:1, 10) fail
   return A(c)
 end
 

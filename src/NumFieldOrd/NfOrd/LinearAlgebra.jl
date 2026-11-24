@@ -451,7 +451,7 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:AbsNumFieldOrderEle
   return z
 end
 
-rand(I::AbsNumFieldOrderIdeal, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(I::AbsNumFieldOrderIdeal, B::Int) = rand(Random.default_rng(), I, B)
 rand(rng::AbstractRNG, I::AbsNumFieldOrderIdeal, B::Int) = rand(rng, make(I, B))
 
 
@@ -464,7 +464,7 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldElem
   # type assert to help inference in Julia 1.0
 end
 
-rand(I::AbsSimpleNumFieldOrderFractionalIdeal, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(I::AbsSimpleNumFieldOrderFractionalIdeal, B::Int) = rand(Random.default_rng(), I, B)
 rand(rng::AbstractRNG, I::AbsSimpleNumFieldOrderFractionalIdeal, B::Int) = rand(rng, make(I, B))
 
 @doc raw"""
