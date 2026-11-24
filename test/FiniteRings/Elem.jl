@@ -21,6 +21,7 @@
   m = R([1, 1, 0, 1])
   n = R([1, 0, 0, 0])
   p = rand(R)
+  @test reproducible(R)
 
   for x in [z, o, m, n, p]
     @test parent(x) === R

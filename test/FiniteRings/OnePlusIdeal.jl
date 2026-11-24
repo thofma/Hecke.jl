@@ -19,6 +19,7 @@
     @test x == one(x)
     z = rand(OpI)
     @test z == x * z == z * x
+    @test reproducible(OpI)
     zz = inv(z)
     @test zz * z == zz * z == x
     @test z^2 == z * z
@@ -37,6 +38,7 @@
 
     u = rand(Q)
     @test RtoQ(preimage(RtoQ, u)) == u
+    @test reproducible(Q)
   end
 end
 

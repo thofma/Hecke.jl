@@ -57,8 +57,9 @@ function Base.:(==)(x::OnePlusIdealElem, y::OnePlusIdealElem)
   return x.elem == y.elem
 end
 
-function Base.rand(R::OnePlusIdeal)
-  return R(one(base_ring(ideal(R))) + rand(R.ideal))
+function Base.rand(rng::Random.AbstractRNG, sp::Random.SamplerTrivial{<:OnePlusIdeal})
+  R = sp[]
+  return R(one(base_ring(ideal(R))) + rand(rng, R.ideal))
 end
 
 data(x::OnePlusIdealElem) = x.elem
@@ -122,6 +123,8 @@ function Base.:(==)(x::OnePlusIdealModuloOnePlusIdealElem, y::OnePlusIdealModulo
   return x.elem == y.elem
 end
 
-function Base.rand(R::OnePlusIdealModuloOnePlusIdeal)
-  return R(rand(R.I))
+function Base.rand(rng::Random.AbstractRNG,
+                   sp::Random.SamplerTrivial{<:OnePlusIdealModuloOnePlusIdeal})
+  R = sp[]
+  return R(rand(rng, R.I))
 end

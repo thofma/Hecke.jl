@@ -299,8 +299,11 @@ end
 #
 ################################################################################
 
-function Base.rand(I::FiniteRingIdeal)
-  x = FiniteRingElem(base_ring(I), I.BtoA(rand(I.B)))
+Random.gentype(::Type{FiniteRingIdeal}) = FiniteRingElem
+
+function Base.rand(rng::Random.AbstractRNG, sp::Random.SamplerTrivial{FiniteRingIdeal})
+  I = sp[]
+  x = FiniteRingElem(base_ring(I), I.BtoA(rand(rng, I.B)))
   @assert x in I
   return x
 end
