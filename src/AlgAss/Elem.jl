@@ -161,7 +161,7 @@ function -(a::AbstractAssociativeAlgebraElem{T}) where {T}
   if _is_sparse(a)
     return parent(a)(-_coeffs_sparse(a))
   else
-    v = T[ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
+    v = T[ -coeff(a, i) for i in 1:dim(parent(a)) ]
     return parent(a)(v)
   end
 end
@@ -177,7 +177,7 @@ function +(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraEl
   if !_is_sparse(a)
     v = Vector{T}(undef, dim(parent(a)))
     for i = 1:dim(parent(a))
-      v[i] = coefficients(a, copy = false)[i] + coefficients(b, copy = false)[i]
+      v[i] = coeff(a, i) + coeff(b, i)
     end
     return parent(a)(v)
   else
@@ -193,7 +193,7 @@ function -(a::AbstractAssociativeAlgebraElem{T}, b::AbstractAssociativeAlgebraEl
   else
     v = Vector{T}(undef, dim(parent(a)))
     for i = 1:dim(parent(a))
-      v[i] = coefficients(a, copy = false)[i] - coefficients(b, copy = false)[i]
+      v[i] = coeff(a, i) - coeff(b, i)
     end
     return parent(a)(v)
   end
@@ -1116,7 +1116,7 @@ function representation_matrix!(a::Union{AssociativeAlgebraElem, MatAlgebraElem}
       end
     elseif action == :right
       for i = 1:dim(A)
-        if iszero(coefficients(a, copy = false)[i])
+        if iszero(coeff(a, i))
           continue
         end
         for j = 1:dim(A)
@@ -1174,7 +1174,7 @@ function tr(x::AbstractAssociativeAlgebraElem{T}) where T
   _assure_trace_basis(A)
   tr=zero(base_ring(A))
   for i=1:dim(A)
-    tr = add!(tr, tr, coefficients(x, copy = false)[i]*A.trace_basis_elem[i])
+    tr = add!(tr, tr, coeff(x, i)*A.trace_basis_elem[i])
   end
   return tr
 end
@@ -1326,6 +1326,23 @@ function coefficients(a::AbstractAssociativeAlgebraElem; copy::Bool = true)
     return deepcopy(a.coeffs)
   end
   return a.coeffs
+end
+
+@doc raw"""
+    coeff(a::AbstractAssociativeAlgebraElem, i::Int) -> RingElem
+
+Return the $i$-th coefficient of $a$ in the basis of `parent(a)`.
+
+The result may share memory with $a$ and must not be mutated.
+"""
+coeff(a::AbstractAssociativeAlgebraElem, i::Int) = a.coeffs[i]
+
+function coeff(a::GroupAlgebraElem, i::Int)
+  if _is_sparse(a)
+    return a.coeffs_sparse[i]
+  else
+    return a.coeffs[i]
+  end
 end
 
 ################################################################################

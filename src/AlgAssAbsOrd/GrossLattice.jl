@@ -101,7 +101,7 @@ function gross_gram_matrix(B::Vector{<:AssociativeAlgebraElem{QQFieldElem}})
   # On 1, i, j, ij of (a, b) the form trd(x conj(y))/2 has Gram matrix
   # diag(1, -a, -b, ab).
   a, b = standard_form(A)
-  X = matrix(QQ, [coefficients(x, copy = false)[k] for x in B, k in 1:4])
+  X = matrix(QQ, [coeff(x, k) for x in B, k in 1:4])
   G = X * diagonal_matrix(QQ, [one(QQ), -a, -b, a * b]) * transpose(X)
   @req isone(denominator(G)) "the elements do not span a Gross lattice"
   return map_entries(ZZ, G)

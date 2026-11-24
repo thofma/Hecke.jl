@@ -564,7 +564,7 @@ function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbstractAss
 
   temp_den = ZZRingElem()
 
-  #dens = [lcm([denominator(coefficients(A[i], copy = false)[j]) for j=1:d]) for i=1:n]
+  #dens = [lcm([denominator(coeff(A[i], j)) for j in 1:d]) for i in 1:n]
   #deno = lcm(dens)
 
   skip_den = isone(deno)
@@ -575,7 +575,7 @@ function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbstractAss
       if skip_den
         numerator!(t, acoeff[j])
         M[i, j] = t
-        #M[i, j] = numerator(coefficients(A[i], copy = false)[j])
+        #M[i, j] = numerator(coeff(A[i], j))
       else
         denominator!(temp_den, acoeff[j])
         divexact!(temp_den, deno, temp_den)
@@ -583,8 +583,8 @@ function basis_matrix(A::Vector{S}, ::Type{FakeFmpqMat}) where {S <: AbstractAss
         mul!(t, t, temp_den)
         M[i, j] = t
       end
-      #temp_den = divexact(deno, denominator(coefficients(A[i], copy = false)[j]))
-      #M[i, j] = numerator(coefficients(A[i], copy = false)[j]) * temp_den
+      #temp_den = divexact(deno, denominator(coeff(A[i], j)))
+      #M[i, j] = numerator(coeff(A[i], j)) * temp_den
     end
   end
   return FakeFmpqMat(M, deno)
@@ -601,7 +601,7 @@ function basis_matrix(A::Vector{ <: AbstractAssociativeAlgebraElem{T} }) where T
   for i = 1:n
     elem_to_mat_row!(M, i, A[i])
     #for j = 1:d
-    #  M[i, j] = deepcopy(coefficients(A[i], copy = false)[j])
+    #  M[i, j] = deepcopy(coeff(A[i], j))
     #end
   end
   return M
@@ -995,7 +995,7 @@ function any_order(A::AbstractAssociativeAlgebra{QQFieldElem}, ::ZZRing)
     M = vcat(zero_matrix(QQ, 1, di), d*identity_matrix(QQ, di))
     oneA = one(A)
     for i = 1:di
-      M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
+      M[1, i] = deepcopy(coeff(oneA, i))
     end
     M = _hnf!_integral(M, :lowerleft)
     O = order(A, sub(M, 2:di + 1, 1:di))
@@ -1012,7 +1012,7 @@ function any_order(A::AbstractAssociativeAlgebra, R::Ring)#PolyRing{<:FieldElem}
     M = vcat(zero_matrix(K, 1, di), d*identity_matrix(K, di))
     oneA = one(A)
     for i = 1:di
-      M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
+      M[1, i] = deepcopy(coeff(oneA, i))
     end
     M = _hnf!_integral(M, R, :lowerleft)
     O = order(A, R, sub(M, 2:di + 1, 1:di))
