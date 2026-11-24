@@ -54,7 +54,7 @@ function __assert_has_automorphisms(
   do_lll::Bool=true,
   use_dual::Bool=false,
   algorithm::Symbol=:partition_backtrack,
-  target_enum_limit::Int=4000,
+  target_enum_limit::Int=64000,
 )
   @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
 
