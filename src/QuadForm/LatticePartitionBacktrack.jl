@@ -115,7 +115,7 @@
 #  Machine integers
 #  ----------------
 #
-#  The search computes with `Int` and lets it wrap around, see `search_form`.
+#  The search computes with `Int` and lets it wrap around, see `compress_forms`.
 #  All its tests remain necessary conditions for an isometry. In return every
 #  complete image is checked against (1) and against the labels in exact
 #  arithmetic before it is accepted, see `is_isometry`, so the result is
@@ -181,8 +181,8 @@ import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
                 change_base_ring, content, denominator, det, diagonal,
                 divexact, gram_matrix, identity_matrix, is_definite,
                 fits, hnf, hnf_with_transform, inv, is_symmetric,
-                lll_gram_with_transform, matrix, mul!, nbits, nrows, rank,
-                sub, zero_matrix,
+                libflint, lll_gram_with_transform, matrix, nbits, nrows,
+                rank, sub, zero_matrix,
                 __short_vectors, _int_matrix_with_overflow,
                 _short_vectors_gram_integral
 
@@ -210,7 +210,7 @@ import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
 # modulo 2^64. We write <x, y> = x * form * transpose(y); this is not
 # symmetric in general. An isometry preserves <x, y>, and up to the unlikely
 # event of a collision <p, x> determines all F_i(p, x) and F_i(x, p). A
-# collision only weakens the tests of the search, see `search_form`.
+# collision only weakens the tests of the search, see `compress_forms`.
 #
 # A label is a pair of a signed and an unsigned integer supplied by the
 # caller for every vector; the label of -v is that of v with the signed part
@@ -267,6 +267,8 @@ end
 
 struct ShortVectors
   exact_forms::Vector{ZZMatrix}
+  small_forms::Vector{Matrix{Int}}
+  form_size::Int
   form::Matrix{Int}
   vectors::Matrix{Int}                  # n x nv, column j is v_j
   form_vectors::Matrix{Int}             # form * vectors
@@ -276,6 +278,7 @@ struct ShortVectors
   colours::Vector{Int}
   index::Dict{Vector{Int}, Int}         # v_j => j or -v_j => -j
   complete::Bool
+  derived::Bool
   everything::Bool
   tables::Vector{Table}
   work::Vector{Int}
@@ -309,7 +312,8 @@ function mix(x::Int)
   return reinterpret(Int, xor(z, z >> 31))
 end
 
-# The matrix `form` of `ShortVectors`.
+# The matrix `form` of `ShortVectors`, and the forms as matrices of machine
+# integers if their entries fit, otherwise an empty list.
 #
 # The search computes with `Int` and lets the arithmetic wrap around. This is
 # harmless: reduction modulo 2^64 is a ring homomorphism, so an equation
@@ -319,17 +323,40 @@ end
 # wrong candidate pass, which is why a complete image is checked with exact
 # arithmetic, see `is_isometry`. Only the coordinates of the short vectors
 # have to fit into an `Int`.
-function search_form(exact_forms::Vector{ZZMatrix})
+function compress_forms(exact_forms::Vector{ZZMatrix})
   tmp = ZZ()
-  form = _int_matrix_with_overflow(exact_forms[1], tmp)
+  wrapped = [_int_matrix_with_overflow(F, tmp) for F in exact_forms]
+  small = all(F -> abs(@ccall libflint.fmpz_mat_max_bits(F::Ref{ZZMatrix})::Int)
+                   < 63, exact_forms)
+  # If the entries fit, symmetry is read off from the machine integers.
+  symmetric(i) = small ? wrapped[i] == transpose(wrapped[i]) :
+                         is_symmetric(exact_forms[i])
+  @req symmetric(1) "The first form must be symmetric"
+  form = copy(wrapped[1])
   for i in 2:length(exact_forms)
-    F = _int_matrix_with_overflow(exact_forms[i], tmp)
-    form += mix(i) * F
-    if !is_symmetric(exact_forms[i])
-      form += mix(-i) * transpose(F)
+    F = wrapped[i]
+    form .+= mix(i) .* F
+    symmetric(i) || (form .+= mix(-i) .* transpose(F))
+  end
+  return form, small ? wrapped : Matrix{Int}[]
+end
+
+# The largest absolute value of the entries of `A`, or `typemax(Int)`.
+maxabs(A) = mapreduce(x -> x == typemin(Int) ? typemax(Int) : abs(x), max, A;
+                      init = 0)
+
+# Set `C` to `A * B`. The zero entries of `B` are skipped: short vectors and
+# automorphisms have many of them.
+function sparse_mul!(C::Matrix{Int}, A::Matrix{Int}, B::AbstractMatrix{Int})
+  fill!(C, 0)
+  @inbounds for j in axes(B, 2), k in axes(B, 1)
+    b = B[k, j]
+    b == 0 && continue
+    @simd for i in axes(A, 1)
+      C[i, j] += b * A[i, k]
     end
   end
-  return form
+  return C
 end
 
 # All non-zero vectors of norm at most `bound` with respect to the positive
@@ -436,7 +463,7 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
                       source = nothing, everything::Bool = false,
                       given::Bool = false, invariant::Bool = false,
                       cache_max_bytes::Int = CACHE_MAX_BYTES)
-  form = search_form(exact_forms)
+  form, small_forms = compress_forms(exact_forms)
   n = size(form, 1)
   all_vectors = Matrix{Int}(undef, n, length(list))
   for (j, v) in enumerate(list)
@@ -444,7 +471,7 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
   end
 
   # the colours of v_j and of -v_j
-  all_form_vectors = form * all_vectors
+  all_form_vectors = sparse_mul!(similar(all_vectors), form, all_vectors)
   plus = Vector{Tuple{Int, Int, UInt}}(undef, length(list))
   minus = similar(plus)
   for j in 1:length(list)
@@ -457,10 +484,11 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
   end
 
   labelled = any(!iszero, labels) || any(!iszero, unsigned_labels)
+  # the vectors one of whose signs has a colour which is needed
+  coloured(needed) = Int[j for j in 1:length(list)
+                         if plus[j] in needed || minus[j] in needed]
   if source !== nothing
-    needed = Set(source.palette)
-    keep = Int[j for j in 1:length(list)
-               if plus[j] in needed || minus[j] in needed]
+    keep = coloured(Set(source.palette))
   elseif everything
     keep = collect(1:length(list))
   elseif labelled
@@ -472,10 +500,9 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
         sum(v) == -1 && push!(needed, minus[j])
       end
     end
-    keep = Int[j for j in 1:length(list)
-               if plus[j] in needed || minus[j] in needed]
+    keep = coloured(needed)
   else
-    gram = search_form(exact_forms[1:1])
+    gram = compress_forms(exact_forms[1:1])[1]
     keep = shortest_generating(all_vectors, length(exact_forms) == 1 ?
                                  all_form_vectors : gram * all_vectors)
   end
@@ -499,11 +526,16 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
       index[v] = j
     end
   end
-  return ShortVectors(exact_forms, form, all_vectors[:, keep],
-                      all_form_vectors[:, keep], labels[keep],
-                      unsigned_labels[keep], palette, colours, index,
+  return ShortVectors(exact_forms, small_forms,
+                      maximum(maxabs, small_forms; init = 0), form,
+                      nv == length(list) ? all_vectors : all_vectors[:, keep],
+                      nv == length(list) ? all_form_vectors :
+                        all_form_vectors[:, keep],
+                      labels[keep], unsigned_labels[keep], palette, colours,
+                      index,
                       source === nothing && !everything &&
                         (invariant || (!labelled && !given)),
+                      invariant,
                       everything,
                       fill(Table(Int[], PointSet[]), nv),
                       zeros(Int, nv), Ref(8 * cache_max_bytes), zeros(Int, n))
@@ -599,11 +631,12 @@ function tabulate!(S::ShortVectors, x::Int, demand::Int)
   products = Int[product(S, j, k) for j in 1:nv]
   # The negative of the smallest machine integer is not its negative.
   typemin(Int) in products && return nothing
+  # the few distinct values and their negatives
   values = Int[]
-  for s in products, value in (s, -s)
-    r = searchsortedfirst(values, value)
-    (r > length(values) || values[r] != value) && insert!(values, r, value)
+  for s in products
+    s in values || push!(values, s, -s)
   end
+  unique!(sort!(values))
   sets = [point_set(2 * nv) for _ in values]
   for j in 1:nv
     r = searchsortedfirst(values, products[j])
@@ -680,6 +713,41 @@ function smallest_cell(P::Partition)
   return best
 end
 
+# Append the cells `from, ..., to` of `P` to `out`.
+function append_cells!(out::Partition, P::Partition, from::Int, to::Int)
+  shift = length(out.elements) + 1 - P.starts[from]
+  append!(out.elements, view(P.elements, P.starts[from]:(P.starts[to + 1] - 1)))
+  for c in from:to
+    push!(out.starts, P.starts[c + 1] + shift)
+  end
+  return out
+end
+
+# Set `out` to the partition `P` with the element `i` of its cell `c` made a
+# cell of its own, in front of the rest of that cell.
+function individualize!(out::Partition, P::Partition, c::Int, i::Int)
+  first, last = P.starts[c], P.starts[c + 1] - 1
+  k = first
+  while P.elements[k] != i
+    k += 1
+  end
+  copy!(out.elements, P.elements)
+  copyto!(out.elements, first + 1, P.elements, first, k - first)
+  out.elements[first] = i
+  copy!(out.starts, P.starts)
+  last > first && insert!(out.starts, c + 1, first + 1)
+  return out
+end
+
+# Set `cells[i]` to the index of the cell containing `i`, for all elements
+# `i` of `P`.
+function locate!(cells::Vector{Int}, P::Partition)
+  for c in 1:number_of_cells(P), i in cell(P, c)
+    cells[i] = c
+  end
+  return cells
+end
+
 # The index of the cell containing the element `i`, or 0.
 function find_cell(P::Partition, i::Int)
   for c in 1:number_of_cells(P)
@@ -750,8 +818,8 @@ mutable struct Reference
   refined::Vector{Int}
   kept::Vector{Vector{Int}}
   branch::Vector{Int}
-  matrix::ZZMatrix
-  solver::ZZMatrix
+  matrix::Matrix{Int}
+  solver::Matrix{Int}
   negation::Bool
   ordered::Bool
 end
@@ -835,8 +903,8 @@ mutable struct Walk
   distinct::Vector{Int}
   sums::Matrix{Int}
   total::Vector{Int}
-  product::ZZMatrix               # work space of `is_isometry`
-  isometry::ZZMatrix              # the isometry found, see `is_isometry`
+  weights::Vector{Int}
+  isometry::Matrix{Int}           # the isometry found, see `is_isometry`
 end
 
 function Walk(target::ShortVectors, reference::Reference, mode::Symbol,
@@ -846,8 +914,8 @@ function Walk(target::ShortVectors, reference::Reference, mode::Symbol,
   return Walk(target, reference, mode, planned, Int[], Node[], 0, 0,
               typemax(Int), Partition(), Partition(),
               point_set(N), zeros(Int, N), zeros(Int, N), Int[],
-              zeros(Int, n, 0), zeros(Int, n), zero_matrix(ZZ, n, n),
-              zero_matrix(ZZ, n, n))
+              zeros(Int, n, 0), zeros(Int, n), zeros(Int, n),
+              zeros(Int, 0, 0))
 end
 
 # Report the next number of the trace of the current node. Returns whether
@@ -978,7 +1046,8 @@ function split_all!(walk::Walk, depth::Int, out::Partition, P::Partition,
   tabulate!(walk.target, x, length(P.elements) - number_of_cells(P))
   for c in 1:number_of_cells(P)
     if cell_size(P, c) == 1
-      push!(out, cell(P, c))
+      push!(out.elements, P.elements[P.starts[c]])
+      push!(out.starts, length(out.elements) + 1)
     else
       split_by_products!(walk, depth, out, cell(P, c), x) || return false
     end
@@ -1018,8 +1087,14 @@ function split_cells!(walk::Walk, depth::Int, x::Int)
   empty!(node.span.pivots)
   fill!(node.dependent, 0)
   if depth == 0
+    by_colour = sortperm(S.colours)
+    last = count(iszero, S.colours)       # colours which do not occur
     for (c, colour) in enumerate(S.palette)
-      push!(P, findall(==(c), S.colours))
+      first = last + 1
+      while last < length(by_colour) && S.colours[by_colour[last + 1]] == c
+        last += 1
+      end
+      push!(P, view(by_colour, first:last))
       observe!(walk, 0, colour[1]) && observe!(walk, 0, colour[2]) &&
         observe!(walk, 0, colour[3] % Int) &&
         observe!(walk, 0, cell_size(P, c)) || return nothing
@@ -1027,15 +1102,8 @@ function split_cells!(walk::Walk, depth::Int, x::Int)
   else
     walk.sequence[depth] = x
     xi = index(S, x)
-    old = walk.path[depth].partition
-    for c in 1:number_of_cells(old)
-      if c == walk.path[depth].branch
-        push!(spare, xi)
-        cell_size(old, c) > 1 && push!(spare, filter(!=(xi), cell(old, c)))
-      else
-        push!(spare, cell(old, c))
-      end
-    end
+    individualize!(spare, walk.path[depth].partition,
+                   walk.path[depth].branch, xi)
     split_all!(walk, depth, P, spare, xi) || return nothing
     walk.planned && return P
     parent = walk.path[depth]
@@ -1092,7 +1160,7 @@ const COUNT_LIMIT = 512
 #       cells in their order, scalar products, colours and linear dependence
 #       modulo `SPAN_PRIME`, never the order of the points in a cell. So an
 #       isomorphism maps a node to a node with the same trace, `basis` to
-#       `basis` entry by entry. Hashing (`search_form`, `mix`), wrap-around
+#       `basis` entry by entry. Hashing (`compress_forms`, `mix`), wrap-around
 #       and the prime are invariant too: a collision or a prime dividing a
 #       minor makes the trace weaker and the tree larger, nothing else.
 #   (S) At every node the points which are alone in their cell lie in
@@ -1145,8 +1213,9 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
     later = view(reference.sequence, (depth + 1):length(reference.sequence))
     if !isempty(later)
       if !reference.ordered
-        cells = Int[find_cell(P, index(S, b)) for b in later]
-        k = argmin(Int[cell_size(P, c) for c in cells])
+        locate!(walk.values, P)
+        k = argmin(Int[cell_size(P, walk.values[index(S, b)])
+                       for b in later])
         later[1], later[k] = later[k], later[1]
       end
       next = index(S, later[1])
@@ -1160,19 +1229,20 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
   end
   walk.planned && recording && (reference.refined[depth + 1] = refined)
   Q = empty!(node.partition)
-  for c in 1:number_of_cells(P)
-    elements = cell(P, c)
-    if c == refined
-      invariants, members = walk.invariants, walk.members
-      foreach(i -> toggle!(members, i), elements)
-      for (t, i) in enumerate(elements)
-        invariants[t] = count_invariant(S, elements, members, i)
-      end
-      foreach(i -> toggle!(members, i), elements)
-      split!(walk, depth, Q, elements, invariants) || return false
-    else
-      push!(Q, elements)
+  sizehint!(Q.elements, length(P.elements); shrink = false)
+  if refined == 0
+    append_cells!(Q, P, 1, number_of_cells(P))
+  else
+    append_cells!(Q, P, 1, refined - 1)
+    elements = cell(P, refined)
+    invariants, members = walk.invariants, walk.members
+    foreach(i -> toggle!(members, i), elements)
+    for (t, i) in enumerate(elements)
+      invariants[t] = count_invariant(S, elements, members, i)
     end
+    foreach(i -> toggle!(members, i), elements)
+    split!(walk, depth, Q, elements, invariants) || return false
+    append_cells!(Q, P, refined + 1, number_of_cells(P))
   end
   if !walk.planned
     # Splitting C may have left points alone in their cell.
@@ -1182,7 +1252,9 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
     Q = node.partition
   end
 
-  # Step 3
+  # Step 3. In a planned walk it is left out if x was alone in its cell:
+  # such a node has no siblings, and the sums are reported at the next node
+  # which has some.
   sums_match!(walk, depth, Q) || return false
 
   # Step 4 and the cell to branch on
@@ -1202,9 +1274,9 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
   end
   finish_trace!(walk, depth) || return false
   if recording
+    locate!(walk.values, Q)
     kept = reference.kept[depth + 1] =
-      Int[c for c in 1:number_of_cells(Q)
-          if any(b -> index(S, b) in cell(Q, c), later)]
+      unique!(sort!(Int[walk.values[index(S, b)] for b in later]))
   else
     kept = reference.kept[depth + 1]
   end
@@ -1227,20 +1299,52 @@ end
 # of all sums are reported.
 function sums_match!(walk::Walk, depth::Int, Q::Partition)
   S = walk.target
-  n = dim(S)
+  n, nv = size(S.vectors)
+  vectors, form = S.vectors, S.form
   cells = number_of_cells(Q)
-  size(walk.sums, 2) < cells && (walk.sums = zeros(Int, n, 2 * cells))
-  sums, total = walk.sums, walk.total
+  # Only the sums of the cells with more than one point are stored.
+  large = count(c -> cell_size(Q, c) > 1, 1:cells)
+  size(walk.sums, 2) < large && (walk.sums = zeros(Int, n, 2 * large))
+  sums, total, weights = walk.sums, walk.total, walk.weights
   fill!(total, 0)
-  for c in 1:cells
-    sum = cell_sum!(view(sums, :, c), S, cell(Q, c))
-    total .+= mix(c) .* sum
+  k = 0
+  @inbounds for c in 1:cells
+    factor = mix(c)
+    if cell_size(Q, c) == 1
+      i = Q.elements[Q.starts[c]]
+      j = i <= nv ? i : i - nv
+      i <= nv || (factor = -factor)
+      @simd for l in 1:n
+        total[l] += factor * vectors[l, j]
+      end
+    else
+      sum = cell_sum!(view(sums, :, k += 1), S, cell(Q, c))
+      @simd for l in 1:n
+        total[l] += factor * sum[l]
+      end
+    end
   end
-  weights = S.form * total
+  fill!(weights, 0)                       # form * total
+  @inbounds for r in 1:n
+    @simd for l in 1:n
+      weights[l] += form[l, r] * total[r]
+    end
+  end
+  k = 0
   for c in 1:cells
     s = 0
-    @inbounds @simd for l in 1:n
-      s += sums[l, c] * weights[l]
+    if cell_size(Q, c) == 1
+      i = Q.elements[Q.starts[c]]
+      j = i <= nv ? i : i - nv
+      @inbounds @simd for l in 1:n
+        s += vectors[l, j] * weights[l]
+      end
+      i <= nv || (s = -s)
+    else
+      k += 1
+      @inbounds @simd for l in 1:n
+        s += sums[l, k] * weights[l]
+      end
     end
     observe!(walk, depth, s) || return false
   end
@@ -1348,16 +1452,16 @@ function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
                 ordered::Bool = false)
   n = dim(S)
   reference = Reference(S, copy(sequence), Vector{Int}[], Int[],
-                        Vector{Int}[], Int[], zero_matrix(ZZ, 0, n),
-                        zero_matrix(ZZ, n, 0), true, ordered)
+                        Vector{Int}[], Int[], zeros(Int, 0, n),
+                        zeros(Int, n, 0), true, ordered)
   walk = Walk(S, reference, :record, true)
   advance!(walk, 0)
-  for d in 1:length(sequence)
+  m = length(sequence)
+  for d in 1:m
     advance!(walk, d, reference.sequence[d])
   end
 
-  m = length(reference.sequence)
-  B = zero_matrix(ZZ, m, n)
+  B = zeros(Int, m, n)
   for k in 1:m
     B[k, :] = coordinates(S, reference.sequence[k])
   end
@@ -1365,9 +1469,9 @@ function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
   # A left inverse of B: its transpose if B is a signed permutation matrix,
   # as for the standard basis. In general the Hermite normal form of B is
   # the identity matrix on top of zero rows.
-  Bt = transpose(B)
+  Bt = permutedims(B)
   reference.solver = m == n && isone(B * Bt) ? Bt :
-                       sub(hnf_with_transform(B)[2], 1:n, 1:m)
+    Matrix{Int}(sub(hnf_with_transform(matrix(ZZ, B))[2], 1:n, 1:m))
   # -1 respects the colours if and only if -v has the colour of v for all v.
   reference.negation = all(iszero, S.labels)
   return walk
@@ -1410,7 +1514,7 @@ end
 # Whether b_k -> x_k describes an isometry, in exact arithmetic, where the
 # x_k are the points of the walk and the b_k those of its reference. If so,
 # it is stored in the walk. This is the only place where the result of the
-# search is trusted, see `search_form`.
+# search is trusted, see `compress_forms`.
 #
 # Let B and X be the matrices whose rows are the b_k and the x_k. The only
 # candidate is the matrix M with B * M = X, whose row i is the image of e_i;
@@ -1426,20 +1530,25 @@ function is_isometry(walk::Walk)
   source, target = reference.source, walk.target
   n = dim(target)
   m = length(reference.sequence)
-  X = zero_matrix(ZZ, m, n)
-  for k in 1:m
-    X[k, :] = coordinates(target, walk.sequence[k])
+  X = zeros(Int, m, n)
+  vectors, sequence = target.vectors, walk.sequence
+  @inbounds for j in 1:n, k in 1:m
+    X[k, j] = sign(sequence[k]) * vectors[j, abs(sequence[k])]
   end
-  M = reference.solver * X
-  reference.matrix * M == X || return false
-  Mt = transpose(M)
-  P = walk.product
-  all(mul!(P, mul!(P, M, T), Mt) == F for (F, T) in
-      zip(source.exact_forms, target.exact_forms)) || return false
+  B, solver = reference.matrix, reference.solver
+  if widemul(m, maxabs(solver)) * maxabs(X) * maxabs(B) * n < typemax(Int)
+    M = sparse_mul!(zeros(Int, n, n), solver, X)
+    (m == n || B * M == X) || return false
+  else
+    Z = matrix(ZZ, solver) * matrix(ZZ, X)
+    matrix(ZZ, B) * Z == matrix(ZZ, X) || return false
+    M = Matrix{Int}(Z)
+  end
+  preserves_forms(source, target, M) || return false
   all(k -> label(target, walk.sequence[k]) ==
            label(source, reference.sequence[k]), 1:m) || return false
   if source === target && !target.complete
-    respects_colours(target, Matrix{Int}(M)) || return false
+    respects_colours(target, M) || return false
   end
   walk.isometry = M
   return true
@@ -1457,23 +1566,65 @@ end
 mutable struct Generator
   matrix::Matrix{Int}
   inverse::Matrix{Int}
+  images::Vector{Int}
 end
 
-Generator(M::Matrix{Int}) = Generator(M, zeros(Int, 0, 0))
+Generator(M::Matrix{Int}, inverse::Matrix{Int} = zeros(Int, 0, 0)) =
+  Generator(M, inverse, Int[])
 
 function inverse(g::Generator)
   if isempty(g.inverse) && !isempty(g.matrix)
-    g.inverse = Matrix{Int}(inv(matrix(ZZ, g.matrix)))
+    M = g.matrix
+    n = size(M, 1)
+    # A candidate from floating point arithmetic is taken if it is exact.
+    X = inv(Float64.(M))
+    if all(x -> abs(x) < 2.0^50, X)
+      R = round.(Int, X)
+      if widemul(n, maxabs(M)) * maxabs(R) < typemax(Int) &&
+         isone(sparse_mul!(similar(M), M, R))
+        g.inverse = R
+      end
+    end
+    isempty(g.inverse) && (g.inverse = Matrix{Int}(inv(matrix(ZZ, M))))
   end
   return g.inverse
 end
 
-apply(S::ShortVectors, g::Generator, p::Int) = apply(S, g.matrix, p)
+# The image of the point `p` under the generator. The images are kept:
+# orbits and Schreier generators ask for the same ones again and again.
+function apply(S::ShortVectors, g::Generator, p::Int)
+  isempty(g.images) && (g.images = zeros(Int, number_of_vectors(S)))
+  q = g.images[abs(p)]
+  if q == 0
+    q = g.images[abs(p)] = apply(S, g.matrix, abs(p))
+  end
+  return p < 0 ? -q : q
+end
 
-# Whether `M * F * transpose(M) == F` for all forms F, in exact arithmetic.
-function preserves_forms(S::ShortVectors, M::Matrix{Int})
-  Z = matrix(ZZ, M)
-  return all(F -> Z * F * transpose(Z) == F, S.exact_forms)
+# Whether `M * T * transpose(M) == F` for all forms F of `source` and the
+# corresponding forms T of `target`, in exact arithmetic: with machine
+# integers if the entries are so small that no product can overflow, which
+# is the usual case, and with big integers otherwise.
+function preserves_forms(source::ShortVectors, target::ShortVectors,
+                         M::Matrix{Int})
+  n = size(M, 1)
+  entry = maxabs(M)
+  if isempty(source.small_forms) || isempty(target.small_forms) ||
+     widemul(n, n) * target.form_size * widemul(entry, entry) >= typemax(Int)
+    Z = matrix(ZZ, M)
+    return all(Z * T * transpose(Z) == F for (F, T) in
+               zip(source.exact_forms, target.exact_forms))
+  end
+  Mt = permutedims(M)
+  V, W = similar(M), similar(M)
+  # If the other forms are derived from the first, it decides.
+  count = source.derived && target.derived ? 1 : length(source.small_forms)
+  for (F, T) in zip(view(source.small_forms, 1:count), target.small_forms)
+    # transpose(T * Mt) * Mt == transpose(M * T * Mt)
+    sparse_mul!(W, permutedims!(V, sparse_mul!(W, T, Mt), (2, 1)), Mt)
+    W == transpose(F) || return false
+  end
+  return true
 end
 
 # The image of the point `p` under the automorphism with matrix `M`.
@@ -1604,20 +1755,29 @@ function seed_stabilizer!(generators::Vector{Vector{Generator}},
     j = position[key(apply(S, g, orbit.points[i]))]
     orbit.parent[j] == i && orbit.via[j] == k && continue
     first, last = push!(transversal(orbit, i), k), transversal(orbit, j)
+    # the image of a point under the product of the generators of a word
+    function along(word, p::Int)
+      for a in word
+        p = apply(S, stabilizer[a], p)
+      end
+      return p
+    end
     # the image of a point under the Schreier generator s, up to sign
     function image(p::Int)
-      for a in first
-        p = apply(S, stabilizer[a].matrix, p)
-      end
+      p = along(first, p)
       for a in Iterators.reverse(last)
         p = apply(S, inverse(stabilizer[a]), p)
       end
       return p
     end
-    # If the orbit is closed under negation, s may map base[step] to its
-    # negative; then -s fixes it.
-    sign = image(base[step]) == base[step] ? 1 : -1
-    l = findfirst(l -> sign * image(base[l]) != base[l], (step + 1):m)
+    # s maps b to c if and only if the words `first` and `last` map b and c
+    # to the same point, which is tested without inverses. If the orbit is
+    # closed under negation, s may map base[step] to its negative; then -s
+    # fixes it.
+    b = base[step]
+    sign = along(first, b) == along(last, b) ? 1 : -1
+    l = findfirst(l -> along(first, base[l]) != sign * along(last, base[l]),
+                  (step + 1):m)
     if l === nothing
       failures += 1
       continue
@@ -1635,7 +1795,7 @@ function seed_stabilizer!(generators::Vector{Vector{Generator}},
                init = one)
       back = prod(stabilizer[a].matrix for a in last; init = one) *
              prod(inverse(stabilizer[a]) for a in Iterators.reverse(first))
-      preserves_forms(S, s) || error("Schreier generator is not exact")
+      preserves_forms(S, S, s) || error("Schreier generator is not exact")
       push!(generators[l], Generator(sign * s, sign * back))
       filter!(entry -> entry.first > l, known)
       failures = 0
@@ -1692,8 +1852,9 @@ function stabilizer_chain(S::ShortVectors, base = nothing)
   for step in 1:m
     # Put the walk at the node where base[1:step-1] is mapped to itself. The
     # cell it branches on is the set of possible images of base[step].
-    resize!(walk.path, step)
-    resize!(walk.sequence, step)
+    # The deeper nodes of the walk are kept and used again.
+    length(walk.path) < step && push!(walk.path, identity.path[step])
+    length(walk.sequence) < step && push!(walk.sequence, 0)
     walk.path[step] = identity.path[step]
     step > 1 && (walk.sequence[step - 1] = base[step - 1])
     candidates = Int[point(S, i) for i in children(walk, step - 1)]
@@ -1723,7 +1884,7 @@ function stabilizer_chain(S::ShortVectors, base = nothing)
       p = first(remaining)
       if advance!(walk, step, p) &&
          extend!(walk, step, filter(g -> apply(S, g, p) == p, stabilizer))
-        g = Generator(Matrix{Int}(walk.isometry))
+        g = Generator(walk.isometry)
         push!(generators[step], g)
         push!(stabilizer, g)
       else
@@ -1818,7 +1979,6 @@ are recomputed here.
 function automorphism_group(forms::Vector{ZZMatrix}, vector_set = (),
                             labels = Int[], unsigned_labels = UInt[];
                             kwargs...)
-  @req is_symmetric(forms[1]) "The first form must be symmetric"
   if nrows(forms[1]) == 0
     return ZZMatrix[identity_matrix(ZZ, 0)], one(ZZRingElem)
   end
@@ -1845,7 +2005,6 @@ every such image.
 function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
                   vector_set1 = (), vector_set2 = (), labels1 = Int[],
                   labels2 = Int[]; kwargs...)
-  @req is_symmetric(forms1[1]) "The first form must be symmetric"
   n = nrows(forms1[1])
   no = false, zero_matrix(ZZ, 0, 0)
   if n != nrows(forms2[1]) || length(forms1) != length(forms2) ||
@@ -1866,7 +2025,7 @@ function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
     S1 = ShortVectors(forms1, list; kwargs...)
     if fits(Int, bound)
       V = S1.vectors
-      GV = search_form(forms1[1:1]) * V
+      GV = compress_forms(forms1[1:1])[1] * V
       bound = ZZ(maximum(j -> sum(V[i, j] * GV[i, j] for i in 1:n),
                          1:number_of_vectors(S1)))
     end
@@ -1879,7 +2038,7 @@ function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
   end
   walk = Walk(S2, Reference(S1), :follow, true)
   if advance!(walk, 0) && extend!(walk, 0)
-    return true, walk.isometry
+    return true, matrix(ZZ, walk.isometry)
   end
   return no
 end
@@ -2146,7 +2305,6 @@ leaf have a coordinate matrix in column Hermite normal form.
 """
 function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
                         labels = Int[], unsigned_labels = UInt[]; kwargs...)
-  @req is_symmetric(forms[1]) "The first form must be symmetric"
   n = nrows(forms[1])
   n == 0 && return forms, identity_matrix(ZZ, 0), ZZMatrix[], one(ZZRingElem)
   # The vectors are sorted by their norms as machine integers.
@@ -2156,7 +2314,7 @@ function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
         short_vectors(forms, vector_set, labels, unsigned_labels;
                       everything = true, kwargs...)
   best = Reference(S, Int[], Vector{Int}[], Int[], Vector{Int}[], Int[],
-                   zero_matrix(ZZ, 0, n), zero_matrix(ZZ, n, 0), true, true)
+                   zeros(Int, 0, n), zeros(Int, n, 0), true, true)
   walk = Walk(S, best, :minimize, false)
   walk.improved = -1
   advance!(walk, 0)
