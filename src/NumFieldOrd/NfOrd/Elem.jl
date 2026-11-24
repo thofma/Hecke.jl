@@ -483,24 +483,35 @@ end
 ################################################################################
 
 # TODO: Make this faster, don't allocate the ar array ...
-function rand!(z::AbsNumFieldOrderElem{S, T}, B::Vector{AbsNumFieldOrderElem{S, T}}, R) where {S, T}
+function rand!(rng::AbstractRNG, z::AbsNumFieldOrderElem{S, T},
+               B::Vector{AbsNumFieldOrderElem{S, T}}, R) where {S, T}
   O = parent(z)
   y = O()
   for i in 1:degree(O)
-    y = mul!(y, rand(R), B[i])
+    y = mul!(y, rand(rng, R), B[i])
     z = add!(z, z, y)
   end
   return z
 end
 
-function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder, R::AbstractUnitRange{T}) where T <: Integer
-  y = O()
-  B = basis(O, copy = false)
-  for i in 1:degree(O)
-    y = mul!(y, rand(R), B[i])
-    z = add!(z, z, y)
-  end
-  return z
+function rand!(z::AbsNumFieldOrderElem{S, T},
+               B::Vector{AbsNumFieldOrderElem{S, T}}, R) where {S, T}
+  return rand!(Random.default_rng(), z, B, R)
+end
+
+function rand!(rng::AbstractRNG, z::AbsNumFieldOrderElem, O::AbsNumFieldOrder,
+               R::AbstractUnitRange{<:IntegerUnion})
+  return rand!(rng, z, basis(O; copy = false), R)
+end
+
+function rand!(rng::AbstractRNG, z::AbsNumFieldOrderElem,
+               O::AbsSimpleNumFieldOrder, n::IntegerUnion)
+  return rand!(rng, z, O, -n:n)
+end
+
+function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder,
+               R::Union{IntegerUnion, AbstractUnitRange{<:IntegerUnion}})
+  return rand!(Random.default_rng(), z, O, R)
 end
 
 @doc raw"""
@@ -513,10 +524,6 @@ function rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{T}) where T <: Int
   z = O()
   rand!(z, O, R)
   return z
-end
-
-function rand!(z::AbsNumFieldOrderElem, O::AbsSimpleNumFieldOrder, n::IntegerUnion)
-  return rand!(z, O, -n:n)
 end
 
 @doc raw"""
@@ -534,10 +541,6 @@ function rand(O::AbsSimpleNumFieldOrder, n::ZZRingElem)
   z = O()
   rand!(z, O, BigInt(n))
   return z
-end
-
-function rand!(z::AbsNumFieldOrderElem, O::AbsSimpleNumFieldOrder, n::ZZRingElem)
-  return rand!(z, O, BigInt(n))
 end
 
 ################################################################################
