@@ -32,6 +32,7 @@
     # Some more miscellaneous tests
     x = rand(O, 10)
     @test elem_in_algebra(x) in O
+    @test reproducible(O, 10)
 
     x = A([ K(1), K(QQFieldElem(1, 3)) ])
     @test denominator(x, O)*x in O
