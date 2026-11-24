@@ -1667,15 +1667,22 @@ end
 #
 ################################################################################
 
-function rand(a::RelNumFieldOrderIdeal, B::Int)
+RandomExtensions.maketype(a::RelNumFieldOrderIdeal, ::Int) = elem_type(order(a))
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:RelNumFieldOrderElem, <:RelNumFieldOrderIdeal, Int}})
+  a, B = sp[][1:end]
   pb = pseudo_basis(a, copy = false)
   z = nf(order(a))()
   for i = 1:degree(order(a))
-    t = rand(pb[i][2], B)
+    t = rand(rng, pb[i][2], B)
     z += t*pb[i][1]
   end
   return order(a)(z)
 end
+
+rand(a::RelNumFieldOrderIdeal, B::Int) = rand(Random.default_rng(), a, B)
+rand(rng::AbstractRNG, a::RelNumFieldOrderIdeal, B::Int) = rand(rng, make(a, B))
 
 ################################################################################
 #

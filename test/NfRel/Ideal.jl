@@ -34,6 +34,7 @@
     @test D == A1
     @test isone(I)
     @test minimum(A) == numerator(PM1.coeffs[1])
+    @test reproducible(A, 5)
   end
 
   @testset "Prime decomposition" begin

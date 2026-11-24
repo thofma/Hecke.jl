@@ -526,15 +526,25 @@ valuation(a::NumFieldElem, P::RelNumFieldOrderIdeal) = valuation_naive(a, P)
 #
 ################################################################################
 
-function rand(a::RelNumFieldOrderFractionalIdeal, B::Int)
+RandomExtensions.maketype(a::RelNumFieldOrderFractionalIdeal, ::Int) =
+  elem_type(nf(order(a)))
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:NumFieldElem, <:RelNumFieldOrderFractionalIdeal, Int}})
+  a, B = sp[][1:end]
   pb = pseudo_basis(a, copy = false)
   z = nf(order(a))()
   for i = 1:degree(order(a))
-    t = rand(pb[i][2], B)
+    t = rand(rng, pb[i][2], B)
     z += t*pb[i][1]
   end
   return z
 end
+
+rand(a::RelNumFieldOrderFractionalIdeal, B::Int) =
+  rand(Random.default_rng(), a, B)
+rand(rng::AbstractRNG, a::RelNumFieldOrderFractionalIdeal, B::Int) =
+  rand(rng, make(a, B))
 
 ################################################################################
 #
