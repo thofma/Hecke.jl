@@ -182,7 +182,7 @@ import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
                 divexact, gram_matrix, identity_matrix, is_definite,
                 fits, hnf, hnf_with_transform, inv, is_symmetric,
                 libflint, lll_gram_with_transform, matrix, nbits, nrows,
-                rank, sub, zero_matrix,
+                pseudo_inv, rank, sub, zero_matrix,
                 __short_vectors, _int_matrix_with_overflow,
                 _short_vectors_gram_integral
 
@@ -222,6 +222,8 @@ import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
 # `small_forms` are the forms as matrices of machine integers if all their
 # entries fit, and `form_size` is then the largest absolute value of an
 # entry; they serve the exact check of an isometry, see `preserves_forms`.
+# `gram_inverse` is for the inverses of automorphisms, see `inverse`; its
+# denominator is 0 as long as it has not been computed.
 # `derived` tells whether the caller asserted that the other forms are
 # determined by the first one and the labels, see `automorphism_group`.
 #
@@ -275,6 +277,7 @@ struct ShortVectors
   exact_forms::Vector{ZZMatrix}
   small_forms::Vector{Matrix{Int}}
   form_size::Int
+  gram_inverse::Base.RefValue{Tuple{Matrix{Int}, Int}}
   form::Matrix{Int}
   vectors::Matrix{Int}                  # n x nv, column j is v_j
   form_vectors::Matrix{Int}             # form * vectors
@@ -350,20 +353,6 @@ end
 # The largest absolute value of the entries of `A`, or `typemax(Int)`.
 maxabs(A) = mapreduce(x -> x == typemin(Int) ? typemax(Int) : abs(x), max, A;
                       init = 0)
-
-# Set `C` to `A * B`. The zero entries of `B` are skipped: short vectors and
-# automorphisms have many of them.
-function sparse_mul!(C::Matrix{Int}, A::Matrix{Int}, B::AbstractMatrix{Int})
-  fill!(C, 0)
-  @inbounds for j in axes(B, 2), k in axes(B, 1)
-    b = B[k, j]
-    b == 0 && continue
-    @simd for i in axes(A, 1)
-      C[i, j] += b * A[i, k]
-    end
-  end
-  return C
-end
 
 # All non-zero vectors of norm at most `bound` with respect to the positive
 # definite form `G`, up to sign.
@@ -477,7 +466,7 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
   end
 
   # the colours of v_j and of -v_j
-  all_form_vectors = sparse_mul!(similar(all_vectors), form, all_vectors)
+  all_form_vectors = form * all_vectors
   plus = Vector{Tuple{Int, Int, UInt}}(undef, length(list))
   minus = similar(plus)
   for j in 1:length(list)
@@ -533,7 +522,8 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
     end
   end
   return ShortVectors(exact_forms, small_forms,
-                      maximum(maxabs, small_forms; init = 0), form,
+                      maximum(maxabs, small_forms; init = 0),
+                      Ref((zeros(Int, 0, 0), 0)), form,
                       nv == length(list) ? all_vectors : all_vectors[:, keep],
                       nv == length(list) ? all_form_vectors :
                         all_form_vectors[:, keep],
@@ -1543,7 +1533,7 @@ function is_isometry(walk::Walk)
   end
   B, solver = reference.matrix, reference.solver
   if widemul(m, maxabs(solver)) * maxabs(X) * maxabs(B) * n < typemax(Int)
-    M = sparse_mul!(zeros(Int, n, n), solver, X)
+    M = solver * X
     (m == n || B * M == X) || return false
   else
     Z = matrix(ZZ, solver) * matrix(ZZ, X)
@@ -1578,22 +1568,35 @@ end
 Generator(M::Matrix{Int}, inverse::Matrix{Int} = zeros(Int, 0, 0)) =
   Generator(M, inverse, Int[])
 
-function inverse(g::Generator)
+function inverse(S::ShortVectors, g::Generator)
   if isempty(g.inverse) && !isempty(g.matrix)
-    M = g.matrix
-    n = size(M, 1)
-    # A candidate from floating point arithmetic is taken if it is exact.
-    X = inv(Float64.(M))
-    if all(x -> abs(x) < 2.0^50, X)
-      R = round.(Int, X)
-      if widemul(n, maxabs(M)) * maxabs(R) < typemax(Int) &&
-         isone(sparse_mul!(similar(M), M, R))
-        g.inverse = R
-      end
-    end
-    isempty(g.inverse) && (g.inverse = Matrix{Int}(inv(matrix(ZZ, M))))
+    g.inverse = inverse(S, g.matrix)
   end
   return g.inverse
+end
+
+# The inverse of the matrix `M` of an automorphism. It preserves the first
+# form G, so its inverse is G * transpose(M) * inverse(G). The inverse of G
+# is computed once, as an integer matrix N and a denominator d with
+# G * N == d; then the inverse of an automorphism costs two products of
+# matrices of machine integers, if no entry of them can overflow.
+function inverse(S::ShortVectors, M::Matrix{Int})
+  n = dim(S)
+  if !isempty(S.small_forms)
+    G = S.small_forms[1]
+    if S.gram_inverse[][2] == 0
+      N, d = pseudo_inv(S.exact_forms[1])
+      small = fits(Int, d) &&
+              abs(@ccall libflint.fmpz_mat_max_bits(N::Ref{ZZMatrix})::Int) < 63
+      S.gram_inverse[] = small ? (Matrix{Int}(N), Int(d)) : (G, -1)
+    end
+    N, d = S.gram_inverse[]
+    if d != -1 && widemul(n, n) * maxabs(G) * maxabs(M) * maxabs(N) <
+                  typemax(Int)
+      return divexact.(G * transpose(M) * N, d)
+    end
+  end
+  return Matrix{Int}(inv(matrix(ZZ, M)))
 end
 
 # The image of the point `p` under the generator. The images are kept:
@@ -1622,15 +1625,10 @@ function preserves_forms(source::ShortVectors, target::ShortVectors,
                zip(source.exact_forms, target.exact_forms))
   end
   Mt = permutedims(M)
-  V, W = similar(M), similar(M)
   # If the other forms are derived from the first, it decides.
   count = source.derived && target.derived ? 1 : length(source.small_forms)
-  for (F, T) in zip(view(source.small_forms, 1:count), target.small_forms)
-    # transpose(T * Mt) * Mt == transpose(M * T * Mt)
-    sparse_mul!(W, permutedims!(V, sparse_mul!(W, T, Mt), (2, 1)), Mt)
-    W == transpose(F) || return false
-  end
-  return true
+  return all(M * T * Mt == F for (F, T) in
+             zip(view(source.small_forms, 1:count), target.small_forms))
 end
 
 # The image of the point `p` under the automorphism with matrix `M`.
@@ -1772,7 +1770,7 @@ function seed_stabilizer!(generators::Vector{Vector{Generator}},
     function image(p::Int)
       p = along(first, p)
       for a in Iterators.reverse(last)
-        p = apply(S, inverse(stabilizer[a]), p)
+        p = apply(S, inverse(S, stabilizer[a]), p)
       end
       return p
     end
@@ -1797,10 +1795,11 @@ function seed_stabilizer!(generators::Vector{Vector{Generator}},
     else
       one = stabilizer[1].matrix^0
       s = prod(stabilizer[a].matrix for a in first) *
-          prod(inverse(stabilizer[a]) for a in Iterators.reverse(last);
+          prod(inverse(S, stabilizer[a]) for a in Iterators.reverse(last);
                init = one)
       back = prod(stabilizer[a].matrix for a in last; init = one) *
-             prod(inverse(stabilizer[a]) for a in Iterators.reverse(first))
+             prod(inverse(S, stabilizer[a])
+                  for a in Iterators.reverse(first))
       preserves_forms(S, S, s) || error("Schreier generator is not exact")
       push!(generators[l], Generator(sign * s, sign * back))
       filter!(entry -> entry.first > l, known)

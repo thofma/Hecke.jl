@@ -57,7 +57,6 @@ function __assert_has_automorphisms(
   target_enum_limit::Int=64000,
 )
   @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
-
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
