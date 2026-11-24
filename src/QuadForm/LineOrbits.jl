@@ -66,12 +66,13 @@ dim(P::LineEnumCtx) = P.dim
 
 primitive_element(P::LineEnumCtx) = P.a
 
-function Base.rand(P::LineEnumCtx)
+function Base.rand(rng::AbstractRNG, sp::Random.SamplerTrivial{<:LineEnumCtx})
+  P = sp[]
   K = base_field(P)
   n = dim(P)
-  v = rand(K, n)
+  v = rand(rng, K, n)
   while iszero(v)
-    v = rand(K, n)
+    v = rand(rng, K, n)
   end
   j = findfirst(!iszero, v)
   vj_inv = inv(v[j])
