@@ -178,8 +178,9 @@
         for allowed in (Int[], [2], [3, 5, 7, 11], [7, 11])
           expected = sort!(Hecke.tame_conductors_degree_2(O, ZZ(bound);
                                                        unramified_outside = ZZ.(allowed)))
-          it = @inferred Hecke.tame_conductors_degree_2_iterator(O, bound;
-                                                               unramified_outside = allowed)
+          it = Hecke.tame_conductors_degree_2_iterator(O, bound;
+                                                      unramified_outside = allowed)
+          @inferred Nothing iterate(it)
           @test sort!(collect(it)) == expected
         end
       end
@@ -188,16 +189,19 @@
     O = maximal_order(fields[1])
     expected = Hecke.tame_conductors_degree_2(O, ZZ(30))
     for T in (Int, Int32, UInt, BigInt, ZZRingElem)
-      it = @inferred Hecke.tame_conductors_degree_2_iterator(O, T(30))
+      it = Hecke.tame_conductors_degree_2_iterator(O, T(30))
+      @inferred Nothing iterate(it)
       @test collect(it) == expected
       for S in (Int, Int32, UInt, BigInt, ZZRingElem)
-        it = @inferred Hecke.tame_conductors_degree_2_iterator(O, T(30);
-                                                             unramified_outside = S.([3, 5]))
+        it = Hecke.tame_conductors_degree_2_iterator(O, T(30);
+                                                    unramified_outside = S.([3, 5]))
+        @inferred Nothing iterate(it)
         @test sort!(collect(it)) == [(m, ZZ(m)) for m in (1, 3, 5, 15)]
       end
     end
-    it = @inferred Hecke.tame_conductors_degree_2_iterator(O, ZZ(30);
-                                                         unramified_outside = view([3, 5, 7], 1:2))
+    it = Hecke.tame_conductors_degree_2_iterator(O, ZZ(30);
+                                                unramified_outside = view([3, 5, 7], 1:2))
+    @inferred Nothing iterate(it)
     @test sort!(collect(it)) == [(m, ZZ(m)) for m in (1, 3, 5, 15)]
     @test isempty(collect(Hecke.tame_conductors_degree_2_iterator(O, big(0))))
     @test_throws ArgumentError Hecke.tame_conductors_degree_2_iterator(O, big(-1))
@@ -210,6 +214,102 @@
     it = Hecke.tame_conductors_degree_2_iterator(O, typemax(Int))
     values = [1, 3, 5, 7, 11, 13, 15, 17, 19, 21]
     @test collect(Iterators.take(it, 10)) == [(m, ZZ(m)) for m in values]
+  end
+
+  @testset "Tame conductor iterator" begin
+    # Check prime support and weights independently using ideal arithmetic.
+    fields = [rationals_as_number_field()[1], quadratic_field(5)[1],
+              quadratic_field(21)[1], cyclotomic_field(15)[1]]
+    for K in fields, n in (2, 3, 4, 6, 8, 9, 12)
+      O = maximal_order(K)
+      p = minimum(prime_divisors(n))
+      e = (p - 1)*divexact(n, p)
+      candidates = Tuple{Int, ZZRingElem}[]
+      for m in 1:100
+        if !is_squarefree(ZZ(m)) || !isone(gcd(m, n))
+          continue
+        end
+        support = prime_divisors(m)
+        if all(p -> !is_coprime(norm(prime_decomposition(O, p)[1][1]) - 1,
+                               ZZ(n)), support)
+          push!(candidates, (m, norm(radical(m*O))^e))
+        end
+      end
+      for b in (0, 1, 4, 7, 16, 24, 25, 80, 81, 100)
+        bound = ZZ(b)^e
+        for allowed in (Int[], [2], [3, 5, 7, 11], [7])
+          expected = [(m, w) for (m, w) in candidates if w <= bound &&
+                      (isempty(allowed) || all(p -> p in allowed,
+                                              prime_divisors(m)))]
+          it = Hecke.conductors_tame_iterator(O, n, bound;
+                                              unramified_outside = allowed)
+          @inferred Nothing iterate(it)
+          @test sort!(collect(it)) == expected
+          if isempty(allowed) && b > 0
+            @test sort!(Hecke.conductors_tame(O, n, bound)) == expected
+          end
+        end
+      end
+    end
+
+    O = maximal_order(fields[1])
+    for T in (Int, Int32, UInt, BigInt, ZZRingElem)
+      it = Hecke.conductors_tame_iterator(O, 3, T(1000);
+                                          unramified_outside = T.([7]))
+      @inferred Nothing iterate(it)
+      @test eltype(it) == Tuple{Int, ZZRingElem}
+      @test Base.IteratorSize(typeof(it)) == Base.SizeUnknown()
+      @test collect(it) == [(1, ZZ(1)), (7, ZZ(49))]
+      @test collect(it) == [(1, ZZ(1)), (7, ZZ(49))]
+    end
+    it = Hecke.conductors_tame_iterator(O, 3, 1000;
+                                        unramified_outside = view([3, 7], 2:2))
+    @inferred Nothing iterate(it)
+    @test collect(it) == [(1, ZZ(1)), (7, ZZ(49))]
+    @test collect(Hecke.conductors_tame_iterator(O, 3, 48;
+                                                unramified_outside = [7])) ==
+          [(1, ZZ(1))]
+
+    O5 = maximal_order(fields[2])
+    @test collect(Hecke.conductors_tame_iterator(O5, 3, 16;
+                                                unramified_outside = [2])) ==
+          [(1, ZZ(1)), (2, ZZ(16))]
+    candidates = collect(Hecke.conductors_tame_iterator(O5, 3, ZZ(100)^4))
+    @test (17, ZZ(17)^4) in candidates
+    @test all(c -> c[1] != 11, candidates)
+    @test sort!(candidates) == sort!(Hecke.conductors_tame(O5, 3, ZZ(100)^4))
+    bound = ZZ(70000)^2
+    @test sort!(collect(Hecke.conductors_tame_iterator(O, 3, bound))) ==
+          sort!(Hecke.conductors_tame(O, 3, bound))
+    for n in (-1, 0, 1)
+      @test_throws ArgumentError Hecke.conductors_tame_iterator(O, n, 100)
+    end
+    @test_throws ArgumentError Hecke.conductors_tame_iterator(O, 3, -1)
+    @test_throws ArgumentError Hecke.conductors_tame_iterator(O, 3, 100;
+                                                            unramified_outside = [4])
+    @test_throws ArgumentError Hecke.conductors_tame_iterator(O, 3,
+                                                            (ZZ(typemax(Int)) + 1)^2)
+
+    it = Hecke.conductors_tame_iterator(O, 3, ZZ(typemax(Int))^2)
+    values = [1, 7, 13, 19, 31, 37, 43, 61, 67, 73]
+    @test collect(Iterators.take(it, 10)) == [(m, ZZ(m)^2) for m in values]
+  end
+
+  @testset "Tame conductor weight bounds" begin
+    # The degree times the weight exponent can overflow even for a unit bound.
+    O = maximal_order(cyclotomic_field(5)[1])
+    n = prevpow(2, typemax(Int))
+    @test isempty(Hecke.conductors_tame_iterator(O, n, 0))
+    for bound in (1, 100)
+      @test collect(Hecke.conductors_tame_iterator(O, n, bound)) == [(1, ZZ(1))]
+    end
+    O5 = maximal_order(quadratic_field(5)[1])
+    @test collect(Hecke.conductors_tame_iterator(O5, 2^26, 100)) == [(1, ZZ(1))]
+
+    # The ramified prime 5 has radical norm 5 and weight 5^4 for exponent 8.
+    @test collect(Hecke.conductors_tame_iterator(O, 8, 624)) == [(1, ZZ(1))]
+    @test collect(Hecke.conductors_tame_iterator(O, 8, 625)) ==
+          [(1, ZZ(1)), (5, ZZ(625))]
   end
 
   @testset "abelian extensions && related examples" begin

@@ -179,6 +179,50 @@
           @test_throws ArgumentError Hecke.squarefree_up_to_iterator(100; prime_base)
         end
       end
+
+      @testset "Prime filters" begin
+        # Check filtering across blocks and with the existing restrictions.
+        for prime_filter in (isodd, p -> p % 3 == 1, Returns(false))
+          for n in (0, 1, 2, 49, 1000)
+            expected = [m for m in 1:n if is_squarefree(ZZ(m)) &&
+                        all(prime_filter, prime_divisors(m))]
+            for block_size in (1, 7, 64)
+              it = @inferred Hecke.squarefree_up_to_iterator(n;
+                                                   prime_filter, block_size)
+              @test collect(it) == expected
+              @test collect(it) == expected
+            end
+          end
+          for prime_base in (Int[], [2, 3, 5, 7, 11, 13], [3, 5]),
+              coprime_to in (Int[], [2, 3])
+            expected = [m for m in 1:1000 if is_squarefree(ZZ(m)) &&
+                        all(p -> prime_filter(p) &&
+                            (isempty(prime_base) || p in prime_base) &&
+                            !(p in coprime_to), prime_divisors(m))]
+            it = Hecke.squarefree_up_to_iterator(1000;
+              prime_filter, prime_base, coprime_to, block_size = 7)
+            @test collect(it) == expected
+          end
+        end
+
+        seen = Int[]
+        prime_filter = p -> begin
+          push!(seen, p)
+          return true
+        end
+        it = Hecke.squarefree_up_to_iterator(1000;
+                                             prime_filter, block_size = 7)
+        @test collect(it) == Hecke.squarefree_up_to(1000)
+        @test all(is_prime, seen)
+        @test collect(Hecke.squarefree_up_to_iterator(typemax(Int);
+                       prime_base = [2, 3, 5],
+                       prime_filter = p -> p % 3 == 1)) == [1]
+
+        it = Hecke.squarefree_up_to_iterator(typemax(Int);
+                                              prime_filter = p -> p % 3 == 1)
+        @test collect(Iterators.take(it, 10)) ==
+              [1, 7, 13, 19, 31, 37, 43, 61, 67, 73]
+      end
     end
 
     @test support(QQ(2)) == [2]
