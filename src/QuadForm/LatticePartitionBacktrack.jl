@@ -219,6 +219,12 @@ import ..Hecke: @req, @vprintln, ZZ, ZZLat, ZZMatrix, ZZRingElem,
 # `colours` gives for every point, by its index, the position of its colour
 # in the palette. An isometry maps every point to a point of the same colour.
 #
+# `small_forms` are the forms as matrices of machine integers if all their
+# entries fit, and `form_size` is then the largest absolute value of an
+# entry; they serve the exact check of an isometry, see `preserves_forms`.
+# `derived` tells whether the caller asserted that the other forms are
+# determined by the first one and the labels, see `automorphism_group`.
+#
 # `complete` tells whether every isometry of the forms which maps the points
 # of a base to points of the same colour maps the set to itself and respects
 # the colours. This holds if there are no labels and the set was cut down by
@@ -1968,9 +1974,13 @@ standard basis. Then exactly those `g` are returned which map the kept set to
 itself and respect norms and labels.
 
 With `invariant = true` the caller asserts that every `g` which preserves the
-forms and maps generators of the lattice among the kept vectors to vectors
-with the same norms and labels maps the kept set to itself and respects norms
-and labels. This is then not verified for the automorphisms which are found.
+first form and maps generators of the lattice among the kept vectors to
+vectors with the same labels preserves the other forms, maps the kept set to
+itself and respects norms and labels. Then an automorphism which is found is
+only verified against the first form and these labels. This holds if the
+other forms and the labels are derived from the first form in a way which is
+invariant under the group, as for projections to characteristic sublattices
+and scalar products with a Weyl vector [BH].
 
 The second entries of the tuples are not used. In the output of the targeted
 enumeration they are the norms of the vector with respect to the forms, which
