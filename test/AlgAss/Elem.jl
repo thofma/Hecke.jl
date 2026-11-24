@@ -206,7 +206,12 @@
       c = [coeff(x, i) for i in 1:dim(QG)]
       @test sort(c) == QQ.([0, 0, 1, 2])
       @test c[QG.group_to_base[g]] == 2
+      @test_throws BoundsError coeff(x, 0)
+      @test_throws BoundsError coeff(x, dim(QG) + 1)
     end
+
+    QZ = group_algebra(QQ, abelian_group([0]); sparse = true, cached = false)
+    @test iszero(coeff(one(QZ), 5))
 
     B = matrix_algebra(QQ, 2)
     b = B(QQ[1 2; 3 4])
