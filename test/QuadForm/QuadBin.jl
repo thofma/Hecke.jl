@@ -133,6 +133,11 @@
     g, T = Hecke.reduction_with_transformation(f)
     @test g == binary_quadratic_form(3, 0, 7)
     @test T == matrix(ZZ, 2, 2, [-2, 1, 1, -1])
+    # [BV07, Example 5.3.10]
+    f = binary_quadratic_form(195751, 37615, 1807)
+    g, T = Hecke.reduction_with_transformation(f)
+    @test g == binary_quadratic_form(1, 1, 1)
+    @test T == matrix(ZZ, 2, 2, [-22, -49, 229, 510])
     # |b| = |a| or a = c, where the sign of b is fixed by is_reduced
     for (a, b, c) in [(2, -2, 3), (3, -2, 3), (1, -1, 1), (-2, -2, -3),
                       (-3, -2, -3), (-1, -1, -1)]
@@ -160,6 +165,7 @@
     @test !is_equivalent(f, g)
     @test is_equivalent(f, g, proper = false)
     @test is_equivalent(f, Hecke._action(f, Vs[3]))
+    # GL_2(ZZ) acts without the factor det(U) of [BV07, (2.4)]
     @test !is_equivalent(f, binary_quadratic_form(-2, 1, -3), proper = false)
   end
 
@@ -440,6 +446,16 @@
     f1, f2, f3 = binary_quadratic_form.([1, 2, 2], [1, 1, -1], [6, 3, 3])
     @test issetequal(R(ZZ(-23)), [f1, f2, f3])
     @test issetequal(R(ZZ(-23), proper = false), [f1, f2])
+    # [BV07, Table 5.1]: every reduced form of discriminant -3 to -31
+    for (d, forms) in [
+        (-3, [(1, 1, 1)]), (-4, [(1, 0, 1)]), (-7, [(1, 1, 2)]),
+        (-8, [(1, 0, 2)]), (-11, [(1, 1, 3)]), (-15, [(1, 1, 4), (2, 1, 2)]),
+        (-19, [(1, 1, 5)]), (-20, [(1, 0, 5), (2, 2, 3)]),
+        (-23, [(1, 1, 6), (2, -1, 3), (2, 1, 3)]),
+        (-24, [(1, 0, 6), (2, 0, 3)]), (-28, [(1, 0, 7), (2, 2, 4)]),
+        (-31, [(1, 1, 8), (2, -1, 4), (2, 1, 4)])]
+      @test issetequal(R(ZZ(d)), [binary_quadratic_form(f...) for f in forms])
+    end
     # the counts against the class numbers of the quadratic orders
     Qx, z = QQ[:z]
     function order_of_discriminant(d)

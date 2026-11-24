@@ -432,7 +432,10 @@ is_isometric(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}) = is_equivalent(f, 
 @doc raw"""
     is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = true)
 
-Return whether `f` and `g` are (properly) equivalent.
+Return whether `f` and `g` are properly equivalent or, if `proper` is `false`,
+equivalent: whether $g(x, y) = f(sx + ty, ux + vy)$ for an integer matrix with
+rows $(s, t)$ and $(u, v)$ of determinant $1$, or of determinant $\pm 1$
+([Cox22](@cite), Section 2, (2.2)).
 """
 function is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = true)
   d = discriminant(f)
@@ -454,6 +457,14 @@ function is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::B
     if proper || is_prop
       return is_prop
     end
+
+    # Our improper equivalence, GL_2(Z) acting by f(sx + ty, ux + vy) with
+    # no determinant factor, is that of [Cox22, (2.2)]. It was taken from
+    # Kani's course notes "Quadratic Forms and Elliptic Curves" (2010), whose
+    # Remark 1.3(c) calls it the definition found in the literature since
+    # Gauss, Buchmann and Vollmer [BV07, (2.4)] being the exception; see
+    # #2605.
+    # https://www.queensu.ca/academia/kani/sites/acadkaniwww/files/uploaded_files/Course%20Notes/quadformsJan10.pdf
 
     # note that our definition of improper equivalence
     # differs from that of Buchmann and Vollmer
@@ -538,9 +549,9 @@ Return a reduced binary quadratic form equivalent to `f`, reduced in the sense
 of `is_reduced`.
 
 If `f` is definite, this is the unique reduced form properly equivalent to `f`
-([Coh93](@cite), Proposition 5.3.3, for positive definite `f`; a negative
+([BV07](@cite), Theorem 5.7.7, for positive definite `f`; a negative
 definite `[a, b, c]` is reduced exactly when `[-a, b, -c]` is, and this map
-preserves proper equivalence).
+preserves proper equivalence, [BV07](@cite), Section 5.1).
 """
 function reduction(f::QuadBin{ZZRingElem})
   if discriminant(f) < 0
@@ -580,13 +591,15 @@ function _reduction(f::QuadBin{ZZRingElem})
   return _reduction_definite(f, true)
 end
 
-# The reduction of a definite form f = [a, b, c] by [Coh93, Algorithm 5.4.2],
+# The reduction of a definite form f = [a, b, c] by [BV07, Algorithm 5.3]
+# (normalization, then the reduction operator rho until the form is reduced),
 # and, if `transform` is true, the matrix U of determinant 1 with
 # _action(f, U) == g (otherwise the identity). A negative definite f is reduced
-# through the positive definite h = [-a, b, -c], which is -f transformed by
-# D = diag(1, -1): if _action(h, V) == [a', b', c'], then
-# _action(f, D * V * D) == [-a', b', -c'], which is reduced in the sense of
-# is_reduced exactly when [a', b', c'] is.
+# through the positive definite h = [-a, b, -c], the image of f under
+# D = diag(1, -1) in the action of [BV07, (2.4), Section 5.1], which carries
+# the factor det(D) = -1; so h is -f transformed by D in _action. If
+# _action(h, V) == [a', b', c'], then _action(f, D * V * D) == [-a', b', -c'],
+# which is reduced in the sense of is_reduced exactly when [a', b', c'] is.
 function _reduction_definite(f::QuadBin{ZZRingElem}, transform::Bool)
   sgn = sign(Int, f[1])
   # fresh copies, as they are changed in place below
@@ -597,7 +610,8 @@ function _reduction_definite(f::QuadBin{ZZRingElem}, transform::Bool)
   s, t, u, v = one(ZZ), zero(ZZ), zero(ZZ), one(ZZ)
   n, a2, w = ZZRingElem(), ZZRingElem(), ZZRingElem()
   while true
-    # (x, y) -> (x - n*y, y), with n the integer such that -a < b - 2*a*n <= a
+    # normalization [BV07, Algorithm 5.2]: (x, y) -> (x - n*y, y), with n the
+    # integer such that -a < b - 2*a*n <= a
     mul!(a2, a, 2)
     cdiv!(n, sub!(w, b, a), a2)
     if !is_zero(n)
@@ -610,13 +624,15 @@ function _reduction_definite(f::QuadBin{ZZRingElem}, transform::Bool)
       end
     end
     a <= c && break
-    # (x, y) -> (-y, x); this decreases a, so the loop ends
+    # (x, y) -> (-y, x), with the normalization above the operator rho
+    # [BV07, Definition 5.3.4]; this decreases a, so the loop ends
     a, c = c, a
     neg!(b)
     if transform
       s, t, u, v = t, neg!(s), v, neg!(u)
     end
   end
+  # a = c and b < 0: one more step of rho, which only changes the sign of b
   if a == c && b < 0
     neg!(b)
     if transform
@@ -776,10 +792,12 @@ Return whether `f` is reduced in the following sense. Let `f = [a, b, c]`
 be of discriminant `D`.
 
 If `f` is positive definite (`D < 0` and `a > 0`), then `f` is reduced if and
-only if `|b| <= a <= c`, and `b >= 0` if `a = |b|` or `a = c`.
+only if `|b| <= a <= c`, and `b >= 0` if `a = |b|` or `a = c`
+([BV07](@cite), Definition 5.3.1).
 
 If `f` is negative definite (`D < 0` and `a < 0`), then `f` is reduced if and
-only if `[-a, b, -c]` is reduced.
+only if `[-a, b, -c]` is reduced; this is the positive definite form that
+[BV07](@cite), Section 5.1, assigns to `f`.
 
 If `f` is indefinite (`D > 0), then `f` is reduced if and only if
 `|sqrt{D} - 2|a|| < b < \sqrt{D}` or `a = 0` and `-b < 2c <= b` or `c = 0` and
@@ -931,8 +949,12 @@ end
 
 Return representatives of the classes of binary quadratic forms of
 discriminant `d`, under proper equivalence or, if `proper` is `false`, under
-$\mathrm{GL}_2(\mathbf{Z})$. If `primitive` is `true`, only the classes of
-primitive forms are returned.
+$\mathrm{GL}_2(\mathbf{Z})$, where the matrix with rows $(s, t)$ and $(u, v)$
+sends $f(x, y)$ to $f(sx + ty, ux + vy)$, as in [Cox22](@cite), (2.2). If
+`primitive` is `true`, only the classes of primitive forms are returned.
+
+Unlike the action of [BV07](@cite), (2.4), this action has no factor given by
+the determinant, so it keeps a positive definite form positive definite.
 
 If `d < 0`, the classes of positive definite forms are returned, each by its
 reduced form in the sense of `is_reduced`; the negative definite classes are
@@ -950,8 +972,9 @@ function binary_quadratic_form_representatives(d::ZZRingElem; proper = true, pri
 end
 
 # The reduced positive definite forms [a, b, c] of discriminant d < 0, one in
-# each class [Coh93, Proposition 5.3.3]. Reduced forms have |b| <= a <= c, so
-# 3a^2 <= 4ac - b^2 = -d [Coh93, Lemma 5.3.4]. For each a, the b in [0, a]
+# each proper class [BV07, Theorem 5.7.7], as in [BV07, Section 5.11] but
+# by a rather than by b. Reduced forms have |b| <= a <= c, so
+# 3a^2 <= 4ac - b^2 = -d [BV07, Lemma 5.4.1]. For each a, the b in [0, a]
 # are the square roots of d modulo 4a, which give c = (b^2 - d)/(4a). The form
 # [a, -b, c] is reduced, and in another proper class, exactly when
 # 0 < b < a < c; it is in the class of [a, b, c] under GL_2(ZZ).
