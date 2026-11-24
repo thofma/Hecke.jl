@@ -183,6 +183,15 @@
     @test rand(A, 2, 3) isa Matrix{E}
 
     @test reproducible(A)
+    @test reproducible(A, -1:1)
+
+    # number field and rational coefficients are bounded by default
+    for A in (matrix_algebra(quadratic_field(2)[1], 2),
+              StructureConstantAlgebra(matrix_algebra(QQ, 2))[1])
+      @test rand(rng, A) isa elem_type(A)
+      @test reproducible(A)
+      @test reproducible(A, -1:1)
+    end
   end
 
   K, a = quadratic_field(2)

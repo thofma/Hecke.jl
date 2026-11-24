@@ -316,20 +316,33 @@ function rand(rng::AbstractRNG, Asp::SamplerTrivial{S}) where {T, S <: AbstractA
   return A(c)
 end
 
-function rand(A::AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}, rng::AbstractUnitRange{Int} = -10:10)
-  c = AbsSimpleNumFieldElem[rand(base_ring(A), rng) for i = 1:dim(A)]
+rand(rng::AbstractRNG, Asp::SamplerTrivial{<:AbstractAssociativeAlgebra{AbsSimpleNumFieldElem}}) =
+  rand(rng, Asp[], -10:10)
+
+rand(rng::AbstractRNG, Asp::SamplerTrivial{<:StructureConstantAlgebra{QQFieldElem}}) =
+  rand(rng, Asp[], -20:20)
+
+RandomExtensions.maketype(A::AbstractAssociativeAlgebra, ::AbstractUnitRange{Int}) =
+  elem_type(A)
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:NCRingElem, <:AbstractAssociativeAlgebra{T}, <:AbstractUnitRange{Int}}}) where T
+  A, r = sp[][1:end]
+  c = T[rand(rng, base_ring(A), r) for i = 1:dim(A)]
   return A(c)
 end
 
-function rand(A::AbstractAssociativeAlgebra{T}, rng::AbstractUnitRange{Int}) where T
-  c = T[rand(base_ring(A), rng) for i = 1:dim(A)]
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:NCRingElem, <:StructureConstantAlgebra{QQFieldElem}, <:AbstractUnitRange{Int}}})
+  A, r = sp[][1:end]
+  c = [QQFieldElem(rand(rng, ZZ, r)) for i = 1:dim(A)]
   return A(c)
 end
 
-function rand(A::StructureConstantAlgebra{QQFieldElem}, rng::AbstractUnitRange{Int} = -20:20)
-  c = [QQFieldElem(rand(ZZ, rng)) for i = 1:dim(A)]
-  return A(c)
-end
+rand(rng::AbstractRNG, A::AbstractAssociativeAlgebra, r::AbstractUnitRange{Int}) =
+  rand(rng, make(A, r))
+rand(A::AbstractAssociativeAlgebra, r::AbstractUnitRange{Int}) =
+  rand(Random.default_rng(), A, r)
 
 ################################################################################
 #
