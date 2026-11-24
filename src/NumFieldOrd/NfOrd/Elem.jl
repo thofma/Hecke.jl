@@ -514,34 +514,44 @@ function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder,
   return rand!(Random.default_rng(), z, O, R)
 end
 
+RandomExtensions.maketype(O::AbsSimpleNumFieldOrder,
+                          ::Union{IntegerUnion, AbstractUnitRange{<:IntegerUnion}}) =
+  elem_type(O)
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldOrderElem, AbsSimpleNumFieldOrder}})
+  O, R = sp[][1:end]
+  return rand!(rng, O(), O, R)
+end
+
 @doc raw"""
-    rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{Integer}) -> AbsNumFieldOrderElem
+    rand([rng::AbstractRNG], O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{Integer}) -> AbsNumFieldOrderElem
 
 Computes a coefficient vector with entries uniformly distributed in `R` and returns
 the corresponding element of the order.
 """
-function rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{T}) where T <: Integer
-  z = O()
-  rand!(z, O, R)
-  return z
+function rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{<:IntegerUnion})
+  return rand(Random.default_rng(), O, R)
+end
+
+function rand(rng::AbstractRNG, O::AbsSimpleNumFieldOrder,
+              R::AbstractUnitRange{<:IntegerUnion})
+  return rand(rng, make(O, R))
 end
 
 @doc raw"""
-    rand(O::AbsSimpleNumFieldOrder, n::IntegerUnion) -> AbsNumFieldOrderElem
+    rand([rng::AbstractRNG], O::AbsSimpleNumFieldOrder, n::IntegerUnion) -> AbsNumFieldOrderElem
 
 Computes a coefficient vector with entries uniformly distributed in
 $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the
 order $\mathcal O$.
 """
-function rand(O::AbsSimpleNumFieldOrder, n::Integer)
-  return rand(O, -n:n)
-end
-
-function rand(O::AbsSimpleNumFieldOrder, n::ZZRingElem)
-  z = O()
-  rand!(z, O, BigInt(n))
-  return z
-end
+rand(O::AbsSimpleNumFieldOrder, n::Integer) = rand(Random.default_rng(), O, n)
+# separate methods for `ZZRingElem` and `Integer` avoid ambiguities with
+# `rand(X, dims::Integer...)`
+rand(O::AbsSimpleNumFieldOrder, n::ZZRingElem) = rand(Random.default_rng(), O, n)
+rand(rng::AbstractRNG, O::AbsSimpleNumFieldOrder, n::Integer) = rand(rng, make(O, n))
+rand(rng::AbstractRNG, O::AbsSimpleNumFieldOrder, n::ZZRingElem) = rand(rng, make(O, n))
 
 ################################################################################
 #
