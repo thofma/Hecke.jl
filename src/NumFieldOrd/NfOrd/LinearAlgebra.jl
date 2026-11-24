@@ -177,14 +177,13 @@ function _basis_coord_nonneg(x::AbsSimpleNumFieldOrderElem)
   return true
 end
 
+function rand(rng::AbstractRNG, M::Generic.MatSpace{AbsSimpleNumFieldOrderElem},
+              B::Union{Int, ZZRingElem})
+  return rand(rng, make(M, B))
+end
+
 function rand(M::Generic.MatSpace{AbsSimpleNumFieldOrderElem}, B::Union{Int, ZZRingElem})
-  z = M()
-  for i in 1:nrows(z)
-    for j in 1:ncols(z)
-      z[i, j] = Hecke.rand(Hecke.base_ring(M), B)
-    end
-  end
-  return z
+  return rand(Random.default_rng(), M, B)
 end
 
 ==(P::PMat, Q::PMat) = P.matrix == Q.matrix && P.coeffs == Q.coeffs
