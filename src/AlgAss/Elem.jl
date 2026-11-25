@@ -1339,6 +1339,13 @@ coeff(a::AbstractAssociativeAlgebraElem, i::Int) = a.coeffs[i]
 
 function coeff(a::GroupAlgebraElem, i::Int)
   if _is_sparse(a)
+    A = parent(a)
+    G = group(A)
+    i < 1 && throw(BoundsError(a, i))
+    # indices are assigned lazily, up to the group order; cheap checks first
+    if i > length(A.base_to_group) && is_finite(G) && i > order(G)
+      throw(BoundsError(a, i))
+    end
     return a.coeffs_sparse[i]
   else
     return a.coeffs[i]
