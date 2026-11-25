@@ -57,6 +57,10 @@ function Base.:(==)(x::OnePlusIdealElem, y::OnePlusIdealElem)
   return x.elem == y.elem
 end
 
+# elements of 1 + I live in the same ring as those of I
+Random.gentype(::Type{OnePlusIdeal{S}}) where {S} =
+  OnePlusIdealElem{S, Random.gentype(S)}
+
 function Base.rand(rng::Random.AbstractRNG, sp::Random.SamplerTrivial{<:OnePlusIdeal})
   R = sp[]
   return R(one(base_ring(ideal(R))) + rand(rng, R.ideal))
@@ -122,6 +126,9 @@ function Base.:(==)(x::OnePlusIdealModuloOnePlusIdealElem, y::OnePlusIdealModulo
   @assert x.parent == y.parent
   return x.elem == y.elem
 end
+
+Random.gentype(::Type{P}) where {S, R, P <: OnePlusIdealModuloOnePlusIdeal{S, R}} =
+  OnePlusIdealModuloOnePlusIdealElem{P, elem_type(R)}
 
 function Base.rand(rng::Random.AbstractRNG,
                    sp::Random.SamplerTrivial{<:OnePlusIdealModuloOnePlusIdeal})
