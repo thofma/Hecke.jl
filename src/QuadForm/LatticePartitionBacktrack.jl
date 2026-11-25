@@ -554,7 +554,7 @@ function coordinates(S::ShortVectors, p::Int)
 end
 
 # The scalar product <i, x> of the points with indices i and x.
-function product(S::ShortVectors, i::Int, x::Int)
+function scalar_product(S::ShortVectors, i::Int, x::Int)
   n, nv = size(S.vectors)
   j, k = i <= nv ? i : i - nv, x <= nv ? x : x - nv
   s = 0
@@ -577,18 +577,18 @@ function tabulate!(S::ShortVectors, x::Int, demand::Int)
   isempty(S.tables[k].sets) || return S.tables[k]
   S.work[k] += demand
   (S.work[k] >= nv && S.budget[] > 0) || return nothing
-  products = Int[product(S, j, k) for j in 1:nv]
+  scalar_products = Int[scalar_product(S, j, k) for j in 1:nv]
   # The negative of the smallest machine integer is not its negative.
-  typemin(Int) in products && return nothing
+  typemin(Int) in scalar_products && return nothing
   # the few distinct values and their negatives
   values = Int[]
-  for s in products
+  for s in scalar_products
     s in values || push!(values, s, -s)
   end
   unique!(sort!(values))
   sets = [point_set(2 * nv) for _ in values]
   for j in 1:nv
-    r = searchsortedfirst(values, products[j])
+    r = searchsortedfirst(values, scalar_products[j])
     toggle!(sets[r], j)
     toggle!(sets[length(values) + 1 - r], nv + j)
   end
@@ -605,7 +605,7 @@ function count_invariant(S::ShortVectors, elements::AbstractVector{Int},
   result = 0
   if table === nothing
     for i in elements
-      result += mix(product(S, i, x))
+      result += mix(scalar_product(S, i, x))
     end
   else
     sign = x <= number_of_vectors(S) ? 1 : -1
@@ -923,14 +923,14 @@ end
 
 # The same for the scalar products of the points with the point with index
 # `x`.
-function split_by_products!(walk::Walk, depth::Int, P::Partition, elements,
-                            x::Int)
+function split_by_scalar_products!(walk::Walk, depth::Int, P::Partition,
+                                   elements, x::Int)
   S = walk.target
   table = tabulate!(S, x, length(elements))
   if table === nothing
     values = walk.values
     for (t, i) in enumerate(elements)
-      values[t] = product(S, i, x)
+      values[t] = scalar_product(S, i, x)
     end
     return split!(walk, depth, P, elements, values)
   end
@@ -979,7 +979,7 @@ function split_all!(walk::Walk, depth::Int, out::Partition, P::Partition,
       push!(out.elements, P.elements[P.starts[c]])
       push!(out.starts, length(out.elements) + 1)
     else
-      split_by_products!(walk, depth, out, cell(P, c), x) || return false
+      split_by_scalar_products!(walk, depth, out, cell(P, c), x) || return false
     end
   end
   empty!(P)
