@@ -797,8 +797,13 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
       return false, zero_matrix(QQ,0,0)
     end
     if algorithm == :partition_backtrack
+      # The two vector sets with their labels and the further forms are
+      # compatible: every isometry of the lattices maps the ones to the
+      # others.
       b, T = LatticePartitionBacktrack.isometry(grams1, grams2, V1, V2,
-                                                invariants1[1], invariants2[1])
+                                                invariants1[1],
+                                                invariants2[1];
+                                                invariant = true)
       @goto search_done
     end
     fl, CLsmall, CMsmall = _try_iso_setup_small(grams1, grams2, depth = depth, bacher_depth = bacher_depth; vector_set1=V1, vector_set2=V2, invariants1, invariants2)
