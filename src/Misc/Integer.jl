@@ -173,21 +173,6 @@ function sunit_group(S::Vector{ZZRingElem})
   return u, mp
 end
 
-@doc raw"""
-    is_prime_power(n::ZZRingElem) -> Bool
-    is_prime_power(n::Integer) -> Bool
-
-Tests if $n$ is the exact power of a prime number.
-"""
-function is_prime_power(n::ZZRingElem)
-  e, p = is_perfect_power_with_data(n)
-  return is_prime(p)
-end
-
-function is_prime_power(n::Integer)
-  return is_prime_power(ZZRingElem(n))
-end
-
 ######################################################################################
 
 function _factors_trial_division(n::ZZRingElem, np::Int=10^5)
