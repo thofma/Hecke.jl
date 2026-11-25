@@ -1828,8 +1828,7 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
   V = _short_vectors_gram_nolll_integral(FinckePohstInt, G, 0, m, nothing, one(ZZ), ZZRingElem)
   B = ZZMatrix[]
   n = ncols(G)
-  H = zero_matrix(ZZ, n+1, n) # One row more for hnf
-  w = zero_matrix(ZZ, 1, n)
+  S = RowSpan(n)
   flag = false
   for (_v, l) in V
     if l > m
@@ -1840,25 +1839,19 @@ function _shortest_vectors_sublattice_gram_integral(G::ZZMatrix)
       # In that case, m was not the minimum so we have to start a new
       # system of vectors from scratch
       empty!(B)
-      zero!(H)
+      zero!(S.basis)
       k = Int(0)
       m = ZZ(l)
     end
-    w[1:1, :] = _v
-    # test whether _v is in the span of B
-    reduce_mod_hnf_ur!(w, H)
-    iszero(w) && continue
+    # test whether _v is in the span of B, and add it if it is not
+    add_generator!(S, _v) || continue
     push!(B, matrix(ZZ, 1, n, _v))
-    # We add w in the last row, and we do an hnf
-    # H will always have rank at most n
-    H[(n+1):(n+1), :] = w
-    hnf!(H)
-    if all(isone(H[i, i]) for i in 1:n) # We have a basis
+    if is_full(S) # We have a basis
       flag = true
       break
     end
   end
-  return flag, m, B, H
+  return flag, m, B, S.basis
 end
 
 function _successive_sublattices(L::ZZLat; use_dual=false)
@@ -1887,34 +1880,55 @@ function _successive_sublattices(L::ZZLat; use_dual=false)
 end
 
 
+# The sublattice of ZZ^d spanned by vectors which are added one by one. The
+# nonzero rows of `basis` are its basis in upper right Hermite normal form;
+# `basis` has one row more than the rank can be, and `row` is work space.
+mutable struct RowSpan
+  basis::ZZMatrix
+  row::ZZMatrix
+end
+
+RowSpan(d::Int) = RowSpan(zero_matrix(ZZ, d + 1, d), zero_matrix(ZZ, 1, d))
+
+# Add the vector `v` to the generators of the span. Return whether this made
+# the span larger. A vector in the span costs one reduction; the Hermite
+# normal form is only computed again if the span grows.
+function add_generator!(S::RowSpan, v)
+  _copy_to_row_matrix!(S.row, v)
+  reduce_mod_hnf_ur!(S.row, S.basis)
+  iszero(S.row) && return false
+  d = ncols(S.basis)
+  S.basis[(d + 1):(d + 1), :] = S.row
+  hnf!(S.basis)
+  return true
+end
+
+# Whether the span is all of ZZ^d.
+function is_full(S::RowSpan)
+  H = S.basis
+  return all(i -> isone(H[i, i]), 1:ncols(H))
+end
+
 function _row_span!(L::Vector)
   l = length(L)
   d = length(L[1])
   m = min(d,l)
-  B = zero_matrix(ZZ, m, d)
+  S = RowSpan(d)
+  B = S.basis
   for i in 1:m
     v = L[i]
     for j in 1:d
       B[i,j] = v[j]
     end
   end
-  #B = reduce(vcat, L[1:m])
-  h = hnf!(B)
-  b = zero_matrix(ZZ, 1, d)
+  hnf!(B)
   for i in (m+1):l
-    _copy_to_row_matrix!(b, L[i])
-    reduce_mod_hnf_ur!(b, h)
-    if iszero(b)
-      continue
-    else
-      h = vcat(h, b)
-      hnf!(h)
-    end
+    add_generator!(S, L[i])
   end
-  return h[1:rank(h), :]
+  return B[1:rank(B), :]
 end
 
-function _copy_to_row_matrix!(b::ZZMatrix, c::Vector)
+function _copy_to_row_matrix!(b::ZZMatrix, c::AbstractVector)
   @assert ncols(b) == length(c)
   for i in 1:ncols(b)
     @inbounds b[1,i] = c[i]
