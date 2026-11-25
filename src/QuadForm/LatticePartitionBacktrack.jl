@@ -1181,9 +1181,7 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
     Q = node.partition
   end
 
-  # Step 3. In a planned walk it is left out if x was alone in its cell:
-  # such a node has no siblings, and the sums are reported at the next node
-  # which has some.
+  # Step 3
   sums_match!(walk, depth, Q) || return false
 
   # Step 4 and the cell to branch on
