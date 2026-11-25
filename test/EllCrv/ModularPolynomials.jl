@@ -36,6 +36,76 @@
   @test_throws ArgumentError classical_modular_polynomial(-1)
   @test_throws ArgumentError classical_modular_polynomial(0)
   @test_throws ArgumentError classical_modular_polynomial(60)
+  @test_throws ArgumentError classical_modular_polynomial(121)
+  @test_throws ArgumentError classical_modular_polynomial(typemax(Int))
+  for R in (polynomial_ring(ZZ, [:x])[1], ZZ["x", "y", "z"][1]), n in (3, 61)
+    @test_throws ArgumentError classical_modular_polynomial(R, n)
+  end
+end
+
+@testset "Classical, prime levels above 59" begin
+  # The algorithm of Broker-Lauter-Sutherland for prime levels above 59:
+  # against the database below 60, over Z and modulo m by the explicit CRT;
+  # at level 61, the properties of Cox, Theorem 11.18, and isogenies.
+  for l in (3, 5, 7, 11, 13)
+    phi = classical_modular_polynomial(l)
+    c = [coeff(phi, [a, b]) for a in 0:(l + 1) for b in 0:a]
+    ord = Hecke._bls_order(l)
+    ps = Hecke._bls_primes(l, ord.D)
+    @test Hecke._bls_crt(l, ord, ps) == c
+    for m in (2, 3, l, 6, 61 * 7, 1000003, next_prime(ZZ(2)^64), ZZ(2)^70)
+      @test Hecke._bls_explicit_crt(l, ord, ps, ZZ(m)) == mod.(c, m)
+    end
+    for R in (GF(1000003), GF(7, 2), residue_ring(ZZ, 6)[1],
+              residue_ring(ZZ, 1)[1])
+      S, _ = polynomial_ring(R, [:x, :y])
+      @test Hecke._classical_modular_polynomial_bls(S, l) ==
+            classical_modular_polynomial(S, l)
+    end
+  end
+
+  l = 61
+  f = @inferred classical_modular_polynomial(l)
+  @test parent(f) === Hecke.Globals.Zxy
+  @test classical_modular_polynomial(l) === f
+  x, y = gens(parent(f))
+  @test f == evaluate(f, [y, x])
+  @test degree(f, 1) == l + 1 && coeff(f, [l + 1, 0]) == 1
+  @test total_degree(f) == 2 * l
+  Zt, t = ZZ["t"]
+  @test abs(leading_coefficient(evaluate(f, [t, t]))) == 1
+  Fl = GF(l)
+  Sl, (u, v) = polynomial_ring(Fl, [:x, :y])
+  @test map_coefficients(Fl, f; parent = Sl) == (u^l - v) * (u - v^l)
+
+  F = GF(1009)
+  S, _ = polynomial_ring(F, [:x, :y])
+  g = @inferred classical_modular_polynomial(S, l)
+  @test parent(g) === S
+  @test classical_modular_polynomial(S, l) === g
+  @test g == map_coefficients(F, f; parent = S)
+  Random.seed!(1)
+  @test Hecke._classical_modular_polynomial_bls(S, l) == g
+  SQ, _ = polynomial_ring(QQ, [:x, :y])
+  @test classical_modular_polynomial(SQ, l) ==
+        map_coefficients(QQ, f; parent = SQ)
+
+  # an l-isogeny over F_1009, by Kohel's formulas and by Velu's of BLS12;
+  # E has 976 = 16 * 61 points
+  E = elliptic_curve(F, [1, 4])
+  P = 16 * rand(E)
+  while is_infinite(P)
+    P = 16 * rand(E)
+  end
+  @test is_infinite(l * P)
+  Fz, z = F["z"]
+  psi = prod(z - (k * P)[1] for k in 1:div(l - 1, 2))
+  EE = codomain(isogeny_from_kernel(E, psi))
+  @test iszero(evaluate(g, [j_invariant(E), j_invariant(EE)]))
+  A, B = a_invariants(E)[4], a_invariants(E)[5]
+  @test Hecke._bls_j(Hecke._bls_velu_codomain(A, B, P, l)...) == j_invariant(EE)
+
+  @test_throws ArgumentError Hecke._bls_primes(2^31 - 1, -3359)
 end
 
 @testset "Atkin" begin
