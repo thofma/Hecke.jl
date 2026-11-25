@@ -50,19 +50,27 @@ end
   for l in (3, 5, 7, 11, 13)
     phi = classical_modular_polynomial(l)
     c = [coeff(phi, [a, b]) for a in 0:(l + 1) for b in 0:a]
-    ord = Hecke._bls_order(l)
-    ps = Hecke._bls_primes(l, ord.D)
-    @test Hecke._bls_crt(l, ord, ps) == c
+    ord = Hecke._modular_polynomial_order(l)
+    ps = Hecke._modular_polynomial_crt_primes(l, ord.D)
+    @test Hecke._modular_polynomial_coefficients(l, ord, ps) == c
     for m in (2, 3, l, 6, 61 * 7, 1000003, next_prime(ZZ(2)^64), ZZ(2)^70)
-      @test Hecke._bls_explicit_crt(l, ord, ps, ZZ(m)) == mod.(c, m)
+      @test Hecke._modular_polynomial_coefficients_mod(l, ord, ps, ZZ(m)) ==
+            mod.(c, m)
     end
     for R in (GF(1000003), GF(7, 2), residue_ring(ZZ, 6)[1],
               residue_ring(ZZ, 1)[1])
       S, _ = polynomial_ring(R, [:x, :y])
-      @test Hecke._classical_modular_polynomial_bls(S, l) ==
+      @test Hecke._classical_modular_polynomial_crt(S, l) ==
             classical_modular_polynomial(S, l)
     end
   end
+
+  F = Native.GF(1009)
+  Fx, _ = polynomial_ring(F, :X)
+  T = change_base_ring(F, Hecke._modular_polynomial_table(5))
+  j = F(17)
+  @test Hecke._modular_polynomial_at(Fx, T, j) ==
+        Fx([sum(T[a, b] * j^(b - 1) for b in 1:7) for a in 1:7])
 
   l = 61
   f = @inferred classical_modular_polynomial(l)
@@ -85,7 +93,7 @@ end
   @test classical_modular_polynomial(S, l) === g
   @test g == map_coefficients(F, f; parent = S)
   Random.seed!(1)
-  @test Hecke._classical_modular_polynomial_bls(S, l) == g
+  @test Hecke._classical_modular_polynomial_crt(S, l) == g
   SQ, _ = polynomial_ring(QQ, [:x, :y])
   @test classical_modular_polynomial(SQ, l) ==
         map_coefficients(QQ, f; parent = SQ)
@@ -103,9 +111,11 @@ end
   EE = codomain(isogeny_from_kernel(E, psi))
   @test iszero(evaluate(g, [j_invariant(E), j_invariant(EE)]))
   A, B = a_invariants(E)[4], a_invariants(E)[5]
-  @test Hecke._bls_j(Hecke._bls_velu_codomain(A, B, P, l)...) == j_invariant(EE)
+  A1, B1 = Hecke._velu_codomain(A, B, P, l)
+  @test Hecke._short_weierstrass_j_invariant(A1, B1) == j_invariant(EE)
 
-  @test_throws ArgumentError Hecke._bls_primes(2^31 - 1, -3359)
+  @test_throws ArgumentError Hecke._modular_polynomial_crt_primes(2^31 - 1,
+                                                                  -3359)
 end
 
 @testset "Atkin" begin

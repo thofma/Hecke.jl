@@ -18,8 +18,8 @@ by the explicit Chinese remainder theorem [Sut11](@cite), so that the memory
 used is that of the result (for $m$ beyond the product of the primes used,
 over $\mathbf{Z}$ and then reduced). The result is always correct; only the
 running time depends on random choices. Under the GRH it grows like $n^3$ up
-to logarithmic factors [BLS12](@cite): on a laptop, about 3 seconds for
-$n = 61$, 20 seconds for $n = 101$ and 30 seconds for $n = 131$, whatever the
+to logarithmic factors [BLS12](@cite): on a laptop, about 2.5 seconds for
+$n = 61$, 14 seconds for $n = 101$ and 20 seconds for $n = 131$, whatever the
 ring, and a few seconds more on the first call, for compilation. Composite
 levels above `59` are not supported. Precomputed classical modular
 polynomials of every level up to 400 and of prime level up to 1000 are
@@ -42,7 +42,7 @@ function classical_modular_polynomial(R::MPolyRing, n::Int)
   get!(_classical_modular_polynomial_cache, (R, n)) do
     # a dynamic call, so that reading the database does not compile the
     # algorithm
-    n > 59 && return Base.invokelatest(_classical_modular_polynomial_bls, R, n)
+    n > 59 && return Base.invokelatest(_classical_modular_polynomial_crt, R, n)
     open(joinpath(default_class_mod_pol_db, "$n")) do io
       b, exps = _parse(Vector{Vector{Int}}, io)
       @assert Char(b) == ','
@@ -108,20 +108,22 @@ end
 # from isogeny volcanoes over F_p (Algorithm 2.1), then the Chinese remainder
 # theorem. The output is always correct; random choices affect the running
 # time only.
-function _classical_modular_polynomial_bls(R::MPolyRing, l::Int)
+function _classical_modular_polynomial_crt(R::MPolyRing, l::Int)
   m = characteristic(base_ring(R))
   isone(m) && return zero(R)
-  ord = _bls_order(l)
-  ps = _bls_primes(l, ord.D)
+  ord = _modular_polynomial_order(l)
+  ps = _modular_polynomial_crt_primes(l, ord.D)
   # For m = 0, and for m beyond the product of the primes, the coefficients
   # over Z are needed; they are computed once, in Zxy, and mapped.
   if iszero(m) || m > prod(ZZ(p) for (p, _) in ps)
     if R !== Globals.Zxy
       return _map_symmetric(R, classical_modular_polynomial(Globals.Zxy, l))
     end
-    return _symmetric_from_triangle(R, l, _bls_crt(l, ord, ps))
+    c = _modular_polynomial_coefficients(l, ord, ps)
+    return _symmetric_from_triangle(R, l, c)
   end
-  return _symmetric_from_triangle(R, l, _bls_explicit_crt(l, ord, ps, m))
+  c = _modular_polynomial_coefficients_mod(l, ord, ps, m)
+  return _symmetric_from_triangle(R, l, c)
 end
 
 # The image in R of f in Zxy, coefficient by coefficient, as for the database.
@@ -159,7 +161,7 @@ end
 # binary quadratic forms. The two ideals of norm l have classes [l0]^e and
 # [l0]^(-e), with 2e != 0 mod h, so that the two l-isogenies of the surface
 # lead to distinct curves.
-function _bls_order(l::Int)
+function _modular_polynomial_order(l::Int)
   d = 4
   while true
     d += 1
@@ -170,82 +172,83 @@ function _bls_order(l::Int)
     h = length(_binary_quadratic_form_representatives_definite(ZZ(D), true,
                                                                true))
     l + 2 <= h && 4 * h <= 5 * (l + 2) || continue
-    ord = _bls_order_presentation(D, h, l)
+    ord = _modular_polynomial_order_presentation(D, h, l)
     ord === nothing || return ord
   end
 end
 
 # The class group of positive definite binary quadratic forms of discriminant
 # d < 0, its elements the reduced forms: product, identity, inverse, power.
-function _bls_mul(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem})
+function _class_group_mul(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem})
   return reduction(compose(f, g))
 end
 
-function _bls_one(d::ZZRingElem)
+function _class_group_one(d::ZZRingElem)
   b = mod(d, 2)
   return binary_quadratic_form(one(ZZ), b, divexact(b^2 - d, 4))
 end
 
-function _bls_inv(f::QuadBin{ZZRingElem})
+function _class_group_inv(f::QuadBin{ZZRingElem})
   return reduction(binary_quadratic_form(f[1], -f[2], f[3]))
 end
 
-function _bls_pow(f::QuadBin{ZZRingElem}, n::Int)
-  r = _bls_one(discriminant(f))
+function _class_group_pow(f::QuadBin{ZZRingElem}, n::Int)
+  r = _class_group_one(discriminant(f))
   x = f
   while n > 0
-    isodd(n) && (r = _bls_mul(r, x))
+    isodd(n) && (r = _class_group_mul(r, x))
     n >>= 1
-    n > 0 && (x = _bls_mul(x, x))
+    n > 0 && (x = _class_group_mul(x, x))
   end
   return r
 end
 
 # Whether the class of f generates the class group, of order N.
-function _bls_generates(f::QuadBin{ZZRingElem}, N::Int)
-  e = _bls_one(discriminant(f))
-  return all(_bls_pow(f, div(N, Int(q))) != e for (q, _) in factor(N))
+function _class_group_generates(f::QuadBin{ZZRingElem}, N::Int)
+  e = _class_group_one(discriminant(f))
+  return all(_class_group_pow(f, div(N, Int(q))) != e for (q, _) in factor(N))
 end
 
 # The k in [0, N) with [f]^k = [x], [f] of order N, by baby steps and giant
 # steps.
-function _bls_dlog(f::QuadBin{ZZRingElem}, x::QuadBin{ZZRingElem}, N::Int)
+function _class_group_dlog(f::QuadBin{ZZRingElem}, x::QuadBin{ZZRingElem},
+                           N::Int)
   m = isqrt(N) + 1
   baby = Dict{QuadBin{ZZRingElem}, Int}()
-  y = _bls_one(discriminant(f))
+  y = _class_group_one(discriminant(f))
   for j in 0:(m - 1)
     get!(baby, y, j)
-    y = _bls_mul(y, f)
+    y = _class_group_mul(y, f)
   end
-  g = _bls_inv(_bls_pow(f, m))
+  g = _class_group_inv(_class_group_pow(f, m))
   z = x
   i = 0
   while !haskey(baby, z)
     i += 1
     @assert i <= m
-    z = _bls_mul(z, g)
+    z = _class_group_mul(z, g)
   end
   return mod(i * m + baby[z], N)
 end
 
-_bls_prime_class(d::ZZRingElem, q::Int) = reduction(prime_form(d, ZZ(q)))
+_prime_form_class(d::ZZRingElem, q::Int) = reduction(prime_form(d, ZZ(q)))
 
-function _bls_order_presentation(D::Int, h::Int, l::Int)
+function _modular_polynomial_order_presentation(D::Int, h::Int, l::Int)
   dO = ZZ(D)
   dR = ZZ(l)^2 * dO
   # h(R) = (l - 1) h, as l splits and O* = R* = {1, -1}
   hR = (l - 1) * h
   for l0 in 3:59
     (is_prime(l0) && l0 != l && kronecker_symbol(D, l0) == 1) || continue
-    g = _bls_prime_class(dO, l0)
-    _bls_generates(g, h) || continue
-    gR = _bls_prime_class(dR, l0)
-    _bls_generates(gR, hR) || continue
-    e = _bls_dlog(g, _bls_prime_class(dO, l), h)
+    g = _prime_form_class(dO, l0)
+    _class_group_generates(g, h) || continue
+    gR = _prime_form_class(dR, l0)
+    _class_group_generates(gR, hR) || continue
+    e = _class_group_dlog(g, _prime_form_class(dO, l), h)
     iszero(mod(2 * e, h)) && continue
     return (D = D, h = h, l0 = l0, e = e,
-            aux = _bls_auxiliary(dO, l, l0, g, h),
-            auxR = _bls_auxiliary(dR, l, l0, gR, hR))
+            aux = _auxiliary_isogeny_prime(dO, l, l0, g, h),
+            auxR = _auxiliary_isogeny_prime(dR, l, l0, gR, hR))
   end
   return nothing
 end
@@ -255,13 +258,14 @@ end
 # of discriminant d, of order N and generated by [l0] = [g], with
 # 2 <= k <= N/2; the one with the least k, so that most steps of a walk can
 # use it. Nothing if there is none.
-function _bls_auxiliary(d::ZZRingElem, l::Int, l0::Int, g::QuadBin{ZZRingElem},
+function _auxiliary_isogeny_prime(d::ZZRingElem, l::Int, l0::Int,
+                                  g::QuadBin{ZZRingElem},
                         N::Int)
   best = nothing
   for l1 in 3:59
     (is_prime(l1) && l1 != l0 && l1 != l && kronecker_symbol(d, l1) == 1) ||
       continue
-    x = _bls_dlog(g, _bls_prime_class(d, l1), N)
+    x = _class_group_dlog(g, _prime_form_class(d, l1), N)
     k = min(x, N - x)
     k >= 2 || continue
     if best === nothing || k < best[2]
@@ -273,7 +277,7 @@ end
 
 # The height bound of [BS10] for Phi_l: the smaller of Corollary 9 and
 # Theorem 1, a bound for log max |c| over the coefficients c (natural log).
-function _bls_height_bound(l::Int)
+function _modular_polynomial_height_bound(l::Int)
   return 6 * l * log(l) + min(18 * l, 16 * l + 14 * sqrt(l) * log(l))
 end
 
@@ -284,9 +288,9 @@ end
 # than E[l], which the construction of points of order l relies on. The
 # product of the primes exceeds 4 exp(B), B the height bound, as the explicit
 # CRT needs (Section 6.2); the summand 1 absorbs rounding in the logarithms.
-function _bls_primes(l::Int, D::Int)
+function _modular_polynomial_crt_primes(l::Int, D::Int)
   v = mod(D, 8) == 1 ? 2 : 1
-  target = _bls_height_bound(l) + log(4) + 1
+  target = _modular_polynomial_height_bound(l) + log(4) + 1
   ps = Tuple{Int, Int}[]
   s = 0.0
   k = 0
@@ -308,11 +312,38 @@ function _bls_primes(l::Int, D::Int)
   return ps
 end
 
-# Phi_{l0}(X, j) for j in F, from the coefficient table T of Phi_{l0} over F:
-# T[a + 1, b + 1] the coefficient of X^a Y^b.
-function _bls_specialize(Fx::PolyRing, T::Matrix, pw::Vector)
-  n = size(T, 1)
-  return Fx([sum(T[a, b] * pw[b] for b in 1:n) for a in 1:n])
+# Phi_l(X, Y) as the table of its coefficients, the entry [a + 1, b + 1] that
+# of X^a Y^b, for l <= 59.
+function _modular_polynomial_table(l::Int)
+  phi = classical_modular_polynomial(l)
+  T = zero_matrix(ZZ, l + 2, l + 2)
+  for (c, e) in zip(coefficients(phi), exponent_vectors(phi))
+    T[e[1] + 1, e[2] + 1] = c
+  end
+  return T
+end
+
+# Phi(X, j) in Fx, T the table of Phi reduced into the field of j, by Horner's
+# rule in Y.
+function _modular_polynomial_at(Fx::PolyRing, T::MatElem, j)
+  n = ncols(T)
+  cs = [T[a, n] for a in 1:nrows(T)]
+  for b in (n - 1):-1:1, a in eachindex(cs)
+    cs[a] = cs[a] * j + T[a, b]
+  end
+  return Fx(cs)
+end
+
+# The same over a word-size prime field: the table times the vector of powers
+# of j, by FLINT.
+function _modular_polynomial_at(Fx::fpPolyRing, T::fpMatrix, j::fpFieldElem)
+  pw = Vector{UInt}(undef, ncols(T))
+  x = one(j)
+  for b in eachindex(pw)
+    pw[b] = data(x)
+    x *= j
+  end
+  return Fx(mul!(Vector{UInt}(undef, nrows(T)), T, pw))
 end
 
 # The n j-invariants j_0, j_1, ... of an l0-isogeny cycle from j0, on a
@@ -321,19 +352,17 @@ end
 # root of Phi_{l1}(X, j_{i-k}), whichever way the walk goes, so a gcd of degree
 # 1 gives it without root-finding ([ES10], Section 2.3); otherwise the roots
 # are found.
-function _bls_cycle(Fx::PolyRing, T::Matrix, j0, n::Int,
-                    T1::Union{Nothing, Matrix} = nothing, k::Int = 0)
+function _isogeny_cycle(Fx::PolyRing, T::MatElem, j0, n::Int,
+                    T1::Union{Nothing, MatElem} = nothing, k::Int = 0)
   X = gen(Fx)
   J = [j0]
-  r = roots(_bls_specialize(Fx, T, powers(j0, size(T, 1) - 1)))
+  r = roots(_modular_polynomial_at(Fx, T, j0))
   @assert length(r) == 2
   push!(J, r[1])
   while length(J) < n
-    f = _bls_specialize(Fx, T, powers(J[end], size(T, 1) - 1))
-    f = divexact(f, X - J[end - 1])
+    f = divexact(_modular_polynomial_at(Fx, T, J[end]), X - J[end - 1])
     if T1 !== nothing && length(J) >= k
-      pw = powers(J[end + 1 - k], size(T1, 1) - 1)
-      g = gcd(f, _bls_specialize(Fx, T1, pw))
+      g = gcd(f, _modular_polynomial_at(Fx, T1, J[end + 1 - k]))
       if degree(g) == 1
         push!(J, -coeff(g, 0) // coeff(g, 1))
         continue
@@ -348,7 +377,7 @@ end
 
 # The codomain of the l-isogeny with kernel generated by the point P of order
 # l on y^2 = x^3 + A x + B: Velu's formulas as in Algorithm 6.4 of [BLS12].
-function _bls_velu_codomain(A, B, P, l::Int)
+function _velu_codomain(A, B, P, l::Int)
   t = zero(A)
   w = zero(A)
   Q = P
@@ -361,7 +390,7 @@ function _bls_velu_codomain(A, B, P, l::Int)
   return A - 5 * t, B - 7 * w
 end
 
-_bls_j(A, B) = 6912 * A^3 // (4 * A^3 + 27 * B^2)
+_short_weierstrass_j_invariant(A, B) = 6912 * A^3 // (4 * A^3 + 27 * B^2)
 
 # Step 4 of Algorithm 2.1: an l-isogenous curve of j with endomorphism ring R,
 # that is, whose j-invariant is not on the surface. Of the curve
@@ -370,7 +399,7 @@ _bls_j(A, B) = 6912 * A^3 // (4 * A^3 + 27 * B^2)
 # point killed by exactly one of p + 1 - t and p + 1 + t. Its l-Sylow subgroup
 # is E[l] (Theorem 4.1, and l^3 does not divide p + 1 - t), so n Q with
 # n = (p + 1 - t)/l^2 is a uniform point of E[l].
-function _bls_floor_neighbour(F, j, p::Int, t::Int, l::Int, c, surface)
+function _floor_isogenous_j_invariant(F, j, p::Int, t::Int, l::Int, c, surface)
   k = j // (1728 - j)
   A, B = 3 * k, 2 * k
   N = ZZ(p + 1 - t)
@@ -390,27 +419,27 @@ function _bls_floor_neighbour(F, j, p::Int, t::Int, l::Int, c, surface)
   while true
     P = n * rand(E)
     is_infinite(P) && continue
-    jc = _bls_j(_bls_velu_codomain(A, B, P, l)...)
+    jc = _short_weierstrass_j_invariant(_velu_codomain(A, B, P, l)...)
     haskey(surface, jc) || return jc
   end
 end
 
 # Algorithm 2.1 of [BLS12]: the triangle of Phi_l mod p, for a prime p of
-# _bls_primes with trace t. The surface Ell_O(F_p) is one l0-cycle J of
-# length h, the l-neighbours of J[i] on it are J[i +- e]; the floor Ell_R(F_p)
-# is one l0-cycle of length (l - 1) h, and the floor l-neighbours of J[i] are
-# the coset of one of them under the subgroup of order l - 1 generated by
-# [l0]^h, positions h apart on that cycle (Lemmas 3.1 and 3.2). Phi_l(X, J[i])
-# is the product over the l + 1 neighbours, for l + 2 of the J[i]; then
-# interpolation in Y.
-function _bls_mod_p(l::Int, ord, HO::ZZPolyRingElem,
-                    tables::Dict{Int, Matrix{ZZRingElem}}, p::Int, t::Int)
+# _modular_polynomial_crt_primes with trace t. The surface Ell_O(F_p) is one
+# l0-cycle J of length h, the l-neighbours of J[i] on it are J[i +- e]; the
+# floor Ell_R(F_p) is one l0-cycle of length (l - 1) h, and the floor
+# l-neighbours of J[i] are the coset of one of them under the subgroup of
+# order l - 1 generated by [l0]^h, positions h apart on that cycle (Lemmas 3.1
+# and 3.2). Phi_l(X, J[i]) is the product over the l + 1 neighbours, for l + 2
+# of the J[i]; then interpolation in Y.
+function _modular_polynomial_mod_p(l::Int, ord, HO::ZZPolyRingElem,
+                    tables::Dict{Int, ZZMatrix}, p::Int, t::Int)
   F = Native.GF(p; cached = false)
   Fx, X = polynomial_ring(F, :X; cached = false)
   h, e = ord.h, ord.e
-  T = map(F, tables[ord.l0])
-  walk(j0, n, aux) = aux === nothing ? _bls_cycle(Fx, T, j0, n) :
-    _bls_cycle(Fx, T, j0, n, map(F, tables[aux[1]]), aux[2])
+  T = change_base_ring(F, tables[ord.l0])
+  walk(j0, n, aux) = aux === nothing ? _isogeny_cycle(Fx, T, j0, n) :
+    _isogeny_cycle(Fx, T, j0, n, change_base_ring(F, tables[aux[1]]), aux[2])
   c = F(2)
   while is_square(c)
     c += 1
@@ -418,7 +447,7 @@ function _bls_mod_p(l::Int, ord, HO::ZZPolyRingElem,
   J = walk(first(roots(map_coefficients(F, HO; parent = Fx))), h, ord.aux)
   surface = Dict(j => i for (i, j) in enumerate(J))
   @assert length(surface) == h
-  children = [_bls_floor_neighbour(F, J[i], p, t, l, c, surface)
+  children = [_floor_isogenous_j_invariant(F, J[i], p, t, l, c, surface)
               for i in 1:(l + 2)]
   JR = walk(children[1], (l - 1) * h, ord.auxR)
   floor = Dict(j => i for (i, j) in enumerate(JR))
@@ -446,18 +475,13 @@ end
 
 # The data that every prime needs: H_O over Z (Nemo's, from FLINT; Step 1 of
 # Algorithm 6.1) and the coefficient tables of Phi_{l0} and of the auxiliary
-# Phi_{l1}, T[a + 1, b + 1] the coefficient of X^a Y^b.
-function _bls_setup(ord)
+# Phi_{l1}.
+function _modular_polynomial_crt_setup(ord)
   Zx, _ = polynomial_ring(ZZ, :x; cached = false)
   HO = hilbert_class_polynomial(ord.D, Zx)
-  tables = Dict{Int, Matrix{ZZRingElem}}()
+  tables = Dict{Int, ZZMatrix}()
   for q in (ord.l0, (a[1] for a in (ord.aux, ord.auxR) if a !== nothing)...)
-    T = [ZZ() for _ in 1:(q + 2), _ in 1:(q + 2)]
-    phi = classical_modular_polynomial(q)
-    for (c, ex) in zip(coefficients(phi), exponent_vectors(phi))
-      T[ex[1] + 1, ex[2] + 1] = c
-    end
-    tables[q] = T
+    tables[q] = _modular_polynomial_table(q)
   end
   return HO, tables
 end
@@ -465,12 +489,13 @@ end
 # The triangle of Phi_l over Z: the residues of every prime, then the CRT with
 # symmetric residues, the product of the primes exceeding twice every
 # coefficient ([BLS12], Section 6.2).
-function _bls_crt(l::Int, ord, ps::Vector{Tuple{Int, Int}})
-  HO, tables = _bls_setup(ord)
+function _modular_polynomial_coefficients(l::Int, ord,
+                                          ps::Vector{Tuple{Int, Int}})
+  HO, tables = _modular_polynomial_crt_setup(ord)
   n = _triangle_index(l + 1, l + 1)
   res = Matrix{Int}(undef, n, length(ps))
   for (i, (p, t)) in enumerate(ps)
-    res[:, i] = _bls_mod_p(l, ord, HO, tables, p, t)
+    res[:, i] = _modular_polynomial_mod_p(l, ord, HO, tables, p, t)
   end
   env = crt_env(ZZRingElem[ZZ(p) for (p, _) in ps])
   b = ZZRingElem[ZZ() for _ in ps]
@@ -493,10 +518,11 @@ end
 # precision each summand of s has error below 3 * 2^-53, and the sum of n
 # summands below n (n + 3) 2^-53, under the 1/4 that rounding to r tolerates
 # when n < 2^25.
-function _bls_explicit_crt(l::Int, ord, ps::Vector{Tuple{Int, Int}},
+function _modular_polynomial_coefficients_mod(l::Int, ord,
+                                              ps::Vector{Tuple{Int, Int}},
                            m::ZZRingElem)
   @assert length(ps) < 2^25
-  HO, tables = _bls_setup(ord)
+  HO, tables = _modular_polynomial_crt_setup(ord)
   n = _triangle_index(l + 1, l + 1)
   M = prod(ZZ(p) for (p, _) in ps)
   C = ZZRingElem[ZZ() for _ in 1:n]
@@ -505,7 +531,7 @@ function _bls_explicit_crt(l::Int, ord, ps::Vector{Tuple{Int, Int}},
     Mi = divexact(M, p)
     ai = Int(invmod(mod(Mi, p), ZZ(p)))
     Mim = mod(Mi, m)
-    r = _bls_mod_p(l, ord, HO, tables, p, t)
+    r = _modular_polynomial_mod_p(l, ord, HO, tables, p, t)
     for k in 1:n
       d = Int(mod(Int128(r[k]) * ai, p))
       addmul!(C[k], Mim, d)
