@@ -1224,6 +1224,17 @@ end
 # These are the vector sums of [PS97, Section 4], taken over the cells.
 # Instead of all scalar products of two sums, those with a fixed combination
 # of all sums are reported.
+#
+# In formulas, with the cells C_1, ..., C_k of `Q` in their order:
+#
+#     s_c = sum of the vectors of the points in C_c        (sum of the cell)
+#     t   = mix(1) * s_1 + ... + mix(k) * s_k              (`total`)
+#     w   = form * transpose(t)                            (`weights`)
+#
+# and the number reported for the cell C_c is <s_c, t> = s_c * w. All of
+# this is computed modulo 2^64, see `compress_forms`. The factors `mix(c)`
+# only depend on the position of the cell, so corresponding cells of two
+# nodes get the same factor.
 function sums_match!(walk::Walk, depth::Int, Q::Partition)
   S = walk.target
   n, nv = size(S.vectors)
@@ -1233,6 +1244,8 @@ function sums_match!(walk::Walk, depth::Int, Q::Partition)
   large = count(c -> cell_size(Q, c) > 1, 1:cells)
   size(walk.sums, 2) < large && (walk.sums = zeros(Int, n, 2 * large))
   sums, total, weights = walk.sums, walk.total, walk.weights
+  # t: add mix(c) * s_c for every cell. The sum of a cell with one point is
+  # the vector of that point, with its sign.
   fill!(total, 0)
   k = 0
   @inbounds for c in 1:cells
@@ -1251,12 +1264,14 @@ function sums_match!(walk::Walk, depth::Int, Q::Partition)
       end
     end
   end
-  fill!(weights, 0)                       # form * total
+  # w = form * transpose(t)
+  fill!(weights, 0)
   @inbounds for r in 1:n
     @simd for l in 1:n
       weights[l] += form[l, r] * total[r]
     end
   end
+  # <s_c, t> = s_c * w for every cell
   k = 0
   for c in 1:cells
     s = 0
@@ -1278,7 +1293,9 @@ function sums_match!(walk::Walk, depth::Int, Q::Partition)
   return true
 end
 
-# Add up the coordinate vectors of the points with the given indices.
+# Set `sum` to the sum s_c of the coordinate vectors of the points with the
+# given indices; an index above the number of vectors stands for the negative
+# of a vector.
 function cell_sum!(sum::AbstractVector{Int}, S::ShortVectors, elements)
   n, nv = size(S.vectors)
   fill!(sum, 0)
