@@ -882,7 +882,7 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
 end
 
 rank(z::GrowingSubspace) = z.rank
-degree(z::GrowingSubspace) = ncols(z.B1)
+degree(z::GrowingSubspace) = z.degree
 
 # satisfies _signed_hash(-x, seed) = -_signed_hash(x,seed)
 function _signed_hash(x::Vector, seed::UInt)
@@ -936,69 +936,191 @@ function neg!(x::Vector{ZZRingElem})
   end
 end
 
-function _zero!(z::GrowingSubspace)
-  zero!(z.B1)
-  zero!(z.B2)
+function Base.empty!(z::GrowingSubspace)
   z.rank = 0
-  z.dirty=true
-  zero!(z.pivs)
-  resize!(z.pivs, z.rank)
-  resize!(z.pure, z.rank)
+  z.bits = 0
+  empty!(z.generators)
+  fill!(z.ranks, 0)
+  foreach(empty!, z.pivots)
+  return z
 end
 
-function push!(z::GrowingSubspace, x, offset=0)
-  n = length(z.range)
-  z.rank == n && return nothing
-  B1 = z.B1
-  B2 = z.B2
-  nn = z.rank+1
-  r = offset
-  @inbounds for i in 1:n
-    B1[nn,i] = x[r+i]
-  end
-  if !_reduce_modulo_rref(B1, z.rank, z.pivs, z.pure, z.dirty)
-    # found something new
-    rref!(B1)
-    z.rank += 1
-    z.dirty = true
-    resize!(z.pivs, z.rank)
-    resize!(z.pure, z.rank)
-    rk = z.rank
-    @inbounds for i in 1:n
-      B2[rk, i] = x[r+i]
+function Base.copy!(z::GrowingSubspace, y::GrowingSubspace)
+  @req z.degree == y.degree "The subspaces must have the same degree"
+  z.rank, z.bits = y.rank, y.bits
+  copy!(z.generators, y.generators)
+  copy!(z.primes, y.primes)
+  copy!(z.ranks, y.ranks)
+  for i in 1:length(y.primes)
+    if i > length(z.echelons)
+      push!(z.echelons, copy(y.echelons[i]))
+      push!(z.pivots, copy(y.pivots[i]))
+    else
+      copyto!(z.echelons[i], y.echelons[i])
+      copy!(z.pivots[i], y.pivots[i])
     end
-  else
-    z.dirty = false
   end
-  nothing
+  return z
+end
+
+# The first of the primes which are used, in increasing order. They have 26
+# bits: so a product of two residues has at most 52 bits, and thousands of
+# them can be added up in a machine integer before reducing.
+const GROWING_SUBSPACE_PRIME = 33554467
+
+_residue(a::Int, p::Int) = mod(a, p)
+_residue(a::ZZRingElem, p::Int) = Int(mod(a, ZZ(p)))
+
+# The number of bits of the squared norm of the entries of `x` which are used.
+function _norm_bits(x::AbstractVector{Int}, offset::Int, n::Int)
+  s = Int128(0)
+  for j in 1:n
+    a = x[offset + j]
+    -2^31 < a < 2^31 || return nbits(sum(ZZ(x[offset + k])^2 for k in 1:n))
+    s += a * a
+  end
+  return 128 - leading_zeros(s)
+end
+
+_norm_bits(x, offset::Int, n::Int) = nbits(sum(ZZ(x[offset + k])^2 for k in 1:n))
+
+# Reduce `x` by the span modulo the i-th prime, into `z.work`. Return whether
+# the result is non-zero, that is, whether `x` is not in that span.
+function _reduce!(z::GrowingSubspace, i::Int, x, offset::Int)
+  p, E, pivots, w = z.primes[i], z.echelons[i], z.pivots[i], z.work
+  n = z.degree
+  @inbounds for j in 1:n
+    w[j] = _residue(x[offset + j], p)
+  end
+  # The entries stay non-negative and below (n + 1) * p^2 < 2^63; only the
+  # pivot entry is reduced on the way.
+  @inbounds for k in 1:z.ranks[i]
+    c = mod(w[pivots[k]], p)
+    c == 0 && continue
+    c = p - c
+    @simd for j in 1:n
+      w[j] += c * E[j, k]
+    end
+  end
+  @inbounds for j in 1:n
+    w[j] = mod(w[j], p)
+  end
+  return any(!iszero, w)
+end
+
+# Add the non-zero vector `z.work`, which is reduced by the span modulo the
+# i-th prime, to the basis of that span.
+function _enlarge!(z::GrowingSubspace, i::Int)
+  p, E, w = z.primes[i], z.echelons[i], z.work
+  pivot = findfirst(!iszero, w)
+  c = invmod(w[pivot], p)
+  k = z.ranks[i] += 1
+  for j in 1:z.degree
+    E[j, k] = mod(c * w[j], p)
+  end
+  push!(z.pivots[i], pivot)
+  return z
+end
+
+# Take one more prime, with the span of the generators found so far.
+function _add_prime!(z::GrowingSubspace)
+  p = isempty(z.primes) ? GROWING_SUBSPACE_PRIME : Int(next_prime(z.primes[end]))
+  push!(z.primes, p)
+  push!(z.ranks, 0)
+  i = length(z.primes)
+  if i > length(z.echelons)
+    push!(z.echelons, zeros(Int, z.degree, z.degree))
+    push!(z.pivots, Int[])
+  end
+  for g in z.generators
+    _reduce!(z, i, g, 0) && _enlarge!(z, i)
+  end
+  return z
+end
+
+@doc raw"""
+    add_generator!(z::GrowingSubspace, x, offset::Int = 0) -> Bool
+
+Add the vector with entries `x[offset + 1], ..., x[offset + degree(z)]` to
+the generators of `z`. Return whether this made the span larger; exactly the
+vectors for which it did are counted by `rank(z)`.
+
+If `z` is exact, this is decided over the rationals. Let `S` be the vectors
+which enlarged the span so far; they are linearly independent. If `x` is
+independent of `S`, some minor `m` of size `rank(z) + 1` of `S` and `x` is
+non-zero, and by Hadamard's inequality `abs(m)` is at most the product of
+the norms of these vectors. The primes are taken so that their product is
+larger, hence one of them does not divide `m`: modulo that prime `S` is
+independent and `x` is not in its span. Conversely, if `S` is independent
+modulo a prime and `x` is not in its span there, then `S` and `x` are
+independent. So `x` enlarges the span if and only if this holds for one of
+the primes modulo which `S` is independent.
+
+If `z` is not exact, a single prime is used. Then a vector which is
+independent of the earlier ones may be taken for dependent; the rank which
+is found is the rank modulo this prime.
+"""
+function add_generator!(z::GrowingSubspace, x, offset::Int = 0)
+  n = z.degree
+  z.rank == n && return false
+  if z.exact
+    z.bits = max(z.bits, _norm_bits(x, offset, n))
+    # A minor of size rank + 1 is smaller than 2^(bits * (rank + 1) / 2),
+    # and a prime is larger than 2^25.
+    while 50 * length(z.primes) < z.bits * (z.rank + 1) + 2
+      _add_prime!(z)
+    end
+  elseif isempty(z.primes)
+    _add_prime!(z)
+  end
+  enlarged = false
+  for i in 1:length(z.primes)
+    # The generators have to be independent modulo the prime.
+    z.ranks[i] == z.rank || continue
+    if _reduce!(z, i, x, offset)
+      _enlarge!(z, i)
+      enlarged = true
+    end
+  end
+  enlarged || return false
+  z.rank += 1
+  z.exact && push!(z.generators, ZZRingElem[ZZ(x[offset + j]) for j in 1:n])
+  return true
+end
+
+# The vectors which enlarged the span, as the rows of a matrix.
+function _generators_matrix(z::GrowingSubspace)
+  B = zero_matrix(ZZ, z.rank, z.degree)
+  for (i, g) in enumerate(z.generators), j in 1:z.degree
+    B[i, j] = g[j]
+  end
+  return B
 end
 
 function _search_invariant_subspaces(D::Dict, r::UnitRange{Int})
    # collects invariant subspaces of rank 1,
-   # the rows of B2 are the rk 1 invariant subspaces,
-   # this is okay, since B2 does not get row reduced
+   # the generators of J1 are the rk 1 invariant subspaces
   subspaces = Set{ZZMatrix}()
   offset = first(r) - 1
   J1 = GrowingSubspace(r)
   J = GrowingSubspace(r)
   for vv in values(D)
-    _zero!(J)
+    empty!(J)
     for v in vv
-      push!(J, v, offset)
+      add_generator!(J, v, offset)
       J.rank == J.degree && break
     end
     if 1 < J.rank < J.degree
-      push!(subspaces, J.B2[1:J.rank,:])
+      push!(subspaces, _generators_matrix(J))
     end
     if J.rank == 1
-      w = J.B2[1,:]
-      push!(J1, w)
+      add_generator!(J1, J.generators[1])
     end
     if J1.rank == degree(J1)
       break
     end
   end
-  return subspaces, J1.B2[1:J1.rank,:]
+  return subspaces, _generators_matrix(J1)
 end
 
 ########################################################################################
@@ -1161,8 +1283,6 @@ function __short_vectors(G::ZZMatrix, lb, ub; chol = CholeskyIntegralDenom(G))
   return sv
 end
 
-(==)(a::T,b::T) where {T<:GrowingSubspace} = a.range==b.range && a.B1==b.B1  #not quite mathematically correct, but what we need
-hash(x::GrowingSubspace, y::UInt) = hash((x.B1,x.range),y)
 
 
 # type piracy

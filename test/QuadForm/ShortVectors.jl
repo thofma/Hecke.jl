@@ -426,3 +426,48 @@ end
   @test_throws ArgumentError theta_series(rescale(A2, 1//4), 3)
   @test_throws ArgumentError theta_series(A2, -1)
 end
+
+@testset "Growing subspaces" begin
+  # which vectors enlarge the span is decided over the rationals, also if
+  # they are dependent modulo the primes which are used
+  p = Hecke.GROWING_SUBSPACE_PRIME
+  @test is_prime(p) && p == next_prime(2^25)
+  J = Hecke.GrowingSubspace(1:2)
+  @test Hecke.add_generator!(J, [1, p - 1])
+  @test Hecke.add_generator!(J, [p - 1, 1])
+  @test rank(J) == 2
+  K = Hecke.GrowingSubspace(1:2; exact = false)
+  @test Hecke.add_generator!(K, [1, p - 1])
+  @test !Hecke.add_generator!(K, [p - 1, 1])
+
+  # a set which is invariant under the swap of the coordinates and has rank
+  # one modulo a prime of 64 bits: no line is reported as invariant
+  q = next_prime(UInt(2) << 62)
+  a = 2^62
+  b = Int(q - UInt(a))
+  S = [[a, b], [b, a], [-a, -b], [-b, -a]]
+  subspaces, lines = Hecke._search_invariant_subspaces(Dict(0 => S), 1:2)
+  @test isempty(subspaces) && nrows(lines) == 0
+
+  # a multiple of a generator is not new, entries are taken from the range,
+  # and the generators are kept
+  J = Hecke.GrowingSubspace(3:4)
+  @test Hecke.add_generator!(J, ZZRingElem[5, 5, 2, 0], 2)
+  @test !Hecke.add_generator!(J, ZZRingElem[7, 7, 1, 0], 2)
+  @test Hecke.add_generator!(J, [0, 0, 3, 4], 2)
+  @test !Hecke.add_generator!(J, [0, 0, 1, 1], 2)
+  @test Hecke._generators_matrix(J) == ZZ[2 0; 3 4]
+  @test rank(empty!(J)) == 0 && Hecke.add_generator!(J, [1, 1])
+
+  # the rank is the rank over the rationals
+  for (n, c) in [(3, 2), (5, 3), (6, 10^6), (4, 2^40)]
+    vectors = [rand(-c:c, n) for _ in 1:8]
+    push!(vectors, 2 * vectors[1], vectors[1] + vectors[2])
+    J = Hecke.GrowingSubspace(1:n)
+    kept = [v for v in vectors if Hecke.add_generator!(J, v)]
+    @test rank(J) == length(kept) == rank(matrix(QQ, length(kept), n,
+                                                 reduce(vcat, kept)))
+    @test rank(J) == rank(matrix(QQ, length(vectors), n,
+                                 reduce(vcat, vectors)))
+  end
+end

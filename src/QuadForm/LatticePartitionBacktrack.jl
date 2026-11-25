@@ -177,7 +177,8 @@
 
 module LatticePartitionBacktrack
 
-import ..Hecke: @req, @vprintln, RowSpan, ZZ, ZZLat, ZZMatrix, ZZRingElem,
+import ..Hecke: @req, @vprintln, GrowingSubspace, RowSpan, ZZ, ZZLat,
+                ZZMatrix, ZZRingElem,
                 add_generator!, is_full,
                 change_base_ring, content, denominator, det, diagonal,
                 divexact, gram_matrix, identity_matrix, is_definite,
@@ -242,6 +243,8 @@ import ..Hecke: @req, @vprintln, RowSpan, ZZ, ZZLat, ZZMatrix, ZZRingElem,
 # `tabulate!`.
 # A set of points, by their indices: the point with index i is in the set if
 # bit (i - 1) % 64 of the word (i - 1) >> 6 + 1 is set.
+# New datastructure because BitVector has no public API for allocation-free
+# intersection count, and reaching into its internals is bad
 const PointSet = Vector{UInt64}
 
 # The empty set of points with indices up to `N`.
@@ -702,35 +705,6 @@ function find_cell(P::Partition, i::Int)
   return 0
 end
 
-# The span of some integer vectors modulo a prime, to recognise linear
-# independence: vectors which are independent modulo a prime are independent,
-# and the rank modulo a prime does not depend on the basis of the lattice.
-struct Span
-  rows::Vector{Vector{Int}}             # in echelon form
-  pivots::Vector{Int}
-end
-
-Span() = Span(Vector{Int}[], Int[])
-
-const SPAN_PRIME = 2147483629
-
-# Add `v` to the span. Returns whether this made the span larger.
-function enlarge!(span::Span, v::AbstractVector{Int})
-  w = mod.(v, SPAN_PRIME)
-  for (row, pivot) in zip(span.rows, span.pivots)
-    c = w[pivot]
-    c == 0 && continue
-    @. w = mod(w - c * row, SPAN_PRIME)
-  end
-  pivot = findfirst(!iszero, w)
-  pivot === nothing && return false
-  c = invmod(w[pivot], SPAN_PRIME)
-  @. w = mod(c * w, SPAN_PRIME)
-  push!(span.rows, w)
-  push!(span.pivots, pivot)
-  return true
-end
-
 ################################################################################
 #
 #  Reference paths
@@ -792,7 +766,7 @@ end
 #   `basis`        linearly independent points whose scalar products have
 #                  been used to split cells, on the way to the node and at
 #                  it; every other point used for this lies in their span
-#   `span`         their span, modulo `SPAN_PRIME`
+#   `span`         their span modulo a prime, see `GrowingSubspace`
 #   `dependent`    points which are known to lie in this span
 #
 # If the walk is not planned, every point which is alone in its cell lies in
@@ -802,11 +776,16 @@ mutable struct Node
   partition::Partition
   branch::Int
   basis::Vector{Int}
-  span::Span
+  span::GrowingSubspace
   dependent::PointSet
 end
 
-Node(N::Int) = Node(Partition(), 0, Int[], Span(), point_set(N))
+# For a set with `N` points in dimension `n`. The span is only used to tell
+# which points are independent of the earlier ones, in a way which does not
+# depend on the basis of the lattice; the rank modulo a prime serves for that,
+# so it need not be exact.
+Node(N::Int, n::Int) = Node(Partition(), 0, Int[],
+                            GrowingSubspace(1:n; exact = false), point_set(N))
 
 # A `Walk` is the state of a walk through this tree.
 #
@@ -977,7 +956,7 @@ function next_fixed_point!(node::Node, S::ShortVectors, P::Partition)
     i = first(cell(P, c))
     j = i <= nv ? i : i - nv
     has(node.dependent, j) && continue
-    enlarge!(node.span, view(S.vectors, :, j)) && return i
+    add_generator!(node.span, view(S.vectors, :, j)) && return i
     toggle!(node.dependent, j)
   end
   return 0
@@ -1009,7 +988,7 @@ end
 function split_by_fixed_points!(walk::Walk, depth::Int)
   S = walk.target
   node = walk.path[depth + 1]
-  while length(node.span.pivots) < dim(S)
+  while rank(node.span) < dim(S)
     P = walk.scratch
     i = next_fixed_point!(node, S, P)
     i == 0 && break
@@ -1029,8 +1008,7 @@ function split_cells!(walk::Walk, depth::Int, x::Int)
   node = walk.path[depth + 1]
   P, spare = empty!(walk.scratch), empty!(walk.spare)
   empty!(node.basis)
-  empty!(node.span.rows)
-  empty!(node.span.pivots)
+  empty!(node.span)
   fill!(node.dependent, 0)
   if depth == 0
     by_colour = sortperm(S.colours)
@@ -1054,10 +1032,10 @@ function split_cells!(walk::Walk, depth::Int, x::Int)
     walk.planned && return P
     parent = walk.path[depth]
     append!(node.basis, parent.basis)
-    append!(node.span.rows, parent.span.rows)
-    append!(node.span.pivots, parent.span.pivots)
+    copy!(node.span, parent.span)
     copyto!(node.dependent, parent.dependent)
-    enlarge!(node.span, view(S.vectors, :, abs(x))) && push!(node.basis, x)
+    add_generator!(node.span, view(S.vectors, :, abs(x))) &&
+      push!(node.basis, x)
   end
   # Points which are alone in their cell are fixed. Use them like x, unless
   # the walk is planned: there this costs more than it saves. A fixed point
@@ -1104,7 +1082,7 @@ const COUNT_LIMIT = 512
 #   (T) The tree only depends on the set of points up to isomorphism (an
 #       isometry of all forms which respects the colours): the steps use
 #       cells in their order, scalar products, colours and linear dependence
-#       modulo `SPAN_PRIME`, never the order of the points in a cell. So an
+#       modulo a fixed prime, never the order of the points in a cell. So an
 #       isomorphism maps a node to a node with the same trace, `basis` to
 #       `basis` entry by entry. Hashing (`compress_forms`, `mix`), wrap-around
 #       and the prime are invariant too: a collision or a prime dividing a
@@ -1128,7 +1106,7 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
   walk.position = 0
   S, reference = walk.target, walk.reference
   while length(walk.path) <= depth
-    push!(walk.path, Node(2 * number_of_vectors(walk.target)))
+    push!(walk.path, Node(2 * number_of_vectors(S), dim(S)))
     push!(walk.sequence, 0)
   end
   node = walk.path[depth + 1]
@@ -1207,7 +1185,7 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
   if !walk.planned
     # The points of `node.basis` determine every automorphism fixing x_1,
     # ..., x_depth, so if they span the space the node is a leaf.
-    if length(node.span.pivots) == dim(S)
+    if rank(node.span) == dim(S)
       node.branch = 0
     else
       keep_spanning!(node, S, Q)
@@ -1329,17 +1307,17 @@ const KEEP_LIMIT = 2^12
 # the trace, however: more children of a node look alike.
 function keep_spanning!(node::Node, S::ShortVectors, Q::Partition)
   n, nv = size(S.vectors)
-  span = Span(copy(node.span.rows), copy(node.span.pivots))
+  span = copy!(GrowingSubspace(1:n; exact = false), node.span)
   kept = Int[]
   points = 0
   for c in sortperm(Int[cell_size(Q, c) for c in 1:number_of_cells(Q)])
     cell_size(Q, c) == 1 && continue
-    length(span.pivots) == n && points >= KEEP_LIMIT && break
+    rank(span) == n && points >= KEEP_LIMIT && break
     push!(kept, c)
     points += cell_size(Q, c)
     for i in cell(Q, c)
-      length(span.pivots) == n && break
-      enlarge!(span, view(S.vectors, :, i <= nv ? i : i - nv))
+      rank(span) == n && break
+      add_generator!(span, view(S.vectors, :, i <= nv ? i : i - nv))
     end
   end
   return keep!(Q, sort!(kept))
@@ -2089,7 +2067,7 @@ function compare_leaf!(state::Minimization, depth::Int)
   walk = state.walk
   S, best = walk.target, walk.reference
   node = walk.path[depth + 1]
-  length(node.span.pivots) == dim(S) ||
+  rank(node.span) == dim(S) ||
     error("the points of a leaf do not span the space")
   sequence = walk.sequence[1:depth]
   U, key = canonical_basis(S, vcat(sequence, node.basis))
