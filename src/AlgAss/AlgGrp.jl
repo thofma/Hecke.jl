@@ -36,6 +36,8 @@ group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
 
+characteristic(A::GroupAlgebra) = characteristic(base_ring(A))
+
 function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
   if c isa Vector
     @req _is_dense(A) "Sparse group algebras do not accept coefficient vectors"
@@ -70,6 +72,9 @@ _is_identity_elem(x::GroupElem) = isone(x)
 
 _identity_elem(G::AbstractAlgebra.AdditiveGroup) = zero(G)
 _identity_elem(G::Group) = one(G)
+
+_inv_group_elem(x::AbstractAlgebra.AdditiveGroupElem) = -x
+_inv_group_elem(x::GroupElem) = inv(x)
 
 ################################################################################
 #

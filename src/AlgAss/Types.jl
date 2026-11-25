@@ -278,10 +278,16 @@ mutable struct GroupAlgebraElem{T, S} <: AbstractAssociativeAlgebraElem{T}
   end
 end
 
-__elem_index(A, g) = get!(A.group_to_base, g) do
-        push!(A.base_to_group, g)
-        return length(A.base_to_group)
-      end
+function __elem_index(A, g)
+  i = get(A.group_to_base, g, 0)
+  i != 0 && return i
+  # Store a copy, since the caller may mutate g later.
+  g = deepcopy(g)
+  push!(A.base_to_group, g)
+  i = length(A.base_to_group)
+  A.group_to_base[g] = i
+  return i
+end
 
 ################################################################################
 #

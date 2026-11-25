@@ -205,6 +205,7 @@
       @test bb * aa == dd
       @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
       @test aa - bb == aa + (-bb)
+      @test inv(aa) == QG(inv(a))
     end
   end
 
@@ -252,6 +253,64 @@
     B = basis(QG)
     b = B[1]
     @test sprint(show, MIME"text/plain"(), b) isa String
+  end
+
+  # Sparse group algebras of infinite groups whose elements are mutable.
+  @testset "Sparse, infinite group" begin
+    G = abelian_group([0, 0, 0])
+    g1, g2, g3 = gens(G)
+
+    # Mutating a group element must not change stored elements.
+    A = group_algebra(ZZ, G; sparse = true, cached = false)
+    w = g1 + g2
+    x = A(w)
+    add!(w, g1)
+    @test x == A(g1 + g2)
+    @test x != A(2*g1 + g2)
+
+    # Type stability
+    x = A(g1)
+    y = A(g2)
+    @test @inferred(x + y) == @inferred(y + x)
+    @test @inferred(x - y) == -@inferred(y - x)
+    @test @inferred(x * y) == A(g1 + g2)
+    @test @inferred((x + y)[g1]) == 1
+
+    # Hashing
+    @test hash(x + y) == hash(y + x)
+    @test length(Set([x, y, A(g1), x * y, y * x])) == 3
+
+    # Compact printing
+    @test sprint(show, x; context = :compact => true) isa String
+    @test sprint(show, Dict(x => 1)) isa String
+
+    # In-place operations
+    z = A(g3)
+    @test add!(z, x, y) == A(g1) + A(g2)
+    @test x == A(g1) && y == A(g2)
+    @test add!(z, z, x) == 2*A(g1) + A(g2)
+    @test addmul!(z, x, y) == 2*A(g1) + A(g2) + A(g1 + g2)
+    @test mul!(z, x, ZZ(3)) == 3*A(g1)
+    @test mul!(z, z, 2) == 6*A(g1)
+    @test iszero(zero!(z))
+    R = residue_ring(ZZ, 6)[1]
+    B = group_algebra(R, G; sparse = true, cached = false)
+    u = 2*B(g1) + 3*B(g2)
+    @test mul!(u, u, R(3)) == 3*B(g2)
+
+    # Characteristic
+    @test characteristic(A) == 0
+    @test characteristic(B) == 6
+
+    # Inverses
+    @test inv(A(g1)) == A(-g1)
+    @test inv(-A(g1 - g2)) == -A(g2 - g1)
+    Q = group_algebra(QQ, G; sparse = true, cached = false)
+    @test inv(2*Q(g1)) == Q(-g1) * QQ(1, 2)
+    @test !is_invertible(2*A(g1))[1]
+    @test !is_invertible(A(g1) + A(g2))[1]
+    @test !is_invertible(zero(A))[1]
+    @test_throws ErrorException inv(A(g1) + A(g2))
   end
 
   let
