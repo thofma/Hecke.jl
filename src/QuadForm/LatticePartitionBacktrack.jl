@@ -1434,6 +1434,13 @@ end
 # x_depth) with the trace of (b_1, ..., b_depth). Returns `true` if it ends at
 # a node (x_1, ..., x_m) such that b_k -> x_k describes an isometry, and
 # `false` if there is none below the node.
+#
+# `fixing` are known automorphisms which fix x_1, ..., x_depth, or `nothing`
+# if none are to be used. Such an automorphism g maps the subtree below a
+# child x onto the subtree below g(x). So if there is no isometry below x,
+# there is none below any point of the orbit of x under `fixing`; these
+# points are collected in `failed` and skipped. The automorphisms which fix
+# x as well are handed down to the search below x.
 function extend!(walk::Walk, depth::Int, fixing = nothing)
   depth == length(walk.reference.sequence) && return is_isometry(walk)
   S = walk.target
