@@ -857,8 +857,13 @@ function observe!(walk::Walk, depth::Int, value::Int)
     return position <= length(trace) && trace[position] == value
   end
   if walk.improved > depth
-    # The trace is compared with that of the reference, which is complete.
-    # If that one is the beginning of this one, it is smaller.
+    # Traces are ordered like words in a dictionary: at the first entry
+    # where two of them differ the smaller entry decides, and a trace which
+    # is the beginning of a longer one is the smaller of the two. Here the
+    # trace of the reference is complete and the trace of the walk is still
+    # growing. If the walk runs past the end of the reference's trace, the
+    # reference's is the smaller one and the node is abandoned. The other
+    # case, in which the walk's trace ends first, is seen in `finish_trace!`.
     position > length(trace) && return false
     value == trace[position] && return true
     value > trace[position] && return false
