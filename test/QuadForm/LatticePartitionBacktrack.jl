@@ -378,4 +378,23 @@ import Random
   B = rescale(root_lattice(:A, 3), ZZ(2)^70)
   @test automorphism_group_order(B) == 48
   @test is_isometric_with_isometry(B, lll(B))[1]
+  # an isometry of sets with labels maps the one set onto the other and
+  # respects the labels of all vectors, not only of those it is found by
+  PB = Hecke.LatticePartitionBacktrack
+  D4 = ZZ[2 0 -1 0; 0 2 -1 0; -1 -1 2 -1; 0 0 -1 2]
+  V = PB.enumerate_vectors(D4)
+  e1 = [1, 0, 0, 0]
+  @test e1 in V
+  with_e1(v) = (matrix(ZZ, 1, 4, e1) * D4 * matrix(ZZ, 4, 1, v))[1, 1]
+  others = [v for v in V if count(!iszero, v) > 1]
+  u = first(v for v in others if with_e1(v) == 1)
+  u0 = first(v for v in others if with_e1(v) == 0)
+  marked(x) = Int[v == e1 || v == x ? 1 : 0 for v in V]
+  set = [(v, 0) for v in V]
+  fl, M = PB.isometry([D4], [D4], set, set, marked(u), marked(u))
+  @test fl && M * D4 * transpose(M) == D4
+  @test Set([e1, u]) == Set([Int.(vec(Matrix(matrix(ZZ, 1, 4, v) * M)))
+                             for v in [e1, u]])
+  @test !PB.isometry([D4], [D4], set, set, marked(u), marked(u0))[1]
+
 end

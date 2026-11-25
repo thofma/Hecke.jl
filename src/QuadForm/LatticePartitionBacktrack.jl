@@ -232,7 +232,8 @@ import ..Hecke: @req, @vprintln, GrowingSubspace, RowSpan, ZZ, ZZLat,
 # `complete` tells whether every isometry of the forms which maps the points
 # of a base to points of the same colour maps the set to itself and respects
 # the colours. This holds if there are no labels and the set was cut down by
-# the norm alone, and the caller may assert it, see `automorphism_group`.
+# the norm alone, and the caller may assert it, see `automorphism_group`. A
+# set which is built for a `source` is complete if the source is.
 #
 # `everything` tells whether the set is the one given by the caller, with
 # nothing dropped. Then an automorphism is an isometry of the forms which
@@ -492,8 +493,8 @@ function ShortVectors(exact_forms::Vector{ZZMatrix},
                         all_form_vectors[:, keep],
                       labels[keep], unsigned_labels[keep], palette, colours,
                       index,
-                      source === nothing && !everything &&
-                        (invariant || (!labelled && !given)),
+                      source !== nothing ? source.complete :
+                        !everything && (invariant || (!labelled && !given)),
                       invariant,
                       everything,
                       fill(Table(Int[], PointSet[]), nv),
@@ -1471,11 +1472,11 @@ end
 # candidate is the matrix M with B * M = X, whose row i is the image of e_i;
 # it is integral since `solver * B == 1`. It has to satisfy this equation and
 # equation (1) for all forms, generalised to an isometry from the source to
-# the target, and x_k has to have the label of b_k. In the search for
-# automorphisms of a set which is not complete it moreover has to map the set
-# to itself and to respect the colours: so the group which is found is the
-# group of the set with its colours, whether the caller's set is invariant
-# under more or not.
+# the target, and x_k has to have the label of b_k. If the sets are not
+# complete, it moreover has to map the set of the source onto that of the
+# target and to respect the colours: so what is found are the isometries of
+# the sets with their colours, and for one set the group of that set, whether
+# the caller's sets are invariant under more or not.
 function is_isometry(walk::Walk)
   reference = walk.reference
   source, target = reference.source, walk.target
@@ -1498,8 +1499,8 @@ function is_isometry(walk::Walk)
   preserves_forms(source, target, M) || return false
   all(k -> label(target, walk.sequence[k]) ==
            label(source, reference.sequence[k]), 1:m) || return false
-  if source === target && !target.complete
-    respects_colours(target, M) || return false
+  if !(source.complete && target.complete)
+    respects_colours(source, target, M) || return false
   end
   walk.isometry = M
   return true
@@ -1960,11 +1961,14 @@ Given two lists of square integer matrices as in `automorphism_group`, decide
 whether there is an integer matrix `g` with `g*forms2[i]*transpose(g) ==
 forms1[i]` for all `i`, and return such a matrix if it exists.
 
-If sets of vectors with labels are given, then `g` is moreover required to
-map vectors of `vector_set1` which generate the lattice to vectors in
-`vector_set2` with the same labels: the standard basis vectors in the set
-and, if some are missing, further vectors of it. The second set must contain
-every such image.
+If sets of vectors with labels are given, the vectors with the norms and the
+label of a standard basis vector in the first set are kept, as in
+`automorphism_group`, and of the second set those with the same norms and
+labels. Then `g` is moreover required to map the kept vectors of the first
+set onto those of the second and to respect norms and labels. With
+`invariant = true` the caller asserts this for every `g` which maps the first
+of `forms2` to the first of `forms1` and generators among the kept vectors to
+vectors with the same labels; then it is not verified.
 """
 function isometry(forms1::Vector{ZZMatrix}, forms2::Vector{ZZMatrix},
                   vector_set1 = (), vector_set2 = (), labels1 = Int[],
@@ -2067,15 +2071,20 @@ function canonical_basis(S::ShortVectors, points::Vector{Int})
   return U, key
 end
 
-# Whether the automorphism with matrix `M` maps the set of points to itself
-# and respects the colours.
-function respects_colours(S::ShortVectors, M::Matrix{Int})
-  nv = number_of_vectors(S)
+# Whether the isometry with matrix `M` maps every point of `source` to a
+# point of `target` of the same colour. Then it maps the one set onto the
+# other: it is injective, and the two sets have the same number of points of
+# every colour, which for two different sets is compared at the root of the
+# search.
+function respects_colours(source::ShortVectors, target::ShortVectors,
+                          M::Matrix{Int})
+  nv = number_of_vectors(source)
   for j in 1:nv
-    q = find_point(S, transpose(M) * view(S.vectors, :, j))
+    q = find_point(target, transpose(M) * view(source.vectors, :, j))
     q == 0 && return false
-    S.colours[index(S, q)] == S.colours[j] || return false
-    S.colours[index(S, -q)] == S.colours[nv + j] || return false
+    target.colours[index(target, q)] == source.colours[j] || return false
+    target.colours[index(target, -q)] == source.colours[nv + j] ||
+      return false
   end
   return true
 end
@@ -2112,7 +2121,7 @@ function compare_leaf!(state::Minimization, depth::Int)
   end
   key == state.key || return typemax(Int)
   M = Matrix{Int}(inv(state.basis) * U)
-  (S.complete || respects_colours(S, M)) || return typemax(Int)
+  (S.complete || respects_colours(S, S, M)) || return typemax(Int)
   push!(state.automorphisms, Generator(M))
   return findfirst(d -> sequence[d] != best.sequence[d], 1:depth)::Int - 1
 end
