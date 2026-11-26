@@ -739,6 +739,7 @@ end
 
 @doc raw"""
     biproduct(G::FinGenAbGroup, H::FinGenAbGroup...) -> FinGenAbGroup, Vector{FinGenAbGroupHom}, Vector{FinGenAbGroupHom}
+    biproduct(G::Vector{FinGenAbGroup})
 
 Return the direct product $D$ of the (finitely many) abelian groups $G_i$, together
 with the projections $D \to G_i$ and the injections $G_i \to D$.
@@ -755,6 +756,10 @@ later on.
 """
 function biproduct(G::FinGenAbGroup, H::FinGenAbGroup...; kwargs...)
   return biproduct(ZZ, G, H...; kwargs...)
+end
+
+function biproduct(G::Vector{FinGenAbGroup}; kwargs...)
+  return biproduct(ZZ, G...; kwargs...)
 end
 
 function biproduct(::ZZRing, G::FinGenAbGroup...;

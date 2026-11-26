@@ -206,7 +206,10 @@
     @test is_trivial(first(direct_product(ZZ)))
     @test is_trivial(first(biproduct(ZZ)))
 
-    K3, proj, inj = biproduct(G, H)
+    # Check the maps returned for a vector of factors, including the empty case.
+    Z, empty_proj, empty_inj = biproduct(FinGenAbGroup[])
+    @test is_trivial(Z) && isempty(empty_proj) && isempty(empty_inj)
+    K3, proj, inj = biproduct([G, H])
     for i in 1:2, j in 1:2
       if i == j
         @test is_injective(inj[i])
