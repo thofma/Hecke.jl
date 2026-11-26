@@ -14,7 +14,7 @@ Both versions require a LLL reduced basis for the maximal order.
 function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = true, save_LLL_basis::Bool = true)
 
   if degree(K) == 1
-    L = number_field(x - 1, cached = cached, check = false)[1]
+    L = rationals_as_number_field()[1]
     return L, hom(L, K, gen(K), check = false)
   end
   if canonical
