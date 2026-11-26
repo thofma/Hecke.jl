@@ -14,8 +14,8 @@ Both versions require a LLL reduced basis for the maximal order.
 function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = true, save_LLL_basis::Bool = true)
 
   if degree(K) == 1
-    L = rationals_as_number_field()[1]
-    return L, hom(L, K, gen(K), check = false)
+    L = rationals_as_number_field(; cached)[1]
+    return L, hom(L, K, one(K), check = false)
   end
   if canonical
     if !is_defining_polynomial_nice(K)
@@ -37,7 +37,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
     b = _simplify(OK)
     if b != gen(K)
       @vprintln :Simplify 1 "The basis of the maximal order contains a better primitive element"
-      f1 = change_base_ring(QQ, minpoly(representation_matrix(OK(b))); parent = Globals.Qx)
+      f1 = change_base_ring(QQ, minpoly(representation_matrix(OK(b))); parent = parent(defining_polynomial(K)))
       L1 = number_field(f1, cached = cached, check = false)[1]
       #Before calling again the simplify on L1, we need to define the maximal order of L1
       mp = hom(L1, K, b, check = false)
@@ -63,7 +63,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
   if a == gen(K) && is_monic(K.pol) # K.pol is minpoly of a
     f = K.pol
   else
-    @vtime :Simplify 3 f = change_base_ring(QQ, minpoly(representation_matrix(OK(a))); parent = Globals.Qx)
+    @vtime :Simplify 3 f = change_base_ring(QQ, minpoly(representation_matrix(OK(a))); parent = parent(defining_polynomial(K)))
   end
   L = number_field(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
