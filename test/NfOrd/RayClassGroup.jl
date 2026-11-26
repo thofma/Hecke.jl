@@ -33,6 +33,32 @@
     @test isempty(defining_modulus(mR)[2])
   end
 
+  @testset "Distinct maximal order parent" begin
+    # Check ray class maps over two parents for the same maximal order.
+    K, _ = quadratic_field(-5; cached = false)
+    O = maximal_order(K)
+    S = order(K, basis(O, K); is_basis = true, cached = false)
+    @test S !== O
+    @test S == O
+    @test is_maximal(S)
+    @test order(first(class_group(O))) == 2
+
+    for T in (S, O)
+      m = ideal(T, 3)
+      R, mR = ray_class_group(m)
+      @test order(R) == 4
+      @test defining_modulus(mR)[1] === m
+      for r in R
+        I = mR(r)
+        @test all(P -> parent(P) === parent(m), keys(I.fac))
+        @test mR\I == r
+        J = evaluate(I)
+        @test order(J) === T
+        @test mR\J == r
+      end
+    end
+  end
+
   @testset "complex infinite modulus" begin
     K, _ = quadratic_field(-1)
     O = maximal_order(K)

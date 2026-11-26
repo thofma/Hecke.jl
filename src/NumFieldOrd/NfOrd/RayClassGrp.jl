@@ -131,14 +131,16 @@ function _assure_princ_gen(mC::MapClassGrp)
     mC.princ_gens = res1
     return nothing
   end
-  c = get_attribute(OK, :ClassGrpCtx)
-  if c !== nothing && isdefined(c, :dl_data)
+  # By default, class_group builds the map on the LLL-reduced canonical
+  # maximal order. A context cached on OK can use different generators.
+  L = lll(maximal_order(K))
+  c = get_attribute(L, :ClassGrpCtx)
+  if L === OK
     res = __assure_princ_gen(c, mC.quo)
     @hassert :RayFacElem 1 is_consistent(mC, res)
     mC.princ_gens = res
     return nothing
   else
-    c = get_attribute(OK.lllO, :ClassGrpCtx)
     reslll = __assure_princ_gen(c, mC.quo)
     res = Vector{Tuple{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(reslll))
     for i = 1:length(res)
