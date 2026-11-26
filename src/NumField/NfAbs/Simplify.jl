@@ -12,7 +12,6 @@ http://beta.lmfdb.org/knowledge/show/nf.polredabs.
 Both versions require a LLL reduced basis for the maximal order.
 """
 function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = true, save_LLL_basis::Bool = true)
-  Qx, x = polynomial_ring(QQ, "x")
 
   if degree(K) == 1
     L = number_field(x - 1, cached = cached, check = false)[1]
@@ -24,8 +23,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
       K2, mK2 = simplify(K1, cached = cached, save_LLL_basis = save_LLL_basis, canonical = true)
       return K2, mK2*mK1
     end
-    a, f1 = polredabs(K)
-    f = Qx(f1)
+    a, f = polredabs(K)
     L = number_field(f, cached = cached, check = false)[1]
     m = hom(L, K, a, check = false)
     return L, m
@@ -39,7 +37,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
     b = _simplify(OK)
     if b != gen(K)
       @vprintln :Simplify 1 "The basis of the maximal order contains a better primitive element"
-      f1 = change_base_ring(QQ, minpoly(representation_matrix(OK(b))); parent = Qx)
+      f1 = change_base_ring(QQ, minpoly(representation_matrix(OK(b))); parent = Globals.Qx)
       L1 = number_field(f1, cached = cached, check = false)[1]
       #Before calling again the simplify on L1, we need to define the maximal order of L1
       mp = hom(L1, K, b, check = false)
@@ -65,7 +63,7 @@ function simplify(K::AbsSimpleNumField; canonical::Bool = false, cached::Bool = 
   if a == gen(K) && is_monic(K.pol) # K.pol is minpoly of a
     f = K.pol
   else
-    @vtime :Simplify 3 f = change_base_ring(QQ, minpoly(representation_matrix(OK(a))); parent = Qx)
+    @vtime :Simplify 3 f = change_base_ring(QQ, minpoly(representation_matrix(OK(a))); parent = Globals.Qx)
   end
   L = number_field(f, cached = cached, check = false)[1]
   m = hom(L, K, a, check = false)
@@ -361,7 +359,7 @@ function polredabs(K::AbsSimpleNumField)
   #find the smallest index i s.th. the span of basis elements 1..i contains
   # a primitive element. It is pointless to search for a PE in smaller blocks
   #then start the enumeration at e_i - it should then try e_i+e_1 ... and so on
-  Zx = ZZ["x"][1]
+  Zx = Globals.Zx
   f = change_base_ring(ZZ, defining_polynomial(K); parent = Zx)
   p, d = _find_prime(ZZPolyRingElem[f])
 
@@ -392,9 +390,24 @@ function polredabs(K::AbsSimpleNumField)
   local E
   while true
     try
+      #ugly: the enum_ctx needs to have the same basis as ZK - or
+      #the "hack" with starting at a useful position cannot work
+      #the following is "copied" from lat_enum_ctx_from_ideal, resp.
+      #_lll(ideal)
+      #as ZK is lll reduced already, this should not cause more problems.
+      #  x^6 - 6*x^4 - 4*x^3 + 12*x^2 + 18*x + 10 was
+      #(wrongly) reduced to
+      # x^6 + 3*x^4 - 18*x^3 + 21*x^2 + 3 (among other examples, Marina
+      #found a list...)
       setprecision(BigFloat, pr)
-      E = enum_ctx_from_ideal(ideal(ZK, 1), zero_matrix(ZZ, 1, 1), prec = pr, TU = BigFloat, TC = BigFloat)
+      l = minkowski_gram_mat_scaled(ZK, pr)
+      shift!(l, -div(pr, 2))
 
+      for i=1:n
+        fmpz_mat_entry_add_ui!(l, i, i, UInt(n))
+      end
+
+      E = enum_ctx_from_gram(l, ZZ(2)^div(pr, 2); limit = n, Tx = Int, TC = BigFloat, TU = BigFloat)::enum_ctx{Int, BigFloat, BigFloat}
       if E.C[end] + 0.0001 == E.C[end]  # very very crude...
         pr *= 2
         continue
@@ -414,6 +427,10 @@ function polredabs(K::AbsSimpleNumField)
                        # a 1 at position i, it's pointless to start earlier
                        #as none of the elements can be primitive.
                        #scale is large enough so that "a" should be findable
+ 
+  bm = basis_matrix(FakeFmpqMat, ZK)
+  E.t = bm.num
+  E.t_den = bm.den
 
   all_a = AbsSimpleNumFieldElem[a]
   la = length(a)
@@ -433,7 +450,7 @@ function polredabs(K::AbsSimpleNumField)
         continue
       end
       found_pe = true
-#  @show    llq = length(q)
+#      llq = length(q)
 #  @show sum(E.C[i,i]*(BigFloat(E.x[1,i]) + E.tail[i])^2 for i=1:E.limit)/BigInt(E.t_den^2)
       lq = Ec - (E.l[1] - E.C[1, 1]*(BigFloat(E.x[1,1]) + E.tail[1])^2)
 #      @show lq/E.t_den^2
@@ -444,7 +461,6 @@ function polredabs(K::AbsSimpleNumField)
       elseif lq < la + eps
         if lq > la - eps
           push!(all_a, q)
-#          @show "new one", q, minpoly(q), bb
         else
           a = q
           all_a = AbsSimpleNumFieldElem[a]
