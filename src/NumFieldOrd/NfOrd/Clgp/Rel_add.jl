@@ -71,7 +71,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::AbsSimpleNumFieldElem,
         lp = clg.largePrime[(r, i)]
         fl, r1 = _factor!(clg.FB, a, false, n*nI)
         fl, r2 = _factor!(clg.FB, lp[1], false, norm(lp[1]))
-        b = FacElem(Dict([(a,1), (lp[1],-1)]))
+        b = FacElem([a, lp[1]], ZZRingElem[1, -1])
         fl = class_group_add_relation(clg, b, r1 - r2)
         if fl
           clg.largePrime_success += 1
@@ -79,7 +79,7 @@ function class_group_add_relation(clg::ClassGrpCtx{T}, a::AbsSimpleNumFieldElem,
           clg.largePrime_no_success += 1
         end
       else
-        clg.largePrime[i] = (a, n*nI)
+        clg.largePrime[(r, i)] = (a, n*nI)
       end
       clg.largePrimeCnt += 1
     else
