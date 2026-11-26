@@ -1159,7 +1159,11 @@ function advance!(walk::Walk, depth::Int, x::Int = 0)
   end
   walk.planned && recording && (reference.refined[depth + 1] = refined)
   Q = empty!(node.partition)
-  sizehint!(Q.elements, length(P.elements); shrink = false)
+  @static if VERSION >= v"1.11"
+    sizehint!(Q.elements, length(P.elements); shrink = false)
+  else
+    sizehint!(Q.elements, length(P.elements))
+  end
   if refined == 0
     append_cells!(Q, P, 1, number_of_cells(P))
   else

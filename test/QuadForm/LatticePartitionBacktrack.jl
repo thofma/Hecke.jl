@@ -1,5 +1,3 @@
-import Random
-
 @testset "Lattice partition backtrack" begin
   PB = Hecke.LatticePartitionBacktrack
   A2 = ZZ[2 -1; -1 2]
@@ -214,7 +212,7 @@ import Random
 
   # canonical forms: they do not depend on the basis, they are isometric to
   # the given forms, and they tell lattices apart
-  rng = Random.MersenneTwister(1)
+  rng = Hecke.Random.MersenneTwister(1)
   function another_basis(n)
     U = identity_matrix(ZZ, n)
     for _ in 1:(3 * n)
