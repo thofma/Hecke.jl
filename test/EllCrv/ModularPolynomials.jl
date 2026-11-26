@@ -38,6 +38,10 @@
   @test_throws ArgumentError classical_modular_polynomial(60)
   @test_throws ArgumentError classical_modular_polynomial(121)
   @test_throws ArgumentError classical_modular_polynomial(typemax(Int))
+  # prime levels with no order of the family in the word size fail at once
+  for n in (6810301, 2^61 - 1)
+    @test_throws ArgumentError classical_modular_polynomial(n)
+  end
   for R in (polynomial_ring(ZZ, [:x])[1], ZZ["x", "y", "z"][1]), n in (3, 61)
     @test_throws ArgumentError classical_modular_polynomial(R, n)
   end
@@ -45,9 +49,11 @@ end
 
 @testset "Classical, prime levels above 59" begin
   # The algorithm of Broker-Lauter-Sutherland for prime levels above 59:
-  # against the database below 60, over Z and modulo m by the explicit CRT;
-  # at level 61, the properties of Cox, Theorem 11.18, and isogenies.
-  for l in (3, 5, 7, 11, 13)
+  # against the database below 60, over Z and modulo m by the explicit CRT,
+  # for the order the search finds and for orders of each kind of
+  # presentation and of conductor; at level 61, the properties of Cox,
+  # Theorem 11.18, and isogenies.
+  for l in (3, 5, 7, 11, 13, 17)
     phi = classical_modular_polynomial(l)
     c = [coeff(phi, [a, b]) for a in 0:(l + 1) for b in 0:a]
     ord = Hecke._modular_polynomial_order(l)
@@ -65,12 +71,72 @@ end
     end
   end
 
+  # (l, D0, u, h, cl(O) split, cl(R) split): conductors 1, a prime ramified,
+  # inert or split in K, and its square or cube (descents of depth 1 to 3)
+  for (l, D0, u, h, sO, sR) in ((3, -95, 1, 8, false, true),
+                                (3, -119, 1, 10, true, true),
+                                (5, -39, 3, 12, false, true),
+                                (7, -31, 3, 12, false, true),
+                                (7, -31, 5, 12, false, true),
+                                (3, -47, 7, 30, true, true),
+                                (7, -31, 25, 60, false, true),
+                                (11, -7, 49, 49, false, false),
+                                (11, -7, 27, 36, false, true))
+    phi = classical_modular_polynomial(l)
+    c = [coeff(phi, [a, b]) for a in 0:(l + 1) for b in 0:a]
+    ord = Hecke._modular_polynomial_order_presentation(l, D0, u, h)
+    @test (ord.PO.g1 !== nothing, ord.PR.g1 !== nothing) == (sO, sR)
+    ps = Hecke._modular_polynomial_crt_primes(l, ord.D)
+    @test Hecke._modular_polynomial_coefficients(l, ord, ps) == c
+    @test Hecke._modular_polynomial_coefficients_mod(l, ord, ps, ZZ(1000003)) ==
+          mod.(c, 1000003)
+  end
+
+  # the descent from a root of H_{O_K} gives a root of H_O, also for
+  # conductors with two primes, which no order above has
+  Zx, _ = ZZ["x"]
+  for (l, D0, u) in ((7, -31, 15), (7, -31, 45), (11, -39, 35))
+    D = u^2 * D0
+    p, _ = first(Hecke._modular_polynomial_crt_primes(l, D))
+    F = Native.GF(p)
+    Fx, _ = polynomial_ring(F, :X)
+    T = Dict(q => change_base_ring(F, Hecke._modular_polynomial_table(q))
+             for (q, _) in factor(u))
+    HK = map_coefficients(F, hilbert_class_polynomial(D0, Zx); parent = Fx)
+    j = Hecke._descend_to_order(Fx, T, first(roots(HK)), u)
+    HO = map_coefficients(F, hilbert_class_polynomial(D, Zx); parent = Fx)
+    @test iszero(HO(j))
+  end
+
+  # the primes use several v in 4p = t^2 - v^2 l^2 D
+  ord = Hecke._modular_polynomial_order(13)
+  ps = Hecke._modular_polynomial_crt_primes(13, ord.D)
+  vs = [isqrt(div(t^2 - 4 * p, 13^2 * ord.D)) for (p, t) in ps]
+  @test length(unique(vs)) > 1
+
+  # the order of least h(O), then least |D|, of the family of BLS12,
+  # Section 6.6, as found independently with PARI's qfbclassno
+  ord = Hecke._modular_polynomial_order(61)
+  @test (ord.h, ord.D0, ord.u, ord.l1) == (70, -119, 7, 17)
+
+  # no order with h(O) >= l + 2 and l^2 |D| in the word size
+  @test_throws ArgumentError Hecke._modular_polynomial_order(6810301)
+
   F = Native.GF(1009)
   Fx, _ = polynomial_ring(F, :X)
   T = change_base_ring(F, Hecke._modular_polynomial_table(5))
   j = F(17)
   @test Hecke._modular_polynomial_at(Fx, T, j) ==
         Fx([sum(T[a, b] * j^(b - 1) for b in 1:7) for a in 1:7])
+
+  # the shared interpolation tree, against interpolation column by column
+  nodes = F.(1:9)
+  A = UInt[mod(7 * i + 13 * k^2, 1009) for i in 1:9, k in 1:4]
+  B = Hecke._interpolate_columns(F, nodes, A)
+  for k in 1:4
+    f = interpolate(Fx, nodes, F.(A[:, k]))
+    @test B[:, k] == [UInt(lift(coeff(f, b))) for b in 0:8]
+  end
 
   l = 61
   f = @inferred classical_modular_polynomial(l)
@@ -114,6 +180,7 @@ end
   A1, B1 = Hecke._velu_codomain(A, B, P, l)
   @test Hecke._short_weierstrass_j_invariant(A1, B1) == j_invariant(EE)
 
+  # no prime of the CRT fits the word size
   @test_throws ArgumentError Hecke._modular_polynomial_crt_primes(2^31 - 1,
                                                                   -3359)
 end
