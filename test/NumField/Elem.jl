@@ -248,6 +248,40 @@
   end
 end
 
+@testset "Binary operations with different parents" begin
+  # Operations on elements of different fields are carried out in a known
+  # common super field, and throw if there is none.
+  Qx, x = QQ["x"]
+  k, = quadratic_field(2)
+  ky, y = k["y"]
+  pairs = [
+    (number_field([x^2 - 3], cached = false)[2][1],
+     number_field([x^2 - 5], cached = false)[2][1]),
+    (number_field(y^2 - 3, "a", cached = false)[2],
+     number_field(y^2 - 5, "a", cached = false)[2]),
+    (number_field([y^2 - 3], "a", cached = false)[2][1],
+     number_field([y^2 - 5], "a", cached = false)[2][1])]
+  @testset for (a, b) in pairs
+    @test_throws ErrorException a + b
+    @test_throws ErrorException a - b
+    @test_throws ErrorException a * b
+    @test_throws ErrorException a // b
+    @test_throws ErrorException a == b
+  end
+
+  # `embed` does not record K as a subfield of M for `common_super`, so the
+  # embedding is registered by hand.
+  K, a = number_field(y^2 - 3, "a", cached = false)
+  M, b = number_field(y^2 - 3, "b", cached = false)
+  set_attribute!(M, :subs => Any[hom(K, M, b)])
+  set_attribute!(K, :sub_of => WeakRef[WeakRef(M)])
+  @test parent(a + b) === M && a + b == 2*b
+  @test parent(a - b) === M && iszero(a - b)
+  @test parent(a * b) === M && a * b == b^2
+  @test parent(a // b) === M && isone(a // b)
+  @test a == b
+end
+
 @testset "is_square" begin
   #Enable one is_square is working for non-monic defining polynomials
   Qx, x = QQ["x"]
