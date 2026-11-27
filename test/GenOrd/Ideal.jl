@@ -944,7 +944,7 @@ end
 
 @testset "Fractional ideal factorization with cancelling norms" begin
   # The two primes above x cancel in the norm of their quotient.
-  K, x = rational_function_field(QQBar, :x; cached = false)
+  K, x = rational_function_field(algebraic_closure(QQ), :x; cached = false)
   _, Y = polynomial_ring(K, :Y; cached = false)
   F, y = function_field(Y^2 - x^3 - 1, :y; cached = false)
   O = finite_maximal_order(F)
