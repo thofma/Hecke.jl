@@ -261,14 +261,41 @@ function *(a::GroupAlgebraElem{T, S}, b::GroupAlgebraElem{T, S}) where {T, S}
     end
     return A(v)
   else
-    op = _op(A)
-    s = sparse_row(base_ring(A))
-    for (i, ci) in _coeffs_sparse(a)
-      r = sparse_row(base_ring(A), [(__elem_index(A, op(A.base_to_group[i],A.base_to_group[j])), ci * cj) for (j, cj) in _coeffs_sparse(b)])
-      s += r
-    end
-    return A(s)
+    return _mul_sparse(a, b)
   end
+end
+
+# One accumulator per product index, updated in place; the support is
+# sorted once at the end.
+function _mul_sparse(a::GroupAlgebraElem{T}, b::GroupAlgebraElem{T}) where {T}
+  A = parent(a)
+  if is_zero(_coeffs_sparse(a)) || is_zero(_coeffs_sparse(b))
+    return zero(A)
+  end
+  bterms = collect(_coeffs_sparse(b)) # iterating can allocate coefficients, do that just once
+  slot = Dict{Int, Int}()
+  pos = Int[]
+  vals = T[]
+  h = _identity_elem(group(A)) # scratch; __elem_index copies it on insertion
+  t = zero(base_ring(A)) # scratch for addmul!
+  for (i, ci) in _coeffs_sparse(a)
+    gi = A.base_to_group[i]
+    for (j, cj) in bterms
+      gj = A.base_to_group[j]
+      h = _op!(h, gi, gj)
+      k = __elem_index(A, h)
+      s = get(slot, k, 0)
+      if s == 0
+        push!(pos, k)
+        push!(vals, ci * cj)
+        slot[k] = length(pos)
+      else
+        vals[s] = addmul!(vals[s], ci, cj, t)
+      end
+    end
+  end
+  nz = findall(!is_zero, vals)
+  return A(sparse_row(base_ring(A), pos[nz], vals[nz]))
 end
 
 function _is_group_algebra_monomial(a::GroupAlgebraElem)

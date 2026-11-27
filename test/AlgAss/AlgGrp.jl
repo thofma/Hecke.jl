@@ -298,6 +298,22 @@
     u = 2*B(g1) + 3*B(g2)
     @test mul!(u, u, R(3)) == 3*B(g2)
 
+    # Products agree with the convolution of coefficient dictionaries
+    d = Dict([i, j, i - j] => i - 2*j + 1 for i in -2:2 for j in -2:2)
+    e = Dict([i, -i, j] => i*j - 1 for i in -3:3 for j in -1:1)
+    de = Dict{Vector{Int}, Int}()
+    for (u, c) in d, (v, k) in e
+      de[u + v] = get(de, u + v, 0) + c*k
+    end
+    @test any(iszero, values(de))
+    elem(d) = sum(c*A(G(u)) for (u, c) in d)
+    @test elem(d) * elem(e) == elem(de)
+    @test elem(e) * elem(d) == elem(de)
+    v = elem(d)
+    @test mul!(v, v, v) == elem(d) * elem(d)
+    @test (2*B(g1) + B(g2)) * (3*B(g1) + B(g3)) ==
+          2*B(g1 + g3) + 3*B(g1 + g2) + B(g2 + g3)
+
     # Characteristic
     @test characteristic(A) == 0
     @test characteristic(B) == 6
