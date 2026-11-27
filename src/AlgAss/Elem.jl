@@ -269,6 +269,9 @@ end
 # sorted once at the end.
 function _mul_sparse(a::GroupAlgebraElem{T}, b::GroupAlgebraElem{T}) where {T}
   A = parent(a)
+  if is_zero(_coeffs_sparse(a)) || is_zero(_coeffs_sparse(b))
+    return zero(A)
+  end
   bterms = collect(_coeffs_sparse(b)) # iterating can allocate coefficients, do that just once
   slot = Dict{Int, Int}()
   pos = Int[]
