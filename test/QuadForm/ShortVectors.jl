@@ -342,6 +342,22 @@ end
   @test length(Hecke.short_vectors_with_condition(ZZRingElem, L)[1])==4
   @test length(Hecke.short_vectors_with_condition(Int, L)[1])==4
 
+  @testset "Exact coordinate conversion" begin
+    # The numerator of the change of basis can overflow Int before division.
+    a = 1_750_000
+    D = diagonal_matrix(ZZ, ZZ.([3, 2, 2, 3a^2 + 3]))
+    B = identity_matrix(ZZ, 4)
+    B[2, 1] = B[3, 2] = a
+    G = B * D * transpose(B)
+    L = integer_lattice(gram=G)
+    vectors, _, _ = Hecke.short_vectors_with_condition(Int, L)
+    @test length(vectors) == 8
+    for (v, norms) in vectors
+      w = matrix(ZZ, 1, 4, v)
+      @test (w * G * transpose(w))[1, 1] == norms[1]
+    end
+  end
+
   # Some lattices for cheaper testing
   A = [[2 -1 0 0 0 0; -1 2 -1 0 0 0; 0 -1 2 -1 0 0; 0 0 -1 2 -1 0; 0 0 0 -1 2 0; 0 0 0 0 0 20], [2 0 0 0 -1 -1; 0 2 0 -1 0 -1; 0 0 2 -1 1 0; 0 -1 -1 4 1 2; -1 0 1 1 4 1; -1 -1 0 2 1 4], [2 -1 1 0 0 0; -1 2 -1 0 0 0; 1 -1 2 0 0 0; 0 0 0 2 0 0; 0 0 0 0 2 1; 0 0 0 0 1 8], [2 1 -1 -1 0 0; 1 2 -1 -1 0 0; -1 -1 2 1 0 0; -1 -1 1 2 0 0; 0 0 0 0 2 0; 0 0 0 0 0 12], [2 -1 0 0 0 -1; -1 2 0 0 0 0; 0 0 2 0 1 0; 0 0 0 2 1 0; 0 0 1 1 4 0; -1 0 0 0 0 4], [2 -1 1 0 -1 -1; -1 2 -1 0 1 1; 1 -1 2 0 0 0; 0 0 0 2 0 0; -1 1 0 0 4 1; -1 1 0 0 1 6], [2 -1 1 1 -1 0; -1 2 -1 -1 0 0; 1 -1 2 0 0 0; 1 -1 0 2 -1 0; -1 0 0 -1 2 0; 0 0 0 0 0 30]]
   # Genus representatives of some genus

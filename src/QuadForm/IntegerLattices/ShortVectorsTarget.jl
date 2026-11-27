@@ -606,14 +606,17 @@ function _postprocess_short_vectors_with_condition(::Type{CoeffType},
                                                    signs::Vector{Int},
                                                    target_invariants,
                                                    short_vectors) where {CoeffType}
-  if CoeffType===ZZRingElem
-    _B = numerator(B)
-    d = denominator(B)
+  _B, d = integral_split(B, ZZ)
+  B_int, d_int, coordinate_bound = if CoeffType === Int && fits(Int, d)
+    # Bound the absolute column sums by 2^matrix_bits to protect partial sums
+    # before division and to leave room for sign normalization.
+    matrix_bits = maximum(nbits, _B) + nbits(max(0, nrows(_B) - 1))
+    # Divide typemax(Int) by 2^matrix_bits, rounding down, to bound abs(z[i]).
+    bound = typemax(Int) >> matrix_bits
+    B_small = bound > 0 ? _int_matrix_with_overflow(_B, ZZ()) : nothing
+    (B_small, Int(d), bound)
   else
-    tmpZZ = ZZ()
-    _BZZ,dBZZ = integral_split(B,ZZ)
-    _B = _int_matrix_with_overflow(_BZZ, tmpZZ)
-    d = CoeffType(dBZZ)
+    (nothing, 1, 0)
   end
 
   lcmd = lcm(denoms)
@@ -656,9 +659,20 @@ function _postprocess_short_vectors_with_condition(::Type{CoeffType},
     nrm[1] = divexact(dot(sc, nrm_orig),lcmd)  # since we set grams[1] = gramL
     for z in short_vectors[b]
       i = i+1
-      # transform back to the basis of L
-      vv = divexact.(__not_adj(z*_B), d)
-      vv, _sign = _canonicalize_with_data!(vv)  # why do we canonicalize here?
+      # Transform back to the basis of L.
+      if B_int !== nothing &&
+         all(x -> -coordinate_bound <= x <= coordinate_bound, __not_adj(z))
+        vv = __not_adj(z * B_int)
+        if !isone(d_int)
+          vv .= divexact.(vv, d_int)
+        end
+        vv, _sign = _canonicalize_with_data!(vv)
+      else
+        z_exact = convert(Vector{ZZRingElem}, __not_adj(z))
+        vv_exact = divexact.(z_exact * _B, d)
+        vv_exact, _sign = _canonicalize_with_data!(vv_exact)
+        vv = convert(Vector{CoeffType}, vv_exact)
+      end
       if isone(_sign)
         invariants[i] = invariant
       else
