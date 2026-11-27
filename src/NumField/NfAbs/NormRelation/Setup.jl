@@ -104,7 +104,7 @@ function _norm_relation_for_sunits(K::AbsSimpleNumField; small_degree::Bool = tr
   z = NormRelation{Int}()
   z.K = K
   z.is_normal = falses(n)
-  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_Type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
+  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
   z.denominator = den
   z.ispure = pure
   z.embed_cache_triv = Vector{Dict{AbsSimpleNumFieldElem, AbsSimpleNumFieldElem}}(undef, n)
@@ -312,7 +312,7 @@ function induce_action_from_subfield(N::NormRelation, i, s, FB, cache)
     if haskey(N.induced, auto)
       p = N.induced[auto]
     else
-      p = induce(FB, auto)
+      p = Hecke.induce(FB, auto)
       N.induced[auto] = p
     end
   end

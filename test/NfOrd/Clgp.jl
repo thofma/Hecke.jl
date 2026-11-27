@@ -448,6 +448,46 @@ end
     end
   end
 
+  @testset "unit_group_ctx without relations" begin
+    Qx, x = QQ["x"]
+    K, = number_field(x^5 - 5*x^3 + 4*x - 1; cached = false)
+    O = maximal_order(K)
+    c = Hecke.class_group_init(O, Hecke.factor_base_bound_grh(O), complete = false)
+    U = Hecke.unit_group_ctx(c)
+    @test U.full_rank
+    @test Hecke.unit_group_ctx(c) === U
+  end
+
+  @testset "Relations via enumeration" begin
+    Qx, x = QQ["x"]
+    for (f, h) in [(x^2 + 23, 3), (x^2 - 10, 2), (x^3 - 7*x - 5, 1)]
+      K, = number_field(f; cached = false)
+      Hecke.set_verbosity_level(:ClassGroup_gc, 1)
+      C, = try
+        class_group(maximal_order(K); method = 2)
+      finally
+        Hecke.set_verbosity_level(:ClassGroup_gc, 0)
+      end
+      @test order(C) == h
+    end
+
+    # restarting the enumeration prints at this verbosity level
+    K, = number_field(x^2 + 23; cached = false)
+    c = Hecke.class_group_ctx(maximal_order(K))
+    I = Hecke.class_group_small_real_elements_relation_start(c, c.FB.ideals[end], limit = 10, prec = 100)
+    Hecke.set_verbosity_level(:ClassGroup, 2)
+    try
+      redirect_stdout(devnull) do
+        for i in 1:2000
+          Hecke.class_group_small_real_elements_relation_next(I)
+        end
+      end
+    finally
+      Hecke.set_verbosity_level(:ClassGroup, 0)
+    end
+    @test I.restart > 0
+  end
+
   @testset "Auto but no autos" begin
     K, a = number_field(x^3 - 3*x - 4)
     OK = (maximal_order(K))

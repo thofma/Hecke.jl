@@ -257,7 +257,7 @@ function _strong_echelon_form_split(M::MatElem{AbsSimpleNumFieldOrderQuoRingElem
 
     @hassert :PseudoHnf 1 ideal(R, lift(R, gI)) + modulus == I
 
-    g, a, b, e, f = gcdxx(l, gI)
+    g, a, b, e, f = AbstractAlgebra.gcdxx(l, gI)
     #gg = g
     ginv = inv(g)
     #mul!(e, e, gg)

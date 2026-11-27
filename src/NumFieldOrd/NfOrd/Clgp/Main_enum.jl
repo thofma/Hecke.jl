@@ -218,7 +218,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
   clg.rel_cnt = 0
   clg.bad_rel = 0
 
-  n = degree(clg.FB.ideals[1].parent.order)
+  n = degree(order(clg.FB.ideals[1]))
   t = time_ns()
   I = []
   O = parent(clg.FB.ideals[1]).order
@@ -275,7 +275,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
         end
       end
     end
-    @v_do :ClassGroup_gc 1 gc()
+    @v_do :ClassGroup_gc 1 GC.gc()
     if too_slow
       break
     end
@@ -397,7 +397,7 @@ function class_group_find_relations2(clg::ClassGrpCtx; val = 0, prec = 100,
     else
       bad_h = false
     end
-    @v_do :ClassGroup_gc 1 gc()
+    @v_do :ClassGroup_gc 1 GC.gc()
   end
 
   @v_do :ClassGroup 1 println("used ", (time_ns()-s)/1e9, " total so far ",
