@@ -114,6 +114,22 @@ end
   vs = [isqrt(div(t^2 - 4 * p, 13^2 * ord.D)) for (p, t) in ps]
   @test length(unique(vs)) > 1
 
+  # the height bound holds for the database, and the primes stop at the
+  # first sum of logarithms above the bound plus 2 log 2 (at 383, one prime
+  # before B + log 4 + 1 does)
+  for l in (3, 13, 59, 383)
+    B = Hecke._modular_polynomial_height_bound(l)
+    R = parent(B)
+    if l <= 59
+      phi = classical_modular_polynomial(l)
+      @test all(log(R(abs(c))) < B for c in coefficients(phi))
+    end
+    D = Hecke._modular_polynomial_order(l).D
+    ps = Hecke._modular_polynomial_crt_primes(l, D)
+    s = [log(R(p)) for (p, _) in ps]
+    @test sum(s) > B + log(R(4)) && !(sum(s[1:(end - 1)]) > B + log(R(4)))
+  end
+
   # the order of least h(O), then least |D|, of the family of BLS12,
   # Section 6.6, as found independently with PARI's qfbclassno
   ord = Hecke._modular_polynomial_order(61)

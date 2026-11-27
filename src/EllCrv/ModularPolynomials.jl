@@ -282,9 +282,8 @@ end
 # conductors u at which h(u^2 d_K) is "slightly greater than l + 2" are
 # tested by (2), and of those that pass the order of least h(O), then least
 # |D|. The candidates are those of _modular_polynomial_conductors for each
-# d_K up to _class_number_at_most_59_max_disc, each tested once: about 10^4
-# at level 61 and 3.5 * 10^5 at level 7411, all of them tested in 4 s and
-# 3 minutes; if none passes, an ArgumentError.
+# d_K up to _class_number_at_most_59_max_disc, each tested once; if none
+# passes, an ArgumentError.
 function _modular_polynomial_order(l::Int)
   dmax = div(4 * Int128(typemax(Int)) - 4, Int128(l)^2)
   primes_u = [r for r in 3:59 if is_prime(r) && r != l]
@@ -361,10 +360,11 @@ function _modular_polynomial_order_presentation(l::Int, D0::Int, u::Int,
   return nothing
 end
 
-# The height bound of [BS10] for Phi_l: the smaller of Corollary 9 and
-# Theorem 1, a bound for log max |c| over the coefficients c (natural log).
+# The height bound of [BS10] for Phi_l, the smaller of Corollary 9 and
+# Theorem 1: log |c| <= B for every coefficient c (natural log), as a ball.
 function _modular_polynomial_height_bound(l::Int)
-  return 6 * l * log(l) + min(18 * l, 16 * l + 14 * sqrt(l) * log(l))
+  x = ArbField(64)(l)
+  return 6 * x * log(x) + min(18 * x, 16 * x + 14 * sqrt(x) * log(x))
 end
 
 # The CRT primes of [BLS12], (12): p = (t^2 - v^2 l^2 D)/4 with t = 2 mod l,
@@ -376,22 +376,25 @@ end
 # and not divisible by 4, so that the 2-volcanoes have depth 1; l^3 does not
 # divide p + 1 - t, so that the l-Sylow subgroup of the curves of
 # Algorithm 2.1 is E[l]. With t and v varying such primes have
-# positive density (Theorem 4.4); the smallest are taken, until their product
-# exceeds 4 exp(B), B the height bound, as the explicit CRT needs
-# (Section 6.2); the summand 1 absorbs rounding in the logarithms. The bound Y
-# on p doubles up to typemax(Int), so the loop ends; beyond it, an
-# ArgumentError.
+# positive density (Theorem 4.4); the smallest are taken, until the sum of
+# their logarithms exceeds B + 2 log 2, B the height bound (Algorithm 6.2,
+# Step 3d), so that their product exceeds 4 exp(B), as the explicit CRT needs
+# (Section 6.2). The bound Y on p doubles up to typemax(Int), so the loop
+# ends; beyond it, an ArgumentError.
 function _modular_polynomial_crt_primes(l::Int, D::Int)
-  target = _modular_polynomial_height_bound(l) + log(4) + 1
+  B = _modular_polynomial_height_bound(l)
+  R = parent(B)
+  target = B + log(R(4))
   W = Int128(typemax(Int))
   Y = max(div(Int128(l)^2 * abs(D), 4), Int128(1))
   # ends: Y doubles until it reaches W
   while true
     Y = min(Y, W)
     ps = _modular_polynomial_crt_primes_upto(l, D, Y)
-    s = 0.0
+    s = zero(R)
     for k in eachindex(ps)
-      s += log(ps[k][1])
+      s += log(R(ps[k][1]))
+      # true only if it holds for every point of the two balls
       s > target && return ps[1:k]
     end
     @req Y < W "Level $l is too large: the primes of the Chinese remainder " *
@@ -511,7 +514,8 @@ _short_weierstrass_j_invariant(A, B) = 6912 * A^3 // (4 * A^3 + 27 * B^2)
 # quadratic twist by the non-square c has trace t, and Section 6.3 tells
 # which by generating a point of order l: on the curve of trace t the l-Sylow
 # subgroup is E[l] (Theorem 4.1; l^3 does not divide N = p + 1 - t), so
-# P = (N/l^2) Q is a uniform point of E[l], while the twist has
+# P = (N/l^2) Q is a uniform point of E[l] (Section 6.3 prints
+# n = (p + 1 - t)/l, which gives P = 0), while the twist has
 # p + 1 + t = 4 mod l points and no point of order l.
 function _floor_isogenous_j_invariant(F, j, p::Int, t::Int, l::Int, c, surface)
   k = j // (1728 - j)
