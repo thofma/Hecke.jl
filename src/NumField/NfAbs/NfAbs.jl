@@ -1083,7 +1083,7 @@ function embed(f::Map{<:NumField, <:NumField})
   end
   s = get_attribute!(c, :subs, [])::Vector{Any}
   push!(s, f)
-  s = get_attribute!(c, :sub_of, WeakRef[])::Vector{WeakRef}
+  s = get_attribute!(d, :sub_of, WeakRef[])::Vector{WeakRef}
   push!(s, WeakRef(c))
 end
 
@@ -1105,31 +1105,27 @@ end
 
 #in (small) fields, super fields are stored via WeakRef's
 # special -> :sub_of
-#this find all superfields registered
+#this finds A and all superfields registered, transitively. Embeddings can
+#form cycles, e.g. between a field and its simplification.
 function find_all_super(A::NumField, filter::T = x->true) where {T <: Function}
-  s = get_attribute(A, :sub_of)::Union{Nothing, Vector{WeakRef}}
-  s === nothing && return Set(typeof(A)[A])
-
-  # Remove dead weak refs (since we edit s in-place, this
-  # automatically updates the :sub_of attribute of A, too.
-  filter!(x->x.value !== nothing, s)
-
-  #the gc could(?) run anytime, so even after the pruning above
-  #things could get deleted
-
-  all_s = Set(typeof(A)[x.value for x = s if x.value !== nothing && filter(x.value)])
-  new_s = copy(all_s)
-  while length(new_s) > 0
+  all_s = Base.IdSet{NumField}((A,))
+  new_s = NumField[A]
+  while !isempty(new_s)
     B = pop!(new_s)
     s = get_attribute(B, :sub_of)::Union{Nothing, Vector{WeakRef}}
     s === nothing && continue
+
+    # Remove dead weak refs (since we edit s in-place, this
+    # automatically updates the :sub_of attribute of B, too).
     filter!(x->x.value !== nothing, s)
+
     for x in s
-      v = x.value
-      if v !== nothing && filter(v)
-        push!(new_s, v)
-        push!(all_s, v)
-      end
+      #the gc could run anytime, so even after the pruning above
+      #things could get deleted
+      C = x.value
+      (C === nothing || C in all_s || !filter(C)) && continue
+      push!(all_s, C)
+      push!(new_s, C)
     end
   end
   return all_s
@@ -1137,6 +1133,9 @@ end
 
 #finds a common super field for A and B, using the weak-refs
 # in special -> :sub_of
+#For A and B of the same type only fields of that type qualify, since callers
+#like + assert the element type of the result. The field of smallest absolute
+#degree wins, ties going to A, then to B.
 function common_super(A::NumField, B::NumField)
   A === B && return A
   if Nemo.is_cyclo_type(A) && Nemo.is_cyclo_type(B)
@@ -1145,10 +1144,13 @@ function common_super(A::NumField, B::NumField)
     return cyclotomic_field(lcm(fa, fb))[1]
   end
 
-  c = intersect(find_all_super(A), find_all_super(B))
+  T = typeof(A) === typeof(B) ? typeof(A) : NumField
+  rank(C) = (absolute_degree(C), C !== A, C !== B)
+  sA = find_all_super(A)
   m = nothing
-  for C in c
-    if m === nothing || absolute_degree(C) < absolute_degree(m)
+  for C in find_all_super(B)
+    (C isa T && C in sA) || continue
+    if m === nothing || rank(C) < rank(m)
       m = C
     end
   end
@@ -1167,7 +1169,7 @@ end
 function force_op(op::T, ::Val{throw_error}, a::NumFieldElem...) where {T <: Function, throw_error}
   C = parent(a[1])
   for b = a
-    C = common_super(parent(b), C)
+    C = common_super(C, parent(b))
     if C === nothing
       if throw_error
         error("no common parent known")

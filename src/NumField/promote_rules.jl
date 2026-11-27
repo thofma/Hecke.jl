@@ -154,8 +154,15 @@ end
 #
 ################################################################################
 
-(K::RelSimpleNumField{T})(x::RelSimpleNumFieldElem{T}) where {T <: NumFieldElem} = K(x.data)
-(K::RelNonSimpleNumField{T})(x::RelNonSimpleNumFieldElem{T}) where {T <: NumFieldElem} = K(x.data)
+function (K::RelSimpleNumField{T})(x::RelSimpleNumFieldElem{T}) where {T <: NumFieldElem}
+  parent(x) === K || return force_coerce(K, x)
+  return K(x.data)
+end
+
+function (K::RelNonSimpleNumField{T})(x::RelNonSimpleNumFieldElem{T}) where {T <: NumFieldElem}
+  parent(x) === K || return force_coerce(K, x)
+  return K(x.data)
+end
 
 function (K::RelSimpleNumField{S})(a::T) where {S <: NumFieldElem, T <: NumFieldElem}
   if S === T && parent(a) == base_field(K)

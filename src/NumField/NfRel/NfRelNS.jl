@@ -213,21 +213,21 @@ end
 ################################################################################
 
 function Base.:(+)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
-  parent(a) == parent(b) || force_op(+, a, b)::RelNonSimpleNumFieldElem{T}
+  parent(a) == parent(b) || return force_op(+, a, b)::RelNonSimpleNumFieldElem{T}
   z = RelNonSimpleNumFieldElem{T}(data(a) + data(b))
   z.parent = parent(a)
   return z
 end
 
 function Base.:(-)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
-  parent(a) == parent(b) || force_op(-, a, b)::RelNonSimpleNumFieldElem{T}
+  parent(a) == parent(b) || return force_op(-, a, b)::RelNonSimpleNumFieldElem{T}
   z = RelNonSimpleNumFieldElem{T}(data(a) - data(b))
   z.parent = parent(a)
   return z
 end
 
 function Base.:(*)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
-  parent(a) == parent(b) || force_op(*, a, b)::RelNonSimpleNumFieldElem{T}
+  parent(a) == parent(b) || return force_op(*, a, b)::RelNonSimpleNumFieldElem{T}
   return parent(a)(data(a) * data(b))
 end
 
@@ -242,7 +242,7 @@ function Base.:(//)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{
 end
 
 function Base.div(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where {T}
-  parent(a) == parent(b) || force_op(div, a, b)::RelNonSimpleNumFieldElem{T}
+  parent(a) == parent(b) || return force_op(div, a, b)::RelNonSimpleNumFieldElem{T}
   return a*inv(b)
 end
 
@@ -298,7 +298,7 @@ end
 ################################################################################
 
 function Base.:(==)(a::RelNonSimpleNumFieldElem{T}, b::RelNonSimpleNumFieldElem{T}) where T
-  parent(a) == parent(b) || force_op(==, a, b)::Bool
+  parent(a) == parent(b) || return force_op(==, a, b)::Bool
   return data(a) == data(b)
 end
 
