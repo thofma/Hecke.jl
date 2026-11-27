@@ -1492,7 +1492,8 @@ function is_isometry(walk::Walk)
     X[k, j] = sign(sequence[k]) * vectors[j, abs(sequence[k])]
   end
   B, solver = reference.matrix, reference.solver
-  if widemul(m, maxabs(solver)) * maxabs(X) * maxabs(B) * n < typemax(Int)
+  # The bound is computed in ZZ, so that it cannot overflow itself.
+  if ZZ(m) * maxabs(solver) * maxabs(X) * maxabs(B) * n < typemax(Int)
     M = solver * X
     (m == n || B * M == X) || return false
   else
@@ -1551,8 +1552,8 @@ function inverse(S::ShortVectors, M::Matrix{Int})
       S.gram_inverse[] = small ? (Matrix{Int}(N), Int(d)) : (G, -1)
     end
     N, d = S.gram_inverse[]
-    if d != -1 && widemul(n, n) * maxabs(G) * maxabs(M) * maxabs(N) <
-                  typemax(Int)
+    if d != -1 &&
+       ZZ(n)^2 * maxabs(G) * maxabs(M) * maxabs(N) < typemax(Int)
       return divexact.(G * transpose(M) * N, d)
     end
   end
@@ -1579,7 +1580,7 @@ function preserves_forms(source::ShortVectors, target::ShortVectors,
   n = size(M, 1)
   entry = maxabs(M)
   if isempty(source.small_forms) || isempty(target.small_forms) ||
-     widemul(n, n) * target.form_size * widemul(entry, entry) >= typemax(Int)
+     ZZ(n)^2 * target.form_size * ZZ(entry)^2 >= typemax(Int)
     Z = matrix(ZZ, M)
     return all(Z * T * transpose(Z) == F for (F, T) in
                zip(source.exact_forms, target.exact_forms))

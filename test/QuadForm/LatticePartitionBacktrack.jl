@@ -395,4 +395,11 @@
                              for v in [e1, u]])
   @test !PB.isometry([D4], [D4], set, set, marked(u), marked(u0))[1]
 
+  # vectors with entries for which the products of the exact check do not
+  # fit into machine integers: no false isometry is accepted
+  G = 4 * identity_matrix(ZZ, 2)
+  fl, U = PB.isometry([G], [G], [([1, 0], 0), ([0, 1], 0)],
+                      [([1, 0], 0), ([2^62, 1], 0)])
+  @test !fl || U * G * transpose(U) == G
+
 end
