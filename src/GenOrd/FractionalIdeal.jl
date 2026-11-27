@@ -561,11 +561,12 @@ end
 
 function Hecke.factor(A::GenOrdFracIdl)
   O = A.order
-  N = numerator(norm(A)) * denominator(norm(A))
 
   A_num = numerator(A; copy = false)
   A_den = ideal(O, denominator(A; copy = false))
 
+  N = norm(A_num) * norm(A_den)
+  
   factors = factor(N)
   primes = Dict{GenOrdIdl,Int}()
   for (f,e) in factors

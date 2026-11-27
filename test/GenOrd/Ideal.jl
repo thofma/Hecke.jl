@@ -942,6 +942,20 @@ let # 2266
   @test prod(p^e for (p, e) in lp) == I
 end
 
+@testset "Fractional ideal factorization with cancelling norms" begin
+  # The two primes above x cancel in the norm of their quotient.
+  K, x = rational_function_field(algebraic_closure(QQ), :x; cached = false)
+  _, Y = polynomial_ring(K, :Y; cached = false)
+  F, y = function_field(Y^2 - x^3 - 1, :y; cached = false)
+  O = finite_maximal_order(F)
+  p = ideal(O, F(x), y - 1)
+  q = ideal(O, F(x), y + 1)
+  A = fractional_ideal(p) * inv(fractional_ideal(q))
+
+  @test isone(norm(A))
+  @test factor(A) == Dict(p => 1, q => -1)
+end
+
 @testset "Scaling ideals in function field by base-field elements" begin
   kx, x = rational_function_field(GF(5), :x; cached = false)
   ky, y = polynomial_ring(kx, :y; cached = false)
