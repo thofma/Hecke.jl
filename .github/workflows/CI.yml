@@ -27,9 +27,11 @@ jobs:
       fail-fast: false
       matrix:
         julia-version:
-          - '1.10'
-          - '1.13'
-          - '1.14-nightly'
+          # setup-julia reads [compat].julia from Project.toml and selects the
+          # latest patch release in the oldest supported Julia series.
+          - 'min'
+          - '1'
+          - 'pre'
           - 'nightly'
         os:
           - ubuntu-latest
@@ -41,10 +43,10 @@ jobs:
             os: ubuntu-latest
             assertions: true
           # Add a few windows and macOS jobs (not too many, the number we can run in parallel is limited)
-          - julia-version: '1.10'
+          - julia-version: 'min'
             os: macOS-latest
             assertions: false
-          - julia-version: '1.10'
+          - julia-version: 'min'
             os: windows-latest
             assertions: false
 
