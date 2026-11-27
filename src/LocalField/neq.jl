@@ -910,6 +910,7 @@ function local_fundamental_class_serre(mKL::LocalFieldMor)
     @assert length(fb) == 1
 
     c = GG[fa[fb[1]]](pi) * pi_inv
+#    @show isone(norm(c)) || valuation(norm(c)-1)
 
 #    @assert isone(norm(c))
 
@@ -1054,6 +1055,7 @@ function _order_1_unit(a::Union{PadicFieldElem, QadicFieldElem, LocalFieldElem})
   return p^k
 end
 
+#=
 function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalField}
   gens = one_unit_group_gens(K)
 
@@ -1148,6 +1150,142 @@ function one_unit_group(K::T) where T <: Union{PadicField, QadicField, LocalFiel
     end
   end
   return G, map_from_func(G, K, from_G, to_G)
+end
+
+=#
+
+"""
+    additive_quotient(pi::T, k::Int)
+
+(Z_K/pi^k, +) as an abelian group with the usual map.
+"""
+function additive_quotient(pi::T, k::Int) where T<:Union{LocalFieldElem, PadicFieldElem,QadicFieldElem}
+
+  K = parent(pi)
+  p = prime(K)
+  e = absolute_ramification_index(K)
+  n = absolute_degree(K)
+  ab_inv = ZZRingElem[]
+  q, r = divrem(k, e)
+  Fk, mFk = residue_field(K)
+  b = [preimage(mFk, x) for x = basis(Fk)]
+  f = length(b)
+  @assert n == e*f
+  for i=1:e
+    for j=1:f
+      if i<=r
+        push!(ab_inv, p^(q+1))
+      else
+        push!(ab_inv, p^q)
+      end
+    end
+  end
+
+  A = abelian_group(ab_inv)
+  B = absolute_basis(K)
+  function from_A(a::FinGenAbGroupElem)
+    @assert parent(a) == A
+    return sum(B[i] * a[i] for i=1:ngens(A))
+  end
+  function to_A(x::T)
+    cf = ZZRingElem[]
+    d = absolute_coordinates(x)
+    return A(map(lift, d))
+  end
+  return A, map_from_func(A, K, from_A, to_A)
+end
+
+"""
+    one_units_a_b(pi::T, a::Int, b::Int) 
+
+For a<b<=2a, the group of 1-units of level a modulo 1-units of level b, with
+the usual map.
+
+In short: (1+pi^a Z_K)/(1+pi^b Z_K) as an abelian group.
+"""
+function one_units_a_b(pi::T, a::Int, b::Int) where T <:Union{LocalFieldElem, PadicFieldElem,QadicFieldElem}
+
+  @assert a < b <= 2*a
+  A, mA = additive_quotient(pi, b-a)
+  pi_a = pi^a
+  function from_A(a::FinGenAbGroupElem)
+    return 1+pi_a*mA(a)
+  end
+  function to_A(x::T)
+    return preimage(mA, divexact(x-1, pi_a))
+  end
+  return A, map_from_func(A, parent(pi), from_A, to_A)
+end
+
+"""
+    exact_sequence(mA::Map{FinGenAbGroup, T}, mB::Map{FinGenAbGroup, T}, op = (*, ^)) 
+
+Given mA: A -> X and mB: B -> X assuming that there is a short exact sequence
+  1 -> B -> C -> A -> 1
+and mC: C -> X, find mC. The additive operation in the abelian group is 
+evaluated in X using `op`, by default this is multiplicative.
+"""
+function exact_sequence(mA::Map{FinGenAbGroup, T}, mB::Map{FinGenAbGroup, T}, op = (*, ^)) where T
+  @assert codomain(mA) == codomain(mB)
+  A = domain(mA)
+  B = domain(mB)
+  rA = relations(A)
+  rB = relations(B)
+  rels = zero_matrix(ZZ, nrows(rA) + nrows(rB), ncols(rA) + ncols(rB))
+  rels[1:nrows(rA), 1:ncols(rA)] = rA
+  rels[nrows(rA)+1:nrows(rA)+nrows(rB), ncols(rA)+1:ncols(rA)+ncols(rB)] = rB
+  gB = map(mB, gens(B))
+  gA = map(mA, gens(A))
+  for i=1:nrows(rB)
+    r = op[2](gB[1], rB[i, 1])
+    for j=2:ncols(rB)
+      if !iszero(rB[i, j])
+        r = op[1](r, op[2](gB[j], rB[i, j]))
+      end
+    end
+    rels[nrows(rA)+i, 1:ncols(rA)] = -preimage(mA, r).coeff
+  end
+  new_A = abelian_group(rels)
+  function from_A(a::FinGenAbGroupElem)
+    r = op[2](gA[1], a[1])
+    for i=2:ncols(rA)
+      if !iszero(a[i])
+        r = op[1](r, op[2](gA[i], a[i]))
+      end
+    end
+    for i=1:ncols(rB)
+      if !iszero(a[ncols(rA) + i])
+        r = op[1](r, op[2](gB[i], a[ncols(rA) + i]))
+      end
+    end
+    return r
+  end
+  function to_A(x)
+    xb = preimage(mB, x)
+    x = op[1](x, from_A(-new_A(hcat(zero_matrix(ZZ, 1, ncols(rA)), xb.coeff))))
+    xa = preimage(mA, x)
+    return new_A(hcat(xa.coeff, xb.coeff))
+  end
+  return map_from_func(new_A, codomain(mA), from_A, to_A)
+end
+
+function one_unit_group(K, k::Int = precision(K))
+  pi = uniformizer(K)
+  @assert k > 1
+  @assert k <= precision(K)
+  l = 2
+  a = one_units_a_b(pi, 1, 2)[2]
+  if k == 2
+    return a
+  end
+  l = 2
+  while l<k
+    l2 = min(k, 2*l)
+    b = one_units_a_b(pi, l, l2)[2]
+    a = exact_sequence(b, a)
+    l = l2
+  end
+  return domain(a), a
 end
 
 function teichmuller(a::LocalFieldElem)
