@@ -683,6 +683,8 @@ as the *automorphism group of $L$*.
 ```@docs
 automorphism_group_order(::AbstractLat)
 automorphism_group_generators(::AbstractLat)
+automorphism_group_order(::AbstractLat{<:NumField}, ::Vector{<:MatElem})
+automorphism_group_generators(::AbstractLat{<:NumField}, ::Vector{<:MatElem})
 ```
 
 ### Examples
@@ -725,6 +727,8 @@ julia> automorphism_group_generators(Lquad)
 ```@docs
 is_isometric(::AbstractLat, ::AbstractLat)
 is_isometric_with_isometry(::AbstractLat, ::AbstractLat)
+is_isometric(::AbstractLat{<:NumField}, ::Vector{<:MatElem}, ::AbstractLat{<:NumField}, ::Vector{<:MatElem})
+is_isometric_with_isometry(::AbstractLat{<:NumField}, ::Vector{<:MatElem}, ::AbstractLat{<:NumField}, ::Vector{<:MatElem})
 is_locally_isometric(::AbstractLat, ::AbstractLat, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
 ```
 
