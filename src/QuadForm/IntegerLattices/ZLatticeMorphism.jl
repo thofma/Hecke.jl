@@ -649,8 +649,9 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
 end
 
 function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
-
-  # cornercase
+  if rank(L) != rank(M)
+    return false, zero_matrix(QQ, 0, 0)
+  end
   if rank(L) == 0
     return true, zero_matrix(QQ, 0, 0)
   end

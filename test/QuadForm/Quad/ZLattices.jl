@@ -729,6 +729,14 @@ end
   L2 = root_lattice(:D, 4)
   @test !is_isometric_with_isometry(L1, L2)[1]
 
+  # A rank-zero lattice is isometric only to another rank-zero lattice.
+  Z = integer_lattice(gram=zero_matrix(ZZ, 0, 0))
+  M = integer_lattice(gram=identity_matrix(ZZ, 2))
+  Z2 = lattice(ambient_space(M), zero_matrix(QQ, 0, 2))
+  @test !is_isometric_with_isometry(Z, M)[1]
+  @test !is_isometric_with_isometry(M, Z)[1]
+  @test is_isometric_with_isometry(Z, Z2) == (true, zero_matrix(QQ, 0, 0))
+
   # Example from Conway Sloane Chapter 15 p.393
   L1 = integer_lattice(gram=ZZ[2 1 0; 1 2 0; 0 0 18])
   L2 = integer_lattice(gram=ZZ[6 3 0; 3 6 0; 0 0 2])
