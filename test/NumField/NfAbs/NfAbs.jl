@@ -58,6 +58,14 @@ end
   @test typeof(K) == AbsSimpleNumField
   L = simplify(K, canonical = true)[1]
   @test L.pol == x^5 - x^4 + x^3 - 19*x^2 + 35*x + 77
+
+  K = number_field(x^6 - 6*x^4 - 4*x^3 + 12*x^2 + 18*x + 10)[1]
+  L = simplify(K; canonical = true)[1]
+  @test L.pol == K.pol
+
+  K = number_field(x^10 - 2*x^9 - 46*x^8 + 139*x^7 + 439*x^6 - 1926*x^5 + 1048*x^4 + 2648*x^3 - 3520*x^2 + 1440*x - 192)[1]
+  L = simplify(K; canonical = true)[1]
+  @test L.pol == K.pol
 end
 
 @testset "simplify-Gunter" begin

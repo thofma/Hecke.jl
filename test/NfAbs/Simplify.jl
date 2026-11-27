@@ -11,6 +11,10 @@
   K, a = number_field(x - 10, cached = false)
   L, mL = simplify(K)
   @test is_isomorphic(K, L)
+  @test mL(gen(L)) == one(K)
+  L1, _ = simplify(K; cached = false)
+  @test L1 !== L
+  @test L1 !== simplify(K; cached = false)[1]
 
   K,a = number_field(x^4-100020001*x^2+100040006000400010, cached = false)
   L, mL = simplify(K)
@@ -20,6 +24,7 @@
   L, mL = simplify(K)
   @test Hecke.is_defining_polynomial_nice(L)
   L1, mL1 = simplify(K, canonical = true)
+  @test defining_polynomial(L1) == x^3 - x^2 - 2*x + 1
   @test Hecke.is_defining_polynomial_nice(L1)
   @test is_isomorphic(L1, L)
 

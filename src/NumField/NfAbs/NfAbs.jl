@@ -133,9 +133,10 @@ function show_quad(io::IO, q::AbsSimpleNumField)
 end
 
 @doc raw"""
-    rationals_as_number_field() -> AbsSimpleNumField, AbsSimpleNumFieldElem
+    rationals_as_number_field(; cached::Bool = true) -> AbsSimpleNumField, AbsSimpleNumFieldElem
 
 Returns the rational numbers as the number field defined by $x - 1$.
+Set `cached = false` to construct a fresh field.
 
 # Examples
 
@@ -144,9 +145,9 @@ julia> rationals_as_number_field()
 (Number field of degree 1 over QQ, 1)
 ```
 """
-function rationals_as_number_field()
+function rationals_as_number_field(; cached::Bool = true)
   x = gen(Globals.Qx)
-  return number_field(x-1)
+  return number_field(x - 1; cached)
 end
 
 ################################################################################

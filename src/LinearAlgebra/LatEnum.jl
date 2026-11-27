@@ -189,6 +189,7 @@ function enum_ctx_start(E::enum_ctx{A,B,C}, i::Int; eps::Float64=1.0) where {A,B
   end
   E.last_non_zero = i+1
 
+  E.tail[E.limit] = 0
   for k=E.limit-1:-1:1
     E.tail[k] = sum(E.C[k, j]*C(E.x[1,j]) for j=k+1:E.limit)
   end
