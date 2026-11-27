@@ -354,9 +354,11 @@ function compress_forms(exact_forms::Vector{ZZMatrix})
   return form, small ? wrapped : Matrix{Int}[]
 end
 
-# Whether all entries of `A` fit into a machine integer.
+# Whether all entries of `A` fit into a machine integer: they have fewer bits
+# than an `Int`, one of which is the sign.
 fits_int(A::ZZMatrix) =
-  abs(@ccall libflint.fmpz_mat_max_bits(A::Ref{ZZMatrix})::Int) < 63
+  abs(@ccall libflint.fmpz_mat_max_bits(A::Ref{ZZMatrix})::Int) <
+  Sys.WORD_SIZE - 1
 
 # The largest absolute value of the entries of `A`, or `typemax(Int)`.
 maxabs(A) = mapreduce(x -> x == typemin(Int) ? typemax(Int) : abs(x), max, A;
