@@ -2124,7 +2124,7 @@ function rand(rng::AbstractRNG,
   return z
 end
 
-rand(a::AlgAssAbsOrdIdl, B::Int) = rand(Random.GLOBAL_RNG, a, B)
+rand(a::AlgAssAbsOrdIdl, B::Int) = rand(Random.default_rng(), a, B)
 rand(rng::AbstractRNG, a::AlgAssAbsOrdIdl, B::Int) = rand(rng, make(a, B))
 
 ################################################################################

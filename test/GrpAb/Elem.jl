@@ -225,6 +225,10 @@
     @test parent(a) == G
     @test -10 <= a[2] <= 10
     @test -10 <= a[4] <= 10
+
+    @test reproducible(G, 10)
+    @test reproducible(G, ZZRingElem(10))
+    @test reproducible(abelian_group([3, 15]))
   end
 
   @testset "Iterator" begin

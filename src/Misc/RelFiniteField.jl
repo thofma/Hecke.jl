@@ -553,9 +553,10 @@ end
 #
 ################################################################################
 
-function rand(F::RelFinField)
+function rand(rng::AbstractRNG, sp::SamplerTrivial{<:RelFinField})
+  F = sp[]
   Rx = parent(defining_polynomial(F))
-  return F(rand(Rx, 0:degree(F)-1)::elem_type(Rx))
+  return F(rand(rng, Rx, 0:degree(F)-1)::elem_type(Rx))
 end
 
 ################################################################################

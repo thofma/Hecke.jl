@@ -177,14 +177,13 @@ function _basis_coord_nonneg(x::AbsSimpleNumFieldOrderElem)
   return true
 end
 
+function rand(rng::AbstractRNG, M::Generic.MatSpace{AbsSimpleNumFieldOrderElem},
+              B::Union{Int, ZZRingElem})
+  return rand(rng, make(M, B))
+end
+
 function rand(M::Generic.MatSpace{AbsSimpleNumFieldOrderElem}, B::Union{Int, ZZRingElem})
-  z = M()
-  for i in 1:nrows(z)
-    for j in 1:ncols(z)
-      z[i, j] = Hecke.rand(Hecke.base_ring(M), B)
-    end
-  end
-  return z
+  return rand(Random.default_rng(), M, B)
 end
 
 ==(P::PMat, Q::PMat) = P.matrix == Q.matrix && P.coeffs == Q.coeffs
@@ -452,20 +451,20 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:AbsNumFieldOrderEle
   return z
 end
 
-rand(I::AbsNumFieldOrderIdeal, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(I::AbsNumFieldOrderIdeal, B::Int) = rand(Random.default_rng(), I, B)
 rand(rng::AbstractRNG, I::AbsNumFieldOrderIdeal, B::Int) = rand(rng, make(I, B))
 
 
 RandomExtensions.maketype(I::AbsSimpleNumFieldOrderFractionalIdeal, ::Int) = AbsSimpleNumFieldElem
 
 function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldElem,AbsSimpleNumFieldOrderFractionalIdeal,Int}})
-  I, B = sp[][1:2]
+  I, B = sp[][1:end]
   z = rand(rng, make(numerator(I), B))
   return divexact(elem_in_nf(z), denominator(I))::AbsSimpleNumFieldElem
   # type assert to help inference in Julia 1.0
 end
 
-rand(I::AbsSimpleNumFieldOrderFractionalIdeal, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(I::AbsSimpleNumFieldOrderFractionalIdeal, B::Int) = rand(Random.default_rng(), I, B)
 rand(rng::AbstractRNG, I::AbsSimpleNumFieldOrderFractionalIdeal, B::Int) = rand(rng, make(I, B))
 
 @doc raw"""

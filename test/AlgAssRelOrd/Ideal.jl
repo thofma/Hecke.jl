@@ -18,6 +18,7 @@
     @test norm(I) == 4*base_ring(O)
 
     @test hash(I * J) == hash(8 * O)
+    @test reproducible(I, 5)
   end
 
   @testset "Locally free basis" begin

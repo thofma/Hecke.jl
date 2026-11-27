@@ -29,6 +29,7 @@ import ..Hecke:
   NCRingElem,
   NCRingElement,
   Nemo,
+  Random,
   Ring,
   RingElem,
   RingElement,

@@ -170,6 +170,9 @@ end
 #
 ################################################################################
 
-function Base.rand(R::FiniteRing)
-  return FiniteRingElem(R, rand(R.A))
+Random.gentype(::Type{FiniteRing}) = FiniteRingElem
+
+function Base.rand(rng::Random.AbstractRNG, sp::Random.SamplerTrivial{FiniteRing})
+  R = sp[]
+  return FiniteRingElem(R, rand(rng, R.A))
 end

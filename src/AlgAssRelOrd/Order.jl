@@ -317,20 +317,27 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    rand(O::AlgAssRelOrd, B::Int) -> AlgAssRelOrdElem
+RandomExtensions.maketype(O::AlgAssRelOrd, ::Int) = elem_type(O)
 
-Returns a random element of $O$ whose coefficient size is controlled by $B$.
-"""
-function rand(O::AlgAssRelOrd, B::Int)
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:AlgAssRelOrdElem, <:AlgAssRelOrd, Int}})
+  O, B = sp[][1:end]
   pb = pseudo_basis(O, copy = false)
   z = algebra(O)()
   for i = 1:degree(O)
-    t = rand(pb[i][2], B)
+    t = rand(rng, pb[i][2], B)
     z += t*pb[i][1]
   end
   return O(z)
 end
+
+@doc raw"""
+    rand([rng::AbstractRNG], O::AlgAssRelOrd, B::Int) -> AlgAssRelOrdElem
+
+Returns a random element of $O$ whose coefficient size is controlled by $B$.
+"""
+rand(O::AlgAssRelOrd, B::Int) = rand(Random.default_rng(), O, B)
+rand(rng::AbstractRNG, O::AlgAssRelOrd, B::Int) = rand(rng, make(O, B))
 
 ################################################################################
 #

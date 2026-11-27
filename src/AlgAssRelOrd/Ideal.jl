@@ -1598,20 +1598,27 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    rand(a::AlgAssRelOrdIdl, B::Int) -> AbstractAssociativeAlgebraElem
+RandomExtensions.maketype(a::AlgAssRelOrdIdl, ::Int) = elem_type(algebra(a))
 
-Returns a random element of $a$ whose coefficient size is controlled by $B$.
-"""
-function rand(a::AlgAssRelOrdIdl, B::Int)
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{<:AbstractAssociativeAlgebraElem, <:AlgAssRelOrdIdl, Int}})
+  a, B = sp[][1:end]
   pb = pseudo_basis(a, copy = false)
   z = algebra(a)()
   for i = 1:degree(order(a))
-    t = rand(pb[i][2], B)
+    t = rand(rng, pb[i][2], B)
     z += t*pb[i][1]
   end
   return z
 end
+
+@doc raw"""
+    rand([rng::AbstractRNG], a::AlgAssRelOrdIdl, B::Int) -> AbstractAssociativeAlgebraElem
+
+Returns a random element of $a$ whose coefficient size is controlled by $B$.
+"""
+rand(a::AlgAssRelOrdIdl, B::Int) = rand(Random.default_rng(), a, B)
+rand(rng::AbstractRNG, a::AlgAssRelOrdIdl, B::Int) = rand(rng, make(a, B))
 
 ################################################################################
 #

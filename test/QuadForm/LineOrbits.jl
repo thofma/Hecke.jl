@@ -8,6 +8,7 @@
     v = rand(P)
     @test !iszero(v) && isone(v[findfirst(!iszero, v)])
   end
+  @test reproducible(P)
 end
 
 @testset "Line orbits" begin

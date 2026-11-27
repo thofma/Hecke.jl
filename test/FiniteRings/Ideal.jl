@@ -53,6 +53,7 @@
   J = radical(R)
   @test order(J) == 2^7
   @test rand(J) in J
+  @test reproducible(J)
 
   let
     R, f = finite_ring(matrix_algebra(GF(2), 2))

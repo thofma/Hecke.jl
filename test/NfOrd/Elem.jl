@@ -294,6 +294,10 @@
     for i in 1:degree(O1)
       @test -B <= coordinates(b)[i] && coordinates(b)[i] <= B
     end
+
+    @test reproducible(O1, -10:10)
+    @test reproducible(O1, 10)
+    @test reproducible(O1, ZZ(10))
   end
 
   RR = ArbField(64)

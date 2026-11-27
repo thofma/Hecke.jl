@@ -483,62 +483,75 @@ end
 ################################################################################
 
 # TODO: Make this faster, don't allocate the ar array ...
-function rand!(z::AbsNumFieldOrderElem{S, T}, B::Vector{AbsNumFieldOrderElem{S, T}}, R) where {S, T}
+function rand!(rng::AbstractRNG, z::AbsNumFieldOrderElem{S, T},
+               B::Vector{AbsNumFieldOrderElem{S, T}}, R) where {S, T}
   O = parent(z)
   y = O()
   for i in 1:degree(O)
-    y = mul!(y, rand(R), B[i])
+    y = mul!(y, rand(rng, R), B[i])
     z = add!(z, z, y)
   end
   return z
 end
 
-function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder, R::AbstractUnitRange{T}) where T <: Integer
-  y = O()
-  B = basis(O, copy = false)
-  for i in 1:degree(O)
-    y = mul!(y, rand(R), B[i])
-    z = add!(z, z, y)
-  end
-  return z
+function rand!(z::AbsNumFieldOrderElem{S, T},
+               B::Vector{AbsNumFieldOrderElem{S, T}}, R) where {S, T}
+  return rand!(Random.default_rng(), z, B, R)
+end
+
+function rand!(rng::AbstractRNG, z::AbsNumFieldOrderElem, O::AbsNumFieldOrder,
+               R::AbstractUnitRange{<:IntegerUnion})
+  return rand!(rng, z, basis(O; copy = false), R)
+end
+
+function rand!(rng::AbstractRNG, z::AbsNumFieldOrderElem,
+               O::AbsSimpleNumFieldOrder, n::IntegerUnion)
+  return rand!(rng, z, O, -n:n)
+end
+
+function rand!(z::AbsNumFieldOrderElem, O::AbsNumFieldOrder,
+               R::Union{IntegerUnion, AbstractUnitRange{<:IntegerUnion}})
+  return rand!(Random.default_rng(), z, O, R)
+end
+
+RandomExtensions.maketype(O::AbsSimpleNumFieldOrder,
+                          ::Union{IntegerUnion, AbstractUnitRange{<:IntegerUnion}}) =
+  elem_type(O)
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldOrderElem, AbsSimpleNumFieldOrder}})
+  O, R = sp[][1:end]
+  return rand!(rng, O(), O, R)
 end
 
 @doc raw"""
-    rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{Integer}) -> AbsNumFieldOrderElem
+    rand([rng::AbstractRNG], O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{Integer}) -> AbsNumFieldOrderElem
 
 Computes a coefficient vector with entries uniformly distributed in `R` and returns
 the corresponding element of the order.
 """
-function rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{T}) where T <: Integer
-  z = O()
-  rand!(z, O, R)
-  return z
+function rand(O::AbsSimpleNumFieldOrder, R::AbstractUnitRange{<:IntegerUnion})
+  return rand(Random.default_rng(), O, R)
 end
 
-function rand!(z::AbsNumFieldOrderElem, O::AbsSimpleNumFieldOrder, n::IntegerUnion)
-  return rand!(z, O, -n:n)
+function rand(rng::AbstractRNG, O::AbsSimpleNumFieldOrder,
+              R::AbstractUnitRange{<:IntegerUnion})
+  return rand(rng, make(O, R))
 end
 
 @doc raw"""
-    rand(O::AbsSimpleNumFieldOrder, n::IntegerUnion) -> AbsNumFieldOrderElem
+    rand([rng::AbstractRNG], O::AbsSimpleNumFieldOrder, n::IntegerUnion) -> AbsNumFieldOrderElem
 
 Computes a coefficient vector with entries uniformly distributed in
 $\{-n,\dotsc,-1,0,1,\dotsc,n\}$ and returns the corresponding element of the
 order $\mathcal O$.
 """
-function rand(O::AbsSimpleNumFieldOrder, n::Integer)
-  return rand(O, -n:n)
-end
-
-function rand(O::AbsSimpleNumFieldOrder, n::ZZRingElem)
-  z = O()
-  rand!(z, O, BigInt(n))
-  return z
-end
-
-function rand!(z::AbsNumFieldOrderElem, O::AbsSimpleNumFieldOrder, n::ZZRingElem)
-  return rand!(z, O, BigInt(n))
-end
+rand(O::AbsSimpleNumFieldOrder, n::Integer) = rand(Random.default_rng(), O, n)
+# separate methods for `ZZRingElem` and `Integer` avoid ambiguities with
+# `rand(X, dims::Integer...)`
+rand(O::AbsSimpleNumFieldOrder, n::ZZRingElem) = rand(Random.default_rng(), O, n)
+rand(rng::AbstractRNG, O::AbsSimpleNumFieldOrder, n::Integer) = rand(rng, make(O, n))
+rand(rng::AbstractRNG, O::AbsSimpleNumFieldOrder, n::ZZRingElem) = rand(rng, make(O, n))
 
 ################################################################################
 #

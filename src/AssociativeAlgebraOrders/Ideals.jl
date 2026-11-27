@@ -310,11 +310,11 @@ Return an ambient algebra element in `I`. An integer bound `B` samples integer
 basis coefficients in `-B:B`. Other arguments specify a sampler for the
 coefficient ring, as in `rand(rng, base_ring(base_ring(I)), args...)`.
 """
-rand(I::AssociativeAlgebraOrderIdeal, B::Int) = rand(GLOBAL_RNG, I, B)
+rand(I::AssociativeAlgebraOrderIdeal, B::Int) = rand(Random.default_rng(), I, B)
 rand(rng::AbstractRNG, I::AssociativeAlgebraOrderIdeal, B::Int) =
   rand(rng, make(I, B))
 rand(I::AssociativeAlgebraOrderIdeal, r::AbstractUnitRange, args...) =
-  rand(GLOBAL_RNG, I, r, args...)
+  rand(Random.default_rng(), I, r, args...)
 rand(rng::AbstractRNG, I::AssociativeAlgebraOrderIdeal,
      r::AbstractUnitRange, args...) = rand(rng, make(I, r, args...))
 

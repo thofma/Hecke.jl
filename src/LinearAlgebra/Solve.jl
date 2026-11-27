@@ -1,50 +1,55 @@
 @doc raw"""
-    rand!(a::AbsSimpleNumFieldElem, U::AbstractArray) -> AbsSimpleNumFieldElem
+    rand!([rng::AbstractRNG], a::AbsSimpleNumFieldElem, U::AbstractArray) -> AbsSimpleNumFieldElem
 
 Inplace, set the coefficients of $a$ to random elements in $U$.
 $a$ is returned.
 """
-function rand!(a::AbsSimpleNumFieldElem, U::AbstractArray)
-  for i=1:degree(parent(a))
-    _num_setcoeff!(a, i-1, rand(U))
+function rand!(rng::AbstractRNG, a::AbsSimpleNumFieldElem, U::AbstractArray)
+  for i in 1:degree(parent(a))
+    _num_setcoeff!(a, i-1, rand(rng, U))
   end
   return a
 end
 
-@doc raw"""
-    rand(K::AbsSimpleNumField, U::AbstractArray) -> AbsSimpleNumFieldElem
+rand!(a::AbsSimpleNumFieldElem, U::AbstractArray) =
+  rand!(Random.default_rng(), a, U)
 
-Find an element in $K$ where the coefficients are selected at random in $U$.
-"""
-function rand(K::AbsSimpleNumField, U::AbstractArray)
-  a = K()
-  return rand!(a, U)
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{AbsSimpleNumFieldElem, AbsSimpleNumField, <:AbstractArray}})
+  K, U = sp[][1:end]
+  return rand!(rng, K(), U)
 end
 
 @doc raw"""
-    rand!(A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray) -> Generic.Mat{AbsSimpleNumFieldElem}
+    rand([rng::AbstractRNG], K::AbsSimpleNumField, U::AbstractArray) -> AbsSimpleNumFieldElem
+
+Find an element in $K$ where the coefficients are selected at random in $U$.
+"""
+rand(rng::AbstractRNG, K::AbsSimpleNumField, U::AbstractArray) =
+  rand(rng, make(K, U))
+
+rand(K::AbsSimpleNumField, U::AbstractArray) =
+  rand(Random.default_rng(), K, U)
+
+@doc raw"""
+    rand!([rng::AbstractRNG], A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray) -> Generic.Mat{AbsSimpleNumFieldElem}
 
 Inplace, replace each element in $A$ by an element where the coefficients are
 selected at random in $U$.
 Returns $A$.
 """
-function rand!(A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray)
-  for i=1:nrows(A)
-    for j=1:ncols(A)
-      rand!(A[i,j], U)
+function rand!(rng::AbstractRNG, A::Generic.Mat{AbsSimpleNumFieldElem},
+               U::AbstractArray)
+  for i in 1:nrows(A)
+    for j in 1:ncols(A)
+      rand!(rng, A[i,j], U)
     end
   end
   return A
 end
 
-@doc raw"""
-    rand(A::Generic.MatSpace{AbsSimpleNumFieldElem}, U::AbstractArray) -> Generic.Mat{AbsSimpleNumFieldElem}
-
-Create a random matrix in $A$ where the coefficients are selected from $U$.
-"""
-function rand(A::Generic.MatSpace{AbsSimpleNumFieldElem}, U::AbstractArray)
-  return rand!(A(), U)
-end
+rand!(A::Generic.Mat{AbsSimpleNumFieldElem}, U::AbstractArray) =
+  rand!(Random.default_rng(), A, U)
 
 @doc raw"""
     modular_lift(ap::Vector{fqPolyRepMatrix}, me::modular_env) -> Array

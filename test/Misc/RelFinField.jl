@@ -31,6 +31,7 @@
       @test is_square(z^2)
       @test is_square(z) == (iszero(z) || isone(z^e))
     end
+    @test reproducible(K)
   end
 
   @testset "Promote rule" begin

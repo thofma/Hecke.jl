@@ -386,63 +386,50 @@ end
 #
 ##############################################################################
 
-#this allows some more complicated rand(G, (2,2)) and similar.
-#TODO: figure out how this SHOULD be done
-
-rand(rng::AbstractRNG, a::Random.SamplerTrivial{FinGenAbGroup, FinGenAbGroupElem}) = rand(a.self)
-
 @doc raw"""
-    rand(G::FinGenAbGroup) -> FinGenAbGroupElem
+    rand([rng::AbstractRNG], G::FinGenAbGroup) -> FinGenAbGroupElem
 
 Returns an element of $G$ chosen uniformly at random.
 """
-rand(A::FinGenAbGroup) = is_snf(A) ? rand_snf(A) : rand_gen(A)
+rand(::FinGenAbGroup)
 
-function rand_snf(G::FinGenAbGroup)
-  if !isfinite(G)
-    error("Group is not finite")
+function rand(rng::AbstractRNG, sp::SamplerTrivial{FinGenAbGroup})
+  G = sp[]
+  isfinite(G) || error("Group is not finite")
+  if !is_snf(G)
+    S, mS = snf(G)
+    return image(mS, rand(rng, S))
   end
-  return G([rand(1:G.snf[i]) for i in 1:ngens(G)])
+  return G([rand(rng, 1:G.snf[i]) for i in 1:ngens(G)])
 end
 
-function rand_gen(G::FinGenAbGroup)
-  S, mS = snf(G)
-  return image(mS, rand(S))
+RandomExtensions.maketype(::FinGenAbGroup, ::IntegerUnion) = FinGenAbGroupElem
+
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{FinGenAbGroupElem, FinGenAbGroup, <:IntegerUnion}})
+  G, B = sp[][1:end]
+  B = ZZRingElem(B)
+  if !is_snf(G)
+    S, mS = snf(G)
+    return image(mS, rand(rng, S, B))::FinGenAbGroupElem
+  end
+  return G([rand(rng, 1:(iszero(G.snf[i]) ? B : min(B, G.snf[i])))
+            for i in 1:ngens(G)])
 end
 
 @doc raw"""
-    rand(G::FinGenAbGroup, B::ZZRingElem) -> FinGenAbGroupElem
+    rand([rng::AbstractRNG], G::FinGenAbGroup, B::ZZRingElem) -> FinGenAbGroupElem
+    rand([rng::AbstractRNG], G::FinGenAbGroup, B::Integer) -> FinGenAbGroupElem
 
 For a (potentially infinite) abelian group $G$, return an element
 chosen uniformly at random with coefficients bounded by $B$.
 """
-rand(G::FinGenAbGroup, B::ZZRingElem) = is_snf(G) ? rand_snf(G, B) : rand_gen(G, B)
-
-@doc raw"""
-    rand(G::FinGenAbGroup, B::Integer) -> FinGenAbGroupElem
-
-For a (potentially infinite) abelian group $G$, return an element
-chosen uniformly at random with coefficients bounded by $B$.
-"""
-rand(G::FinGenAbGroup, B::Integer) = is_snf(G) ? rand_snf(G, B) : rand_gen(G, B)
-
-function rand_snf(G::FinGenAbGroup, B::ZZRingElem)
-  z = G([rand(1:(iszero(G.snf[i]) ? B : min(B, G.snf[i]))) for i in 1:ngens(G)])
-  return z
-end
-
-function rand_snf(G::FinGenAbGroup, B::Integer)
-  return rand(G, ZZRingElem(B))
-end
-
-function rand_gen(G::FinGenAbGroup, B::ZZRingElem)
-  S, mS = snf(G)
-  return image(mS, rand(S, ZZRingElem(B)))
-end
-
-function rand_gen(G::FinGenAbGroup, B::Integer)
-  return rand(G, ZZRingElem(B))
-end
+rand(G::FinGenAbGroup, B::ZZRingElem) = rand(Random.default_rng(), G, B)
+# separate methods for `ZZRingElem` and `Integer` avoid ambiguities with
+# `rand(X, dims::Integer...)`
+rand(G::FinGenAbGroup, B::Integer) = rand(Random.default_rng(), G, B)
+rand(rng::AbstractRNG, G::FinGenAbGroup, B::ZZRingElem) = rand(rng, make(G, B))
+rand(rng::AbstractRNG, G::FinGenAbGroup, B::Integer) = rand(rng, make(G, B))
 
 ################################################################################
 #

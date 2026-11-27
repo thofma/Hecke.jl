@@ -456,7 +456,7 @@ end
 
 rand(rng::AbstractRNG, R::OrdLoc, r::AbstractUnitRange{Int}) = rand(rng, make(R, r))
 
-rand(K::OrdLoc{T}, r::AbstractVector) where {T <: AbsSimpleNumFieldElem} = rand(Random.GLOBAL_RNG, K, r)
+rand(R::OrdLoc, r::AbstractUnitRange{Int}) = rand(Random.default_rng(), R, r)
 
 ###############################################################################
 #

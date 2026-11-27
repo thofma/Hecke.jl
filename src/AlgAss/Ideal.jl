@@ -599,8 +599,7 @@ end
 #
 ################################################################################
 
-# TODO: implement for ::Type{AbsAlgAssIdl}
-#Random.gentype(a::AbsAlgAssIdl) = elem_type(algebra(a))
+Random.gentype(::Type{AbsAlgAssIdl{S}}) where {S} = elem_type(S)
 
 function RandomExtensions.maketype(I::AbsAlgAssIdl, _)
   return elem_type(algebra(I))
@@ -627,7 +626,7 @@ end
 
 rand(rng::AbstractRNG, a::AbsAlgAssIdl, v...) = rand(rng, make(a, v...))
 
-rand(a::AbsAlgAssIdl, v...) = rand(Random.GLOBAL_RNG, a, v...)
+rand(a::AbsAlgAssIdl, v...) = rand(Random.default_rng(), a, v...)
 
 ################################################################################
 #

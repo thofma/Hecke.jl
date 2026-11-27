@@ -20,6 +20,7 @@
   J = fractional_ideal(OL, PM)
   @test denominator(J) == ZZRingElem(6)
   @test Hecke.is_integral(J.den*J)
+  @test reproducible(J, 5)
 
   @testset "Weird modulus" begin
     K, a = Hecke.rationals_as_number_field()

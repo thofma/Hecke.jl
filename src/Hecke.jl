@@ -55,7 +55,7 @@ import AbstractAlgebra: MapWithHeader, MapHeader, MapCache, InverseMap, pseudo_i
 import LinearAlgebra: dot, nullspace, rank, ishermitian
 
 import Random: rand!
-using Random: Sampler, SamplerTrivial, GLOBAL_RNG
+using Random: Sampler, SamplerTrivial
 
 using RandomExtensions: RandomExtensions, make, Make2, Make3, Make4
 

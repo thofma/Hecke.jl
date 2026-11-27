@@ -19,6 +19,8 @@
     @test x == one(x)
     z = rand(OpI)
     @test z == x * z == z * x
+    @test reproducible(OpI)
+    @test rand(OpI, 2) isa Vector{typeof(z)}
     zz = inv(z)
     @test zz * z == zz * z == x
     @test z^2 == z * z
@@ -37,6 +39,8 @@
 
     u = rand(Q)
     @test RtoQ(preimage(RtoQ, u)) == u
+    @test reproducible(Q)
+    @test rand(Q, 2) isa Vector{typeof(u)}
   end
 end
 
