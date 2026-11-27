@@ -155,6 +155,14 @@
     end
   end
 
+  # The complement of the roots can have norms beyond machine integers; then
+  # the roots of norm greater than 2 are not looked for.
+  let
+    m = 3 * ZZ(2)^60
+    G = matrix(ZZ, 2, 2, [m, div(m, 2), div(m, 2), m + 1])
+    @test automorphism_group_order(integer_lattice(; gram = G)) == 4
+  end
+
   # The partition backtrack with the vectors which look like a short basis
   # vector: with the limit 0 they are used whenever the basis vectors have
   # different norms. They generate the lattice for the first norm, for the

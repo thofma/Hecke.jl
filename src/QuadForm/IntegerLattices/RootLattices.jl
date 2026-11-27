@@ -729,14 +729,32 @@ function _append_long_roots!(fundamental_roots::Vector{ZZMatrix}, G::ZZMatrix, G
     K = nrows(R) == 0 ? identity_matrix(ZZ, n) : kernel(G*transpose(R); side=:left)
     nrows(K) == 0 && break
     GK, T = lll_gram_with_transform(K*G*transpose(K))
-    m = Int(minimum(diagonal(GK)))
-    is_divisible_by(d, m) || break
-    KInt = _int_matrix_with_overflow(T*K, ZZ())
+    mZ = minimum(diagonal(GK))
+    is_divisible_by(d, mZ) || break
+    # From here on machine integers are used, as in the targeted enumeration.
+    # The long roots are optional, so we stop where those do not suffice.
+    maximum(abs, GK) < ZZ(2)^62 || break
+    m = Int(mZ)
+    TK = T*K
+    # A vector v of K, in the coordinates of the reduced basis, is the vector
+    # w = v*TK of L, and it is a root if 2*G*transpose(w) lies in m ZZ. Only
+    # the residues modulo m of A = 2*G*transpose(TK) matter for this; with
+    # them the test is exact in machine integers, by the bound below.
+    A = Matrix{Int}(map_entries(x -> mod(x, mZ), 2*G*transpose(TK)))
+    vectors = __short_vectors(GK, m, m)
+    isempty(vectors) && break
+    entry = maximum(v -> maximum(abs, v[1]), vectors)
+    ZZ(nrows(K)) * m * entry < typemax(Int) || break
     roots = Tuple{Vector{Int}, Int}[]
-    for (v, _) in __short_vectors(GK, m, m)
-      w = transpose(KInt)*v
-      all(x -> iszero(mod(2*x, m)), GInt*w) && push!(roots, (w, m))
+    fits_Int = true
+    for (v, _) in vectors
+      all(x -> iszero(mod(x, m)), A*v) || continue
+      w = matrix(ZZ, 1, length(v), v) * TK
+      fits_Int = all(x -> fits(Int, x), w)
+      fits_Int || break
+      push!(roots, (Int[Int(w[1, j]) for j in 1:n], m))
     end
+    fits_Int || break
     isempty(roots) && break
     append!(fundamental_roots, (matrix(ZZ, 1, n, r) for r in _fundamental_roots(roots, GInt)))
   end
