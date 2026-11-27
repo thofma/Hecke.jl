@@ -1385,7 +1385,7 @@ function denominator(x::AbstractAssociativeAlgebraElem)
   if _is_sparse(x)
     d = [ denominator(y) for (_, y) in _coeffs_sparse(x) ]
     # `lcm` rejects an empty vector, which the zero element gives.
-    return isempty(d) ? one(ZZ) : lcm(d)
+    return isempty(d) ? denominator(zero(base_ring(parent(x)))) : lcm(d)
   else
     return lcm([ denominator(y) for y in coefficients(x, copy = false) ])
   end
