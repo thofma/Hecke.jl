@@ -968,15 +968,16 @@ end
 # can be added up in a machine integer before reducing.
 const GROWING_SUBSPACE_PRIME = 33554467
 
-_residue(a::Int, p::Int) = mod(a, p)
-_residue(a::ZZRingElem, p::Int) = Int(mod(a, ZZ(p)))
+_residue(a::Integer, p::Int) = Int64(mod(a, p))
+_residue(a::ZZRingElem, p::Int) = Int64(mod(a, ZZ(p)))
 
 # The number of bits of the squared norm of the entries of `x` which are used.
-function _norm_bits(x::AbstractVector{Int}, offset::Int, n::Int)
+function _norm_bits(x::AbstractVector{Int64}, offset::Int, n::Int)
   s = Int128(0)
+  bound = Int64(2)^31
   for j in 1:n
     a = x[offset + j]
-    -2^31 < a < 2^31 || return nbits(sum(ZZ(x[offset + k])^2 for k in 1:n))
+    -bound < a < bound || return nbits(sum(ZZ(x[offset + k])^2 for k in 1:n))
     s += a * a
   end
   return 128 - leading_zeros(s)
@@ -1038,7 +1039,7 @@ function _add_prime!(z::GrowingSubspace)
   push!(z.ranks, 0)
   i = length(z.primes)
   if i > length(z.echelons)
-    push!(z.echelons, zeros(Int, z.degree, z.degree))
+    push!(z.echelons, zeros(Int64, z.degree, z.degree))
     push!(z.pivots, Int[])
   end
   for g in z.generators

@@ -733,7 +733,7 @@ function _append_long_roots!(fundamental_roots::Vector{ZZMatrix}, G::ZZMatrix, G
     is_divisible_by(d, mZ) || break
     # From here on machine integers are used, as in the targeted enumeration.
     # The long roots are optional, so we stop where those do not suffice.
-    maximum(abs, GK) < ZZ(2)^62 || break
+    maximum(abs, GK) < ZZ(2)^(Sys.WORD_SIZE - 2) || break
     m = Int(mZ)
     TK = T*K
     # A vector v of K, in the coordinates of the reduced basis, is the vector

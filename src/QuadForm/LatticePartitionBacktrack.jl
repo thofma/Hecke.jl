@@ -316,14 +316,15 @@ end
 label(S::ShortVectors, p::Int) =
   (p > 0 ? S.labels[p] : -S.labels[-p], S.unsigned_labels[abs(p)])
 
-# A fixed bijection of the machine integers which scrambles them. It is used
+# A fixed bijection of the 64 bit integers which scrambles them. It is used
 # wherever several numbers are combined into one, so that the result does
-# not depend on the version of Julia.
-function mix(x::Int)
-  z = reinterpret(UInt, x) + 0x9e3779b97f4a7c15
+# not depend on the version of Julia. The search needs `Int` to have 64
+# bits; there is no method for other integers.
+function mix(x::Int64)
+  z = reinterpret(UInt64, x) + 0x9e3779b97f4a7c15
   z = xor(z, z >> 30) * 0xbf58476d1ce4e5b9
   z = xor(z, z >> 27) * 0x94d049bb133111eb
-  return reinterpret(Int, xor(z, z >> 31))
+  return reinterpret(Int64, xor(z, z >> 31))
 end
 
 # The matrix `form` of `ShortVectors`, and the forms as matrices of machine
@@ -367,7 +368,7 @@ maxabs(A) = mapreduce(x -> x == typemin(Int) ? typemax(Int) : abs(x), max, A;
 # All non-zero vectors of norm at most `bound` with respect to the positive
 # definite form `G`, up to sign.
 function enumerate_vectors(G::ZZMatrix, bound = maximum(diagonal(G)))
-  if all(x -> nbits(x) < 62, G)
+  if all(x -> nbits(x) < Sys.WORD_SIZE - 2, G)
     return Vector{Int}[v for (v, _) in __short_vectors(G, nothing, bound)]
   end
   list = _short_vectors_gram_integral(Vector, G, ZZ(0), bound, ZZRingElem)

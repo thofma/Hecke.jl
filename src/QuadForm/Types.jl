@@ -622,8 +622,8 @@ end
 # `add_generator!`. Of a longer vector the entries with indices in `range` are
 # used.
 #
-# The span is kept modulo primes of 26 bits, where it costs machine
-# arithmetic: the first `ranks[i]` columns of `echelons[i]` are a basis of the
+# The span is kept modulo primes of 26 bits, where it costs arithmetic with
+# 64 bit integers, which is why the residues are stored as `Int64`: the first `ranks[i]` columns of `echelons[i]` are a basis of the
 # span modulo `primes[i]` in echelon form, with pivots `pivots[i]`. A vector
 # which is independent modulo a prime is independent, but not conversely. If
 # `exact` is set, the answers are nevertheless those over the rationals: then
@@ -638,14 +638,14 @@ mutable struct GrowingSubspace
   bits::Int
   generators::Vector{Vector{ZZRingElem}}
   primes::Vector{Int}
-  echelons::Vector{Matrix{Int}}
+  echelons::Vector{Matrix{Int64}}
   pivots::Vector{Vector{Int}}
   ranks::Vector{Int}
-  work::Vector{Int}
+  work::Vector{Int64}
 
   function GrowingSubspace(r::UnitRange{Int}; exact::Bool = true)
     n = length(r)
-    return new(r, n, 0, exact, 0, Vector{ZZRingElem}[], Int[], Matrix{Int}[],
-               Vector{Int}[], Int[], zeros(Int, n))
+    return new(r, n, 0, exact, 0, Vector{ZZRingElem}[], Int[],
+               Matrix{Int64}[], Vector{Int}[], Int[], zeros(Int64, n))
   end
 end
