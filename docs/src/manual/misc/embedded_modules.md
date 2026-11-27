@@ -1,0 +1,435 @@
+```@meta
+CurrentModule = Hecke.EmbeddedModules
+CollapsedDocStrings = true
+DocTestSetup = Hecke.doctestsetup()
+```
+
+# Embedded modules
+
+An embedded module is an $R$-module contained in $S^n$, where $R$ and $S$ are
+commutative rings and $R$ embeds into $S$. In particular, $S$ may be $R$ itself
+or an overring such as the fraction field of $R$. Typical examples are
+$\mathbf Z$-modules in $\mathbf Q^n$ and modules over a polynomial ring or a
+Dedekind domain inside a corresponding ambient module.
+
+The aim is to provide a ring-agnostic interface for working with such modules.
+Users of the interface should be able to construct modules, test membership and
+containment, obtain bases and coordinates, and perform operations such as sums
+and intersections without having to know how the module is represented.
+
+Internally, the appropriate representation depends on the coefficient ring.
+Modules over principal ideal domains can be described by ordinary matrices and
+computed using suitable normal forms, such as Hermite or Popov forms, while
+modules over Dedekind domains require pseudo-matrices and pseudo-Hermite normal
+forms. `EmbeddedModule` hides these matrix and pseudo-matrix details behind a
+common interface so that higher-level code can be written independently of
+this distinction.
+
+Matrices in this interface act on the right: their rows are generators or
+basis elements of the embedded module.
+
+## Construction
+
+```@docs
+embedded_module
+```
+
+Here `R` is the coefficient ring, `S` is an overring of `R`, and the rows of
+`G` generate an $R$-module in $S^n$. The case `R === S` is allowed. For a
+principal ideal domain, `G` is an ordinary matrix. For a Dedekind domain, it is
+a pseudo-matrix whose coefficient ideals specify the multiples allowed for
+each row.
+
+By default the rows of `G` are only assumed to generate the module. A basis is
+computed and cached when it is first needed. Setting `is_basis_matrix = true`
+declares that `G` is already a basis matrix or a pseudo-basis matrix. For a
+full-rank module, `inverse` can be used to supply the inverse of that basis
+matrix and avoid computing it later.
+
+The optional `overstructure` identifies the ambient mathematical object whose
+coordinates are represented by $S^n$. For example, an order lattice uses its
+ambient algebra as the overstructure. It does not affect the module itself,
+but it is used when deciding whether two embedded modules are compatible.
+
+```@example embedded_modules_integer
+using Hecke
+
+M = Hecke.embedded_module(ZZ, QQ, QQ[2 0; 0 3])
+
+@assert Hecke.ring(M) === ZZ
+@assert Hecke.overring(M) === QQ
+@assert Hecke.overstructure(M) === nothing
+@assert Hecke.ambient_rank(M) == 2
+nothing
+```
+
+The zero module in $S^n$ can be constructed without first creating an empty
+matrix:
+
+```@example embedded_modules_integer
+Z = Hecke.zero_embedded_module(ZZ, QQ, 2)
+@assert rank(Z) == 0
+@assert Hecke.ambient_rank(Z) == 2
+nothing
+```
+
+## Elements and coordinates
+
+An `EmbeddedModuleElem` can store both coordinates with respect to a module
+basis and coordinates in the ambient space. Either representation is computed
+from the other when needed and then cached.
+
+The low-level constructors `_element_from_coordinates` and
+`_element_from_ambient_coordinates` are useful to code that wraps embedded
+modules in a higher-level structure. The former takes a vector over $R$; the
+latter takes a vector over $S$ and, by default, checks that it belongs to the
+module. Passing `check = false` skips this membership check and should only be
+done when containment is already known.
+
+```@example embedded_modules_integer
+a = Hecke._element_from_coordinates(M, ZZRingElem[2, -1])
+@assert parent(a) === M
+@assert coordinates(a) == ZZRingElem[2, -1]
+@assert Hecke.ambient_coordinates(a) == QQFieldElem[4, -3]
+
+b = Hecke._element_from_ambient_coordinates(M, QQFieldElem[4, 6])
+@assert coordinates(b) == ZZRingElem[2, 2]
+nothing
+```
+
+Ambient vectors can be tested for membership directly. Their entries must
+belong to the ambient ring.
+
+```@example embedded_modules_integer
+@assert QQFieldElem[4, 6] in M
+@assert !(QQFieldElem[1, 0] in M)
+nothing
+```
+
+For a Dedekind domain, a `PseudoElement` pairs an ambient element with a
+fractional coefficient ideal. Membership of such a pseudo-element means that
+all coefficient-ideal multiples of the element lie in the embedded module. The
+functions `element` and `fractional_ideal` return its two components.
+
+## Bases and generators
+
+The input generators and the computed basis are intentionally separate. This
+allows construction to remain cheap and lets the implementation choose the
+normal-form algorithm appropriate for `R`.
+
+| Function | Meaning |
+|:--|:--|
+| `generator_matrix(M)` | the original generating matrix or pseudo-matrix |
+| `basis(M)` | a basis of module elements for PID coefficients |
+| `basis_matrix(M)` | a cached basis matrix or pseudo-basis matrix |
+| `rank(M)` | the rank of the module over `ring(M)` |
+| `ambient_rank(M)` | the dimension $n$ of the ambient space $S^n$ |
+| `has_full_rank(M)` | whether `rank(M) == ambient_rank(M)` |
+| `basis_matrix_inverse(M)` | the inverse of a full-rank basis matrix |
+
+For PID coefficients, `basis_matrix(M)` is a matrix over `overring(M)`.
+`basis_matrix_components(M)` gives an integral numerator matrix over `ring(M)`
+and a common denominator. For Dedekind coefficients, `basis_matrix(M)` returns
+a pseudo-matrix; its matrix and coefficient ideals can be accessed with
+`matrix` and `coefficient_ideals`.
+
+```@example embedded_modules_integer
+@assert rank(M) == 2
+@assert Hecke.has_full_rank(M)
+@assert basis_matrix(M) == QQ[2 0; 0 3]
+@assert Hecke.basis_matrix_components(M) == (ZZ[2 0; 0 3], ZZ(1))
+nothing
+```
+
+## Containment and set-theoretic operations
+
+Two embedded modules are compatible when they have identical coefficient
+rings, ambient rings, and overstructures, and have the same ambient rank. The
+overstructures are compared by identity. Use `is_compatible(M, N)` to test this
+condition.
+
+The common interface provides:
+
+- `x in M` for element membership;
+- `issubset(N, M)` for module containment;
+- `M + N` for the sum;
+- `intersect(M, N)` for the intersection;
+- `M == N` for equality as embedded modules; and
+- `module_index(N, M)` for the index ideal in the coefficient ring when `N` is
+  contained in `M` and both have the same rank. It is generated by the determinant
+  of the inclusion matrix and is independent of the chosen bases. Use `gen` for
+  a normalized generator. The index operation is currently implemented for PID
+  coefficients.
+
+Except for equality, binary module operations require compatible operands and
+throw an error otherwise. The resulting sum and intersection retain the common
+overstructure.
+
+```@example embedded_modules_integer
+N = Hecke.embedded_module(ZZ, QQ, QQ[4 0; 0 6])
+
+@assert Hecke.is_compatible(M, N)
+@assert issubset(N, M)
+@assert M + N == M
+@assert intersect(M, N) == N
+@assert Hecke.module_index(N, M) == ideal(ZZ, 4)
+nothing
+```
+
+### Indices of associative algebra lattices
+
+For PID coefficients, `Hecke.module_index(N, L; check = true)` delegates to the
+underlying modules and returns an ideal of `base_ring(L)`. By default, it checks
+that the lattices are compatible, have the same rank, and that `N` is contained
+in `L`. Equal lattices, including zero lattices, have the unit ideal as their
+index ideal.
+
+```@example lattice_indices
+using Hecke
+A = matrix_algebra(QQ, 2)
+b = basis(A)
+L = Hecke.lattice(A, ZZ, b[1:2])
+@assert Hecke.module_index(2*L, L) == ideal(ZZ, 4)
+@assert gen(Hecke.module_index(2*L, L)) == 4
+nothing
+```
+
+## Maps
+
+For PID coefficients, `hom(M, X, images)` assigns images to `basis(M)` in
+order. Alternatively, `hom(M, X, [x1 => y1, ...])` accepts generating elements
+of `M` and checks that they generate `M` and that every relation maps to zero.
+Both return an `EmbeddedModuleMap`, evaluated with `f(x)` or `image(f, x)`.
+
+For maps between embedded PID modules, `preimage(f, y)` lifts an element in
+the image; `image(f)` and `kernel(f)` return modules. Use `is_injective(f)`,
+`is_surjective(f)`, and `is_bijective(f)` to test the corresponding properties.
+
+```@example embedded_modules_integer
+b, c = basis(M), basis(N)
+f = hom(M, N, c)
+g = hom(M, N, [b[1] => c[1], b[2] => c[2],
+               b[1] + b[2] => c[1] + c[2]])
+@assert f(b[1]) == g(b[1]) == c[1]
+@assert preimage(f, c[2]) == b[2]
+@assert image(f) == N && is_bijective(f)
+nothing
+```
+
+### Maps of associative algebra lattices
+
+Maps of associative algebra lattices wrap maps of their underlying embedded
+modules. They are linear over the common coefficient ring; the ambient algebras
+may differ. For PID coefficients, `hom(L, N, images)` assigns images to
+`basis(L)` in order, and `hom(L, N, [x1 => y1, ...])` specifies images of
+generators. Entries may be lattice elements with the exact parent or ambient
+algebra elements, which are checked for lattice membership.
+
+For a general codomain `X`, `hom(L, X, images)` and
+`hom(L, X, [x1 => y1, ...])` delegate to the embedded-module constructors.
+The codomain must support the coefficient ring's scalar action, and every
+image must have `X` as its exact parent. Sources in generator assignments
+may be lattice elements with parent `L` or ambient algebra elements in `L`.
+
+Evaluate with `f(x)` or `image(f, x)` for a lattice element `x`.
+Preimages, kernels, images, and the injectivity, surjectivity, and bijectivity
+predicates are available when supported by the underlying embedded-module map,
+accessible through `Hecke.underlying_map(f)`. A preimage is a lattice element,
+and a kernel is a lattice in the domain's ambient algebra. For a lattice
+codomain, `image(f)` returns a lattice in its ambient algebra; for a module
+codomain, it returns a module.
+
+```@example lattice_maps
+using Hecke
+A = matrix_algebra(QQ, 2)
+b = basis(A)
+L = Hecke.lattice(A, ZZ, b[1:2])
+N = Hecke.lattice(A, ZZ, [b[3]])
+f = hom(L, N, [2*b[3], 3*b[3]])
+x = L(4*b[1] - b[2])
+@assert f(x) == N(5*b[3])
+@assert f(preimage(f, N(b[3]))) == N(b[3])
+@assert image(f) == N && rank(kernel(f)) == 1
+@assert compose(id_hom(L), f)(x) == f(x)
+h = hom(L, ZZ, ZZRingElem[2, 3])
+@assert h(x) == 5
+g = hom(L, QQ, [L(b[1]) => QQ(1//2), b[2] => QQ(3)])
+@assert g(x) == -1
+nothing
+```
+
+## Quotients
+
+For `N` contained in `M`, `quo(M, N)` returns `(Q, f)`, where `Q`
+represents $M/N$ and `f` is the surjective projection from `M` to `Q`.
+Its kernel is `N` and its image is `Q`; `preimage(f, y)` chooses a
+representative in `M`.
+
+For PID coefficients, `Hecke.quotient_vector_space(M, p)` and
+`Hecke.quotient_vector_space(M, N, p)` return `(V, f)` for `M/pM` and `M/N`
+over `R/(p)`, where `R = Hecke.ring(M)` and `p` is prime in `R`. The second
+form requires `pM` contained in `N` and `N` contained in `M`.
+
+```@example embedded_modules_integer
+Q, MtoQ = quo(M, N)
+x = Hecke._element_from_coordinates(M, ZZRingElem[1, 0])
+y = Hecke._element_from_coordinates(M, ZZRingElem[2, 0])
+@assert !iszero(MtoQ(x))
+@assert iszero(MtoQ(y))
+
+W, MtoW = Hecke.quotient_vector_space(M, ZZ(2))
+@assert dim(W) == rank(M)
+@assert kernel(MtoW) == N
+
+V, MtoV = Hecke.quotient_vector_space(M, N, ZZ(2))
+@assert dim(V) == 2
+@assert !iszero(MtoV(x))
+@assert iszero(MtoV(y))
+@assert MtoV(preimage(MtoV, MtoV(x))) == MtoV(x)
+nothing
+```
+
+Over a Dedekind domain `O`, pass a nonzero prime ideal `p` to obtain an `O/p`
+vector space. Absolute simple number field orders and generic orders,
+including finite and infinite function field orders, are supported, with
+nonprincipal and fractional coefficient ideals. The form with a submodule `N`
+requires `pM` contained in `N` and `N` contained in `M`. Both forms return
+`(V, f)`, the vector space and projection. The reduction constructs and stores
+the residue field map internally. It is available through `Hecke.ring_map(f)`.
+
+```@example embedded_modules_dedekind_reduction
+using Hecke
+K, a = quadratic_field(-5)
+O = maximal_order(K)
+p = ideal(O, 2, O(1 + a))
+I = inv(K(2))*fractional_ideal(p)
+M = Hecke.embedded_module(O, K, pseudo_matrix(O, identity_matrix(K, 2), [I, I]))
+N = Hecke.embedded_module(O, K, pseudo_matrix(O, K[1 1; 0 1], [I, p*I]))
+V, f = Hecke.quotient_vector_space(M, p)
+W, g = Hecke.quotient_vector_space(M, N, p)
+@assert dim(V) == 2 && dim(W) == 1
+@assert kernel(g) === N
+@assert f(preimage(f, V([1, 0]))) == V([1, 0])
+@assert g(preimage(g, W([1]))) == W([1])
+nothing
+```
+
+```@example embedded_modules_function_field_reduction
+using Hecke
+kt, t = rational_function_field(GF(5), :t)
+K, a = function_field(polynomial(kt, [-t^3 - t - 1, 0, 1]))
+O = finite_maximal_order(K)
+p = first(prime_decomposition(O, base_ring(O)(t)))[1]
+I = inv(K(t))*fractional_ideal(p)
+M = Hecke.embedded_module(O, K, pseudo_matrix(O, identity_matrix(K, 2), [I, I]))
+N = Hecke.embedded_module(O, K, pseudo_matrix(O, K[1 1; 0 1], [I, p*I]))
+V, f = Hecke.quotient_vector_space(M, p)
+W, g = Hecke.quotient_vector_space(M, N, p)
+@assert dim(V) == 2 && dim(W) == 1
+@assert f(preimage(f, V([1, 0]))) == V([1, 0])
+@assert g(preimage(g, W([1]))) == W([1])
+nothing
+```
+
+### Quotients of associative algebra lattices
+
+For PID coefficients, `quo(L, N)` returns the module quotient `L/N` and a
+projection from `L`. `Hecke.quotient_vector_space(L, p)` and
+`Hecke.quotient_vector_space(L, N, p)` return a vector space over `R/(p)`
+and its projection, where `R = base_ring(L)` and `p` is prime. The latter
+requires `pL` contained in `N` and `N` contained in `L`. The residue field map
+is constructed and stored internally. Retrieve it with `Hecke.ring_map(f)`.
+These constructions delegate to the underlying embedded modules. Their
+projections accept lattice elements, return lattice elements from `preimage`,
+and return kernel lattices. Composites ending in an embedded module retain
+the embedded-module operations. Other codomains, including quotient modules
+and vector spaces, use generic map composition.
+
+```@example lattice_quotients
+using Hecke
+A = matrix_algebra(QQ, 2)
+b = basis(A)
+L = Hecke.lattice(A, ZZ, b[1:2])
+N = 3*L
+Q, q = quo(L, N)
+V, f = Hecke.quotient_vector_space(L, ZZ(3))
+ZZtoF = Hecke.ring_map(f)
+W, g = Hecke.quotient_vector_space(L, N, ZZ(3))
+x = L(5*b[1] - b[2])
+@assert dim(V) == dim(W) == 2
+@assert q(preimage(q, q(x))) == q(x)
+@assert f(preimage(f, f(x))) == f(x)
+@assert g(preimage(g, g(x))) == g(x)
+@assert image(f) === V && kernel(q) == kernel(f) == kernel(g) == N
+@assert f(2*x) == ZZtoF(ZZ(2))*f(x)
+nothing
+```
+
+## Colons of associative algebra lattices
+
+For compatible full PID lattices in a unital algebra, `colon(L, M; side = :left)`
+returns the lattice of elements `x` satisfying `x*M` contained in `L`.
+Use `side = :right` for the condition that `M*x` is contained in `L`.
+
+The internal functions `Hecke._left_order_module(L)` and
+`Hecke._right_order_module(L)` return the embedded modules of left and right
+multipliers preserving `L`. Both results are cached on `L`.
+
+```@example lattice_colons
+using Hecke
+A = matrix_algebra(QQ, 2)
+E = Hecke.lattice(A, ZZ, basis(A))
+d = A(QQ[2 0; 0 1])
+L = d*E
+C = colon(L, L)
+@assert C == d*E*inv(d)
+@assert colon(L, L; side = :right) == E
+@assert Hecke._left_order_module(L) == Hecke.underlying_module(C)
+@assert Hecke._right_order_module(L) == Hecke.underlying_module(E)
+nothing
+```
+
+## Examples
+
+The same interface applies to polynomial rings and degree localizations. The
+choice of normal form is hidden from the caller.
+
+```@example embedded_modules_function_fields
+using Hecke
+
+K, x = rational_function_field(QQ, "x")
+R = parent(numerator(x))
+
+M = Hecke.embedded_module(R, K, K[x 0; 0 1])
+@assert typeof(x)[x, x + 1] in M
+@assert !(typeof(x)[K(1), K(0)] in M)
+
+Rinf = localization(K, degree)
+Minf = Hecke.embedded_module(Rinf, K, K[1//x 0; 0 1])
+@assert typeof(x)[inv(x), (x + 1)//x] in Minf
+@assert !(typeof(x)[K(1), K(0)] in Minf)
+nothing
+```
+
+Over a Dedekind domain, construction uses a pseudo-matrix, but accessors and
+set-theoretic operations have the same interface. See also
+[Pseudo-matrices](@ref PMatLink).
+
+```@example embedded_modules_dedekind
+using Hecke
+
+K, = quadratic_field(5)
+O = maximal_order(K)
+P = pseudo_matrix(identity_matrix(K, 2))
+M = Hecke.embedded_module(O, K, P)
+
+v = elem_type(K)[K(1), K(0)]
+w = elem_type(K)[K(1)//2, K(0)]
+@assert Hecke._pseudo_element(v, O) in M
+@assert !(Hecke._pseudo_element(w, O) in M)
+
+N = Hecke.embedded_module(O, K, 2*basis_matrix(M))
+@assert M + N == M
+@assert intersect(M, N) == N
+nothing
+```

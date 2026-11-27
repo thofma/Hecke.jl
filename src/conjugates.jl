@@ -50,7 +50,7 @@ end
 
 function evaluate(f::QQPolyRingElem, r::BigComplex)
   #Horner - not elegant, but workable
-  l = f.length-1
+  l = degree(f)
   s = BigComplex(BigFloat(coeff(f, l)))
   for i =l-1:-1:0
     s = s*r+BigComplex(BigFloat(coeff(f, i)))
@@ -60,7 +60,7 @@ end
 
 function evaluate(f::ZZPolyRingElem, r::BigComplex)
   #Horner - not elegant, but workable
-  l = f.length-1
+  l = degree(f)
   s = BigComplex(coeff(f, l))
   for i =l-1:-1:0
     s = s*r+BigComplex(coeff(f, i))

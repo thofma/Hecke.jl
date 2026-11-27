@@ -12,9 +12,9 @@
 
 struct PseudoHermiteFormTrait <: AbstractAlgebra.Solve.MatrixNormalFormTrait end
 
-AbstractAlgebra.Solve.matrix_normal_form_type(::NumFieldOrder) = PseudoHermiteFormTrait()
+AbstractAlgebra.Solve.matrix_normal_form_type(::Type{<:NumFieldOrder}) = PseudoHermiteFormTrait()
 
-function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormTrait, A, b, task::Symbol; side::Symbol)
+function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormTrait, A::MatElem, b::MatElem, task::Symbol; side::Symbol)
   if side === :right
     fl, _X, _K = AbstractAlgebra.Solve._can_solve_internal_no_check(PseudoHermiteFormTrait(), transpose(A), transpose(b), task; side = :left)
     return fl, transpose(_X), transpose(_K)
@@ -23,12 +23,12 @@ function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormT
   R = base_ring(A)
   @assert is_maximal(R)
   AP = pseudo_matrix(A)
-  H, T = pseudo_hnf_with_transform(AP)
+  H0, T = pseudo_hnf_with_transform(AP)
   # compute the rank
-  r = something(findlast(i -> !is_zero_row(matrix(H), i), 1:nrows(H)), nrows(H))
+  r = something(findlast(i -> !is_zero_row(matrix(H0), i), 1:nrows(H0)), nrows(H0))
   # We have to only take the full rank part of H, otherwise is _contained_in_span_...
   # confused.
-  H = sub(H, 1:r, 1:ncols(H))
+  H = sub(H0, 1:r, 1:ncols(H0))
   if task === :only_check
     Kb = nf(R).(b)
     for i in 1:nrows(b)
@@ -62,7 +62,7 @@ function AbstractAlgebra.Solve._can_solve_internal_no_check(::PseudoHermiteFormT
   return true, R.(sol), K
 end
 
-function kernel(::PseudoHermiteFormTrait, A; side::Symbol = :left)
+function kernel(::PseudoHermiteFormTrait, A::MatElem; side::Symbol = :left)
   if side === :right
     return transpose(kernel(transpose(A); side = :left))
   end

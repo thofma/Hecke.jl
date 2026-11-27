@@ -7,6 +7,7 @@
   @test !is_split(cyclic_algebra(k1, sigma1, QQ(3)))
 
   c = cyclic_algebra(k1, sigma1, QQ(4))
+  @test structure_constant_algebra(c) === parent(Hecke.generating_element(c))
   splits, iso = is_split_with_map(c)
   @test splits
   @test iso(domain(iso)(1)) == codomain(iso)(1)

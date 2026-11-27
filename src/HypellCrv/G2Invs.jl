@@ -5,7 +5,7 @@
 #
 ################################################################################
 
-function _clebsch_invariants(f::MPolyRingElem{T}) where T
+function _clebsch_invariants(f::MPolyRingElem{T}) where T  <: FieldElem
   Kxy = parent(f)
   K = base_ring(f)
   x, y = gens(Kxy)
@@ -20,7 +20,18 @@ function _clebsch_invariants(f::MPolyRingElem{T}) where T
   C = transvectant(i, delta, 4)
   D = transvectant(y3, y1, 2)
 
-  return [K(evaluate(A, [0,0])), K(evaluate(B, [0,0])),K(evaluate(C, [0,0])), K(evaluate(D, [0,0]))]
+  return [K(evaluate(A, [0,0])), K(evaluate(B, [0,0])),K(evaluate(C, [0,0])), K(evaluate(D, [0,0]))], [2,4,6,10]
+end
+
+
+@doc raw"""
+    clebsch_invariants(C::HypellCrv{T}) -> Vector{T}
+Returns the Clebsch invariants A, B, C, D for the genus 2 curve C.
+The Clebsch invariants live in the weighted projective space P(2, 4, 6, 10).
+"""
+function clebsch_invariants(C::HypellCrv)
+  f, h = hyperelliptic_polynomials(C)
+  return clebsch_invariants(f, h)
 end
 
 function clebsch_invariants(f::PolyRingElem{T}) where T
@@ -37,77 +48,92 @@ function clebsch_invariants(f::PolyRingElem{T}) where T
   return _clebsch_invariants(f_hom)
 end
 
-function clebsch_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}) where T
+function clebsch_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}) where T  <: FieldElem
   return clebsch_invariants(f + h^2/4)
 end
 
-function clebsch_invariants(C::HypellCrv)
-  f, h = hyperelliptic_polynomials(C)
-  return clebsch_invariants(f, h)
-end
-
-
-function igusa_clebsch_invariants(f::PolyRingElem{T}) where T
-  K = base_ring(f)
-  n = degree(f)
-  @req 5 <= n <= 6 "Igusa-Clebsch invariants are only defined for a curve of genus 2."
-  if characteristic(K) == 2
-    error("Characteristic of the field cannot be 2")
-  end
-  if characteristic(K) in [3,5]
-    igusa_invs = igusa_invariants(f)
-    return igusa_clebsch_from_igusa(igusa_invs)
-  end
-  A, B, C, D = clebsch_invariants(f)
-  return igusa_clebsch_from_clebsch([A, B, C, D])
-end
-
+@doc raw"""
+    igusa_clebsch_invariants(C::HypellCrv{T}) -> Vector{T}
+Returns the Igusa-Clebsch invariants a, b, c, d for the genus 2 curve C.
+The Igusa-Clebsch invariants live in the weighted projective space P(2, 4, 6, 10).
+"""
 function igusa_clebsch_invariants(C::HypellCrv)
   f, h = hyperelliptic_polynomials(C)
   f = f + h^2/4
   return igusa_clebsch_invariants(f)
 end
 
-function igusa_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}, include_J15::Bool = false) where T
+function igusa_clebsch_invariants(f::PolyRingElem{T}) where T  <: FieldElem
   K = base_ring(f)
+  n = degree(f)
+  @req 5 <= n <= 6 "Igusa-Clebsch invariants are only defined for a curve of genus 2."
   if characteristic(K) == 2
-    return igusa_invs = igusa_char2(f, h)
+    error("Characteristic of the field cannot be 2")
   end
-  f = f + h^2/4
+  ws = [2,4,6,10]
   if characteristic(K) in [3,5]
-    return igusa_general_formulas(f)
+    igusa_invs = igusa_invariants(f)[1]
+    return igusa_clebsch_from_igusa(igusa_invs), ws
   end
-  a, b, c, d = igusa_clebsch_invariants(f)
-  igusa_invs = igusa_from_igusa_clebsch([a,b,c,d])
-  if include_J15
-    J15 = igusa_invariant_J15(f)
-    return push!(igusa_invs, J15)
-  else
-    return igusa_invs
-  end
+  A, B, C, D = clebsch_invariants(f)[1]
+  return igusa_clebsch_from_clebsch([A, B, C, D]), ws
 end
 
-function igusa_invariants(f::PolyRingElem{T}, include_J15::Bool = false) where T
-  R = parent(f)
-  return igusa_invariants(f, zero(R), include_J15)
-end
-
+@doc raw"""
+    igusa_invariants(C::HypellCrv{T}, include_J15::Bool = false) -> Vector{T}
+Returns the Igusa invariants J2, J4, J6, J8, J10 for the genus 2 curve C.
+The Igusa-Clebsch invariants live in the weighted projective space P(2, 4, 6, 8, 10).
+If the optional argument include_J15 is set to true, the additional Igusa invariant 
+of weight 15 J15 is also returned.
+"""
 function igusa_invariants(C::HypellCrv, include_J15::Bool = false)
   f, h = hyperelliptic_polynomials(C)
   return igusa_invariants(f, h, include_J15)
 end
 
-function g2_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}) where T
-  return g2_from_igusa(igusa_invariants(f, h))
+function igusa_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}, include_J15::Bool = false) where T  <: FieldElem
+  K = base_ring(f)
+  ws = [2,4,6,8,10]
+  if characteristic(K) == 2
+    return igusa_char2(f, h), ws
+  end
+  f = f + h^2/4
+  if characteristic(K) in [3,5]
+    return igusa_general_formulas(f), ws
+  end
+  a, b, c, d = igusa_clebsch_invariants(f)[1]
+  igusa_invs = igusa_from_igusa_clebsch([a,b,c,d])
+  if include_J15
+    J15 = igusa_invariant_J15(f)
+    push!(ws, 15)
+    return push!(igusa_invs, J15), ws
+  else
+    return igusa_invs, ws
+  end
 end
 
-function g2_invariants(f::PolyRingElem{T}) where T
-  return g2_from_igusa(igusa_invariants(f))
+function igusa_invariants(f::PolyRingElem{T}, include_J15::Bool = false) where T  <: FieldElem
+  R = parent(f)
+  return igusa_invariants(f, zero(R), include_J15)
 end
 
+@doc raw"""
+    g2_invariants(C::HypellCrv{T}) -> Vector{T}
+Returns the g2 invariants g1, g2, g3 for the genus 2 curve C.
+"""
 function g2_invariants(C::HypellCrv)
-  return g2_from_igusa(igusa_invariants(C))
+  return g2_from_igusa(igusa_invariants(C)[1])
 end
+
+function g2_invariants(f::PolyRingElem{T}, h::PolyRingElem{T}) where T  <: FieldElem
+  return g2_from_igusa(igusa_invariants(f, h)[1])
+end
+
+function g2_invariants(f::PolyRingElem{T}) where T  <: FieldElem
+  return g2_from_igusa(igusa_invariants(f)[1])
+end
+
+
 
 ################################################################################
 #
@@ -115,7 +141,11 @@ end
 #
 ################################################################################
 
-function igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T
+@doc raw"""
+    igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T})
+Computes the Igusa invariants from the Igusa-Clebsch invariants.
+"""
+function igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T  <: FieldElem
   a, b, c, d = igusa_clebsch_invs
   J2  = a/8
   J4  = (4*J2^2 - b)/96
@@ -125,7 +155,11 @@ function igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T
   return [J2, J4, J6, J8, J10]
 end
 
-function igusa_clebsch_from_igusa(igusa_invs::Vector{T}) where T
+@doc raw"""
+    igusa_clebsch_from_igusa(igusa_invs::Vector{T})
+Computes the Igusa-Clebsch invariants from the Igusa invariants.
+"""
+function igusa_clebsch_from_igusa(igusa_invs::Vector{T}) where T  <: FieldElem
   J2, J4, J6, J8, J10 = igusa_invs
   a = 8*J2
   b = -96*J4 + 4*J2^2
@@ -134,7 +168,11 @@ function igusa_clebsch_from_igusa(igusa_invs::Vector{T}) where T
   return [a, b, c, d]
 end
 
-function  igusa_clebsch_from_clebsch(clebsch_invs::Vector{T}) where T
+@doc raw"""
+    igusa_clebsch_from_clebsch(clebsch_invs::Vector{T})
+Computes the Igusa-Clebsch invariants from the Clebsch invariants.
+"""
+function igusa_clebsch_from_clebsch(clebsch_invs::Vector{T}) where T <: FieldElem
   A, B, C, D = clebsch_invs
   a = -120*A
   b = -720*A^2 + 6750*B
@@ -144,17 +182,26 @@ function  igusa_clebsch_from_clebsch(clebsch_invs::Vector{T}) where T
    return [a, b, c, d]
 end
 
-function clebsch_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T
+@doc raw"""
+    igusa_from_igusa_clebsch(igusa_clebsch_invs::Vector{T})
+Computes the Clebsch invariants from the Igusa-Clebsch invariants.
+"""
+function clebsch_from_igusa_clebsch(igusa_clebsch_invs::Vector{T}) where T  <: FieldElem
   a, b, c, d = igusa_clebsch_invs
-  A = -a/120 ;
-  B = (b+720*A^2)//6750
-  C = (c-8640*A^3 + 108000*A*B)//202500 ;
+  K = parent(a)
+  A = -a/K(120)
+  B = (b+720*A^2)/K(6750)
+  C = (c-8640*A^3 + 108000*A*B)/K(202500)
   D = (d+62208*A^5 - 972000*A^3*B - 1620000*A^2*C + 3037500*A*B^2 +
-   6075000*B*C)//(-4556250)
+   6075000*B*C)/K(-4556250)
   return [A, B, C, D]
 end
 
-function g2_from_igusa(igusa_invs::Vector{T}) where T
+@doc raw"""
+    g2_from_igusa(igusa_invs::Vector{T})
+Computes the Cardona-Quer-Nart-Pujolas invariants from the Igusa invariants.
+"""
+function g2_from_igusa(igusa_invs::Vector{T}) where T <: FieldElem
     J2, J4, J6, J8, J10 = igusa_invs
 
     K = parent(J2)
@@ -195,19 +242,23 @@ function g2_from_igusa(igusa_invs::Vector{T}) where T
     return [g1, g2, g3]
 end
 
-function igusa_from_g2(g2_invs::Vector{T}) where T
+@doc raw"""
+    igusa_from_g2(g2_invs::Vector{T})
+Computes the Igusa invariants from the Cardona-Quer-Nart-Pujolas invariants.
+"""
+function igusa_from_g2(g2_invs::Vector{T}) where T <: FieldElem
   g1, g2, g3 = g2_invs
   K = parent(g1)
   if characteristic(K) == 2
     if !is_perfect(K)
       error("The Cardona-Quer-Nart-Pujolas invariants are only defined over
-      a field of characteristic 2 if it is perfect.")
+      #a field of characteristic 2 if it is perfect.")
     end
     if g1 != zero(K)
       J2 = one(K)
       J4 = g3^2
       J6 = g3^4
-      J8 = g2^2+g3^8+g3^6
+      J8 = g2^2 + g3^8 + g3^6
       J10 = g1^2
     elseif g2 != zero(K)
       J2 = J4 = zero(K)
@@ -229,7 +280,7 @@ function igusa_from_g2(g2_invs::Vector{T}) where T
     J2 = g1
     J4 = g1*g2
     J6 = g1^2*g3
-    J8 = (g1^3*g3-g1^2*g2^2)//4
+    J8 = (g1^3*g3 - g1^2*g2^2)//4
     J10 = g1^4
   elseif g2 != zero(K)
     J2 = zero(K)
@@ -256,24 +307,33 @@ end
 #
 ################################################################################
 
-function igusa_char2(f::PolyRingElem{T}, h::PolyRingElem{T}) where T
-  K = base_ring(f)
-  _a0, _a1, _a2, _a3 = elem_type(K)[coeff(h, i) for i in (0:3)]
-  _b0, _b1, _b2, _b3, _b4, _b5, _b6 = elem_type(K)[coeff(f, i) for i in (0:6)]
+# The formulas do not depend on the input, so build them once.
+const _igusa_char2_formulas = Ref{Vector{ZZMPolyRingElem}}()
+
+function _get_igusa_char2_formulas()
+  isassigned(_igusa_char2_formulas) && return _igusa_char2_formulas[]
   Kab, (a0, a1, a2, a3, b0, b1, b2, b3, b4, b5, b6) = ZZ[:a0, :a1, :a2, :a3, :b0, :b1, :b2, :b3, :b4, :b5, :b6]
   A = a0^2*a3^2 + a1^2*a2^2
   B = a0^4*a3^2*b6 + a0^3*a1*a3^2*b5 + a0^3*a2^2*a3*b5 + a0^3*a3^3*b3 +   a0^2*a1^2*a2^2*b6 + a0^2*a1^2*a3^2*b4 + a0^2*a1*a2^3*b5 +   a0^2*a1*a2*a3^2*b3 + a0^2*a2^3*a3*b3 + a0^2*a2^2*a3^2*b2 +   a0^2*a2*a3^3*b1 + a0^2*a3^4*b0 + a0^2*a3^2*b3^2 + a0*a1^4*a3*b5 +   a0*a1^3*a2^2*b5 + a0*a1^3*a3^2*b3 + a0*a1^2*a2^2*a3*b3 + a0*a1^2*a3^3*b1 +   a0*a1*a2^4*b3 + a0*a2^4*a3*b1 + a1^5*a2*b5 + a1^4*a2^2*b4 +   a1^4*a2*a3*b3 + a1^3*a2^3*b3 + a1^3*a2*a3^2*b1 + a1^2*a2^4*b2 +   a1^2*a2^3*a3*b1 + a1^2*a2^2*a3^2*b0 + a1^2*a2^2*b3^2 + a1*a2^5*b1
   C = a0^6*a3^2*b6^2 + a0^4*a1^2*a2^2*b6^2 + a0^4*a1^2*a3^2*b5^2 +   a0^4*a2^4*b5^2 + a0^4*a3^4*b3^2 + a0^2*a1^4*a2^2*b5^2 +   a0^2*a1^4*a3^2*b4^2 + a0^2*a2^6*b3^2 + a0^2*a2^4*a3^2*b2^2 +   a0^2*a2^2*a3^4*b1^2 + a0^2*a3^6*b0^2 + a0^2*a3^2*b3^4 + a1^8*b5^2 +   a1^6*a2^2*b4^2 + a1^6*a3^2*b3^2 + a1^4*a2^4*b3^2 + a1^4*a3^4*b1^2 +   a1^2*a2^6*b2^2 + a1^2*a2^4*a3^2*b1^2 + a1^2*a2^2*a3^4*b0^2 +   a1^2*a2^2*b3^4 + a2^8*b1^2
   D = a0^8*a3^4*b6^2 + a0^8*a3^2*b6^3 + a0^8*b6^4 + a0^7*a1*a3^2*b5*b6^2 +   a0^7*a2^2*a3^3*b5*b6 + a0^7*a2^2*a3*b5*b6^2 +  a0^7*a2*a3^4*b5^2 +   a0^7*a3^5*b4*b5 + a0^7*a3^3*b3*b6^2 + a0^7*a3^3*b5^3 +   a0^6*a1^2*a2^2*b6^3 + a0^6*a1^2*a3^2*b4*b6^2 + a0^6*a1^2*a3^2*b5^2*b6 +   a0^6*a1*a2^3*a3^2*b5*b6 + a0^6*a1*a2^3*b5*b6^2 + a0^6*a1*a2^2*a3^3*b5^2 +   a0^6*a1*a2*a3^4*b4*b5 + a0^6*a1*a2*a3^2*b3*b6^2 + a0^6*a1*a2*a3^2*b5^3 +   a0^6*a1*a3^5*b3*b5 + a0^6*a2^6*b6^2 + a0^6*a2^5*a3*b5*b6 +   a0^6*a2^4*a3^2*b4*b6 + a0^6*a2^4*a3^2*b5^2 + a0^6*a2^3*a3^3*b3*b6 +   a0^6*a2^3*a3*b3*b6^2 + a0^6*a2^2*a3^4*b2*b6 + a0^6*a2^2*a3^4*b3*b5 +   a0^6*a2^2*a3^2*b2*b6^2 + a0^6*a2*a3^5*b2*b5 + a0^6*a2*a3^5*b3*b4 +   a0^6*a2*a3^3*b1*b6^2 + a0^6*a2*a3^3*b3*b5^2 + a0^6*a3^6*b1*b5 +   a0^6*a3^6*b2*b4 + a0^6*a3^6*b3^2 + a0^6*a3^4*b0*b6^2 + a0^6*a3^4*b2*b5^2 +   a0^6*a3^4*b3^2*b6 + a0^6*a3^2*b3^2*b6^2 + a0^5*a1^4*a3^3*b5*b6 +   a0^5*a1^4*a3*b5*b6^2 + a0^5*a1^3*a2^2*b5*b6^2 + a0^5*a1^3*a3^2*b3*b6^2 +   a0^5*a1^3*a3^2*b5^3 +  a0^5*a1^2*a2^3*a3^2*b5^2 +   a0^5*a1^2*a2^2*a3^3*b4*b5 + a0^5*a1^2*a2^2*a3*b3*b6^2 +   a0^5*a1^2*a2*a3^4*b3*b5 + a0^5*a1^2*a3^5*b2*b5 + a0^5*a1^2*a3^3*b1*b6^2 +   a0^5*a1^2*a3^3*b3*b5^2 + a0^5*a1*a2^6*b5*b6 + a0^5*a1*a2^5*a3*b5^2 +   a0^5*a1*a2^4*a3^2*b4*b5 + a0^5*a1*a2^4*b3*b6^2 + a0^5*a1*a2^3*a3^3*b3*b5 +   a0^5*a1*a2^2*a3^4*b1*b6 + a0^5*a1*a2^2*a3^4*b3*b4 +   a0^5*a1*a2^2*a3^2*b3*b5^2 + a0^5*a1*a2*a3^5*b1*b5 + a0^5*a1*a2*a3^5*b3^2 +   a0^5*a1*a3^6*b1*b4 + a0^5*a1*a3^6*b2*b3 + a0^5*a1*a3^4*b1*b5^2 +   a0^5*a1*a3^4*b3^2*b5 + a0^5*a2^7*b5^2 + a0^5*a2^6*a3*b3*b6 +   a0^5*a2^6*a3*b4*b5 + a0^5*a2^5*a3^2*b3*b5 + a0^5*a2^4*a3^3*b3*b4 +   a0^5*a2^4*a3*b1*b6^2 + a0^5*a2^3*a3^4*b1*b5 + a0^5*a2^2*a3^5*b1*b4 +   a0^5*a2^2*a3^3*b1*b5^2 + a0^5*a2^2*a3^3*b3^2*b5 + a0^5*a2*a3^6*b1*b3 +   a0^5*a3^7*b1*b2 + a0^5*a3^5*b3^3 + a0^4*a1^5*a2*a3^2*b5*b6 +   a0^4*a1^5*a2*b5*b6^2 + a0^4*a1^5*a3^3*b5^2 + a0^4*a1^4*a2^2*b4*b6^2 +   a0^4*a1^4*a2^2*b5^2*b6 + a0^4*a1^4*a2*a3^3*b3*b6 +   a0^4*a1^4*a2*a3*b3*b6^2 + a0^4*a1^4*a3^4*b2*b6 + a0^4*a1^4*a3^4*b3*b5 +   a0^4*a1^4*a3^4*b4^2 + a0^4*a1^4*a3^2*b4^2*b6 + a0^4*a1^4*a3^2*b4*b5^2 +   a0^4*a1^4*b5^4 + a0^4*a1^3*a2^3*a3^2*b4*b5 + a0^4*a1^3*a2^3*b3*b6^2 +   a0^4*a1^3*a2^2*a3^3*b3*b5 + a0^4*a1^3*a2*a3^4*b2*b5 +   a0^4*a1^3*a2*a3^2*b1*b6^2 + a0^4*a1^3*a2*a3^2*b3*b5^2 +   a0^4*a1^3*a3^5*b1*b5 + a0^4*a1^2*a2^6*b4*b6 + a0^4*a1^2*a2^5*a3*b4*b5 +   a0^4*a1^2*a2^4*a3^2*b3*b5 + a0^4*a1^2*a2^4*a3^2*b4^2 +   a0^4*a1^2*a2^4*b2*b6^2 + a0^4*a1^2*a2^3*a3^3*b3*b4 +   a0^4*a1^2*a2^3*a3*b1*b6^2 + a0^4*a1^2*a2^2*a3^4*b0*b6 +   a0^4*a1^2*a2^2*a3^4*b3^2 + a0^4*a1^2*a2^2*a3^2*b0*b6^2 +   a0^4*a1^2*a2^2*a3^2*b2*b5^2 + a0^4*a1^2*a2^2*b3^2*b6^2 +   a0^4*a1^2*a2*a3^5*b0*b5 + a0^4*a1^2*a2*a3^5*b2*b3 +   a0^4*a1^2*a2*a3^3*b1*b5^2 + a0^4*a1^2*a3^6*b0*b4 +   a0^4*a1^2*a3^6*b1*b3 + a0^4*a1^2*a3^4*b3^2*b4 +   a0^4*a1^2*a3^2*b3^2*b5^2 + a0^4*a1*a2^7*b3*b6 + a0^4*a1*a2^7*b4*b5 +   a0^4*a1*a2^5*a3^2*b3*b4 + a0^4*a1*a2^5*b1*b6^2 + a0^4*a1*a2^4*a3^3*b3^2 +   a0^4*a1*a2^3*a3^4*b1*b4 + a0^4*a1*a2^3*a3^2*b1*b5^2 +   a0^4*a1*a2^3*a3^2*b3^2*b5 + a0^4*a1*a2^2*a3^5*b1*b3 +   a0^4*a1*a2*a3^6*b1*b2 + a0^4*a1*a2*a3^4*b3^3 + a0^4*a1*a3^7*b1^2 +   a0^4*a2^8*b4^2 + a0^4*a2^7*a3*b1*b6 + a0^4*a2^7*a3*b2*b5 +   a0^4*a2^7*a3*b3*b4 + a0^4*a2^6*a3^2*b0*b6 + a0^4*a2^6*a3^2*b2*b4 +   a0^4*a2^6*a3^2*b3^2 + a0^4*a2^5*a3^3*b0*b5 + a0^4*a2^5*a3^3*b1*b4 +   a0^4*a2^5*a3*b3^2*b5 + a0^4*a2^4*a3^4*b0*b4 + a0^4*a2^4*a3^4*b1*b3 +   a0^4*a2^4*a3^4*b2^2 + a0^4*a2^4*a3^2*b2^2*b6 + a0^4*a2^4*a3^2*b3^2*b4 +   a0^4*a2^3*a3^3*b3^3 + a0^4*a2^2*a3^4*b2*b3^2 + a0^4*a2*a3^5*b1^2*b5 +   a0^4*a2*a3^5*b1*b3^2 + a0^4*a3^8*b0^2 + a0^4*a3^6*b0^2*b6 +   a0^4*a3^6*b0*b3^2 + a0^4*a3^6*b1^2*b4 + a0^4*a3^4*b1^2*b5^2 +   a0^4*a3^4*b3^4 + a0^4*a3^2*b3^4*b6 + a0^3*a1^6*a2^2*a3*b5*b6 +   a0^3*a1^6*a2*a3^2*b5^2 + a0^3*a1^6*a3^3*b4*b5 + a0^3*a1^6*a3*b5^3 +   a0^3*a1^5*a2^2*a3^2*b3*b6 + a0^3*a1^5*a2^2*b5^3 +   a0^3*a1^5*a2*a3^3*b3*b5 + a0^3*a1^5*a3^4*b1*b6 + a0^3*a1^5*a3^4*b2*b5 +   a0^3*a1^5*a3^2*b3*b5^2 + a0^3*a1^5*a3^2*b4^2*b5 +   a0^3*a1^4*a2^3*a3^2*b3*b5 + a0^3*a1^4*a2^2*a3^3*b1*b6 +   a0^3*a1^4*a2^2*a3^3*b2*b5 + a0^3*a1^4*a2^2*a3*b3*b5^2 +   a0^3*a1^4*a2^2*a3*b4^2*b5 + a0^3*a1^4*a2*a3^4*b3^2 +   a0^3*a1^4*a3^5*b2*b3 + a0^3*a1^4*a3^3*b1*b5^2 + a0^3*a1^4*a3^3*b3*b4^2 +   a0^3*a1^3*a2^6*b3*b6 + a0^3*a1^3*a2^5*a3*b3*b5 +   a0^3*a1^3*a2^4*a3^2*b3*b4 + a0^3*a1^3*a2^3*a3^3*b3^2 +   a0^3*a1^3*a2^2*a3^4*b2*b3 + a0^3*a1^3*a2*a3^5*b1*b3 +   a0^3*a1^3*a3^6*b0*b3 + a0^3*a1^3*a3^4*b3^3 + a0^3*a1^2*a2^7*b3*b5 +   a0^3*a1^2*a2^6*a3*b1*b6 + a0^3*a1^2*a2^6*a3*b2*b5 +   a0^3*a1^2*a2^4*a3^3*b0*b5 + a0^3*a1^2*a2^4*a3^3*b1*b4 +   a0^3*a1^2*a2^3*a3^4*b1*b3 + a0^3*a1^2*a2^2*a3^5*b1*b2 +   a0^3*a1^2*a2*a3^6*b1^2 + a0^3*a1^2*a3^7*b0*b1 + a0^3*a1^2*a3^5*b1^2*b5 +   a0^3*a1^2*a3^5*b1*b3^2 + a0^3*a1*a2^8*b1*b6 + a0^3*a1*a2^8*b2*b5 +   a0^3*a1*a2^8*b3*b4 + a0^3*a1*a2^7*a3*b3^2 + a0^3*a1*a2^6*a3^2*b2*b3 +   a0^3*a1*a2^6*b3^2*b5 + a0^3*a1*a2^5*a3^3*b1*b3 +   a0^3*a1*a2^4*a3^4*b0*b3 + a0^3*a1*a2^4*a3^2*b2^2*b5 +   a0^3*a1*a2^2*a3^4*b1^2*b5 + a0^3*a1*a3^6*b0^2*b5 + a0^3*a1*a3^6*b1^2*b3 +   a0^3*a1*a3^2*b3^4*b5 + a0^3*a2^9*b3^2 + a0^3*a2^8*a3*b0*b5 +   a0^3*a2^8*a3*b1*b4 + a0^3*a2^8*a3*b2*b3 + a0^3*a2^7*a3^2*b1*b3 +   a0^3*a2^6*a3^3*b1*b2 + a0^3*a2^6*a3*b2^2*b5 + a0^3*a2^6*a3*b3^3 +   a0^3*a2^5*a3^4*b1^2 + a0^3*a2^4*a3^5*b0*b1 + a0^3*a2^4*a3^3*b1^2*b5 +   a0^3*a2^4*a3^3*b2^2*b3 + a0^3*a2^2*a3^5*b0^2*b5 +   a0^3*a2^2*a3^5*b1^2*b3 + a0^3*a2^2*a3*b3^4*b5 + a0^3*a3^7*b0^2*b3 +   a0^3*a3^7*b1^3 + a0^3*a3^3*b3^5 + a0^2*a1^8*a2^2*b6^2 +   a0^2*a1^8*a2*a3*b5*b6 + a0^2*a1^8*a3^2*b4*b6 + a0^2*a1^8*a3^2*b5^2 +   a0^2*a1^7*a2^3*b5*b6 + a0^2*a1^7*a2^2*a3*b5^2 + a0^2*a1^7*a2*a3^2*b4*b5 +   a0^2*a1^7*a2*b5^3 + a0^2*a1^7*a3^3*b3*b5 + a0^2*a1^6*a2^3*a3*b3*b6 +   a0^2*a1^6*a2^2*a3^2*b3*b5 + a0^2*a1^6*a2^2*b4^2*b6 +   a0^2*a1^6*a2^2*b4*b5^2 + a0^2*a1^6*a2*a3^3*b3*b4 +   a0^2*a1^6*a2*a3*b3*b5^2 + a0^2*a1^6*a3^4*b0*b6 + a0^2*a1^6*a3^4*b2*b4 +   a0^2*a1^6*a3^4*b3^2 + a0^2*a1^6*a3^2*b3^2*b6 + a0^2*a1^6*a3^2*b4^3 +   a0^2*a1^5*a2^3*a3^2*b1*b6 + a0^2*a1^5*a2^3*a3^2*b2*b5 +   a0^2*a1^5*a2^3*b3*b5^2 + a0^2*a1^5*a2^3*b4^2*b5 +   a0^2*a1^5*a2*a3^4*b2*b3 + a0^2*a1^5*a2*a3^2*b1*b5^2 +   a0^2*a1^5*a2*a3^2*b3*b4^2 + a0^2*a1^5*a3^5*b1*b3 +   a0^2*a1^4*a2^6*b2*b6 + a0^2*a1^4*a2^5*a3*b2*b5 +   a0^2*a1^4*a2^4*a3^2*b1*b5 + a0^2*a1^4*a2^4*a3^2*b2*b4 +   a0^2*a1^4*a2^4*b3^2*b6 + a0^2*a1^4*a2^3*a3^3*b2*b3 +   a0^2*a1^4*a2^3*a3*b1*b5^2 + a0^2*a1^4*a2^3*a3*b3*b4^2 +   a0^2*a1^4*a2^2*a3^4*b1*b3 + a0^2*a1^4*a2^2*a3^4*b2^2 +   a0^2*a1^4*a2^2*a3^2*b0*b5^2 + a0^2*a1^4*a2^2*a3^2*b2*b4^2 +   a0^2*a1^4*a2^2*b3^2*b5^2 + a0^2*a1^4*a2*a3^5*b1*b2 +   a0^2*a1^4*a2*a3^3*b1*b4^2 + a0^2*a1^4*a3^6*b0*b2 + a0^2*a1^4*a3^6*b1^2 +   a0^2*a1^4*a3^4*b0*b4^2 + a0^2*a1^4*a3^4*b2*b3^2 +   a0^2*a1^4*a3^2*b3^2*b4^2 + a0^2*a1^3*a2^7*b1*b6 + a0^2*a1^3*a2^7*b2*b5 +   a0^2*a1^3*a2^5*a3^2*b0*b5 + a0^2*a1^3*a2^5*a3^2*b1*b4 +   a0^2*a1^3*a2^4*a3^3*b1*b3 + a0^2*a1^3*a2^3*a3^4*b1*b2 +   a0^2*a1^3*a2^2*a3^5*b1^2 + a0^2*a1^3*a2*a3^6*b0*b1 +   a0^2*a1^3*a2*a3^4*b1^2*b5 + a0^2*a1^3*a2*a3^4*b1*b3^2 +   a0^2*a1^2*a2^8*b0*b6 + a0^2*a1^2*a2^8*b2*b4 + a0^2*a1^2*a2^7*a3*b2*b3 +   a0^2*a1^2*a2^6*a3^2*b1*b3 + a0^2*a1^2*a2^6*b2^2*b6 +   a0^2*a1^2*a2^6*b3^2*b4 + a0^2*a1^2*a2^5*a3^3*b0*b3 +   a0^2*a1^2*a2^4*a3^2*b1^2*b6 + a0^2*a1^2*a2^4*a3^2*b2^2*b4 +   a0^2*a1^2*a2^2*a3^4*b0^2*b6 + a0^2*a1^2*a2^2*a3^4*b1^2*b4 +   a0^2*a1^2*a2^2*b3^4*b6 + a0^2*a1^2*a2*a3^5*b1^2*b3 +   a0^2*a1^2*a3^6*b0^2*b4 + a0^2*a1^2*a3^2*b3^4*b4 + a0^2*a1*a2^9*b0*b5 +   a0^2*a1*a2^9*b1*b4 + a0^2*a1*a2^9*b2*b3 + a0^2*a1*a2^7*a3^2*b1*b2 +   a0^2*a1*a2^7*b2^2*b5 + a0^2*a1*a2^7*b3^3 + a0^2*a1*a2^6*a3^3*b1^2 +   a0^2*a1*a2^5*a3^4*b0*b1 + a0^2*a1*a2^5*a3^2*b1^2*b5 +   a0^2*a1*a2^5*a3^2*b2^2*b3 + a0^2*a1*a2^3*a3^4*b0^2*b5 +   a0^2*a1*a2^3*a3^4*b1^2*b3 + a0^2*a1*a2^3*b3^4*b5 +   a0^2*a1*a2*a3^6*b0^2*b3 + a0^2*a1*a2*a3^6*b1^3 + a0^2*a1*a2*a3^2*b3^5 +   a0^2*a2^10*b2^2 + a0^2*a2^9*a3*b0*b3 + a0^2*a2^9*a3*b1*b2 +   a0^2*a2^8*a3^2*b0*b2 + a0^2*a2^8*a3^2*b1^2 + a0^2*a2^7*a3*b1*b3^2 +   a0^2*a2^7*a3*b2^2*b3 + a0^2*a2^6*a3^2*b0*b3^2 + a0^2*a2^6*a3^2*b2^3 +   a0^2*a2^6*b3^4 + a0^2*a2^5*a3^3*b1^2*b3 + a0^2*a2^5*a3^3*b1*b2^2 +   a0^2*a2^4*a3^4*b0*b2^2 + a0^2*a2^4*a3^4*b1^2*b2 +   a0^2*a2^4*a3^2*b2^2*b3^2 + a0^2*a2^3*a3^5*b0^2*b3 + a0^2*a2^3*a3^5*b1^3 +   a0^2*a2^3*a3*b3^5 + a0^2*a2^2*a3^6*b0^2*b2 + a0^2*a2^2*a3^6*b0*b1^2 +   a0^2*a2^2*a3^4*b1^2*b3^2 + a0^2*a2^2*a3^2*b2*b3^4 +   a0^2*a2*a3^7*b0^2*b1 + a0^2*a2*a3^3*b1*b3^4 + a0^2*a3^8*b0^3 +   a0^2*a3^6*b0^2*b3^2 + a0^2*a3^4*b0*b3^4 + a0^2*a3^2*b3^6 +   a0*a1^10*a3*b5*b6 + a0*a1^9*a2^2*b5*b6 + a0*a1^9*a2*a3*b5^2 +   a0*a1^9*a3^2*b3*b6 + a0*a1^9*a3^2*b4*b5 + a0*a1^8*a2^2*a3*b3*b6 +   a0*a1^8*a3^3*b1*b6 + a0*a1^8*a3^3*b2*b5 + a0*a1^8*a3^3*b3*b4 +   a0*a1^8*a3*b4^2*b5 + a0*a1^7*a2^4*b3*b6 + a0*a1^7*a2^3*a3*b3*b5 +   a0*a1^7*a2^2*a3^2*b3*b4 + a0*a1^7*a2^2*b4^2*b5 + a0*a1^7*a2*a3^3*b3^2 +   a0*a1^7*a3^4*b0*b5 + a0*a1^7*a3^4*b1*b4 + a0*a1^7*a3^4*b2*b3 +   a0*a1^7*a3^2*b3^2*b5 + a0*a1^7*a3^2*b3*b4^2 + a0*a1^6*a2^4*a3*b1*b6 +   a0*a1^6*a2^2*a3^3*b0*b5 + a0*a1^6*a2^2*a3^3*b1*b4 +   a0*a1^6*a2^2*a3*b3^2*b5 + a0*a1^6*a2^2*a3*b3*b4^2 + a0*a1^6*a3^5*b0*b3 +   a0*a1^6*a3^5*b1*b2 + a0*a1^6*a3^3*b1*b4^2 + a0*a1^6*a3^3*b3^3 +   a0*a1^5*a2^6*b1*b6 + a0*a1^5*a2^5*a3*b1*b5 + a0*a1^5*a2^4*a3^2*b1*b4 +   a0*a1^5*a2^4*b1*b5^2 + a0*a1^5*a2^4*b3^2*b5 + a0*a1^5*a2^4*b3*b4^2 +   a0*a1^5*a2^3*a3^3*b1*b3 + a0*a1^5*a2^2*a3^4*b1*b2 +   a0*a1^5*a2*a3^5*b1^2 + a0*a1^5*a3^6*b0*b1 + a0*a1^5*a3^4*b1*b3^2 +   a0*a1^4*a2^7*b1*b5 + a0*a1^4*a2^6*a3*b0*b5 + a0*a1^4*a2^4*a3*b1*b4^2 +   a0*a1^4*a2^4*a3*b2^2*b5 + a0*a1^4*a2^4*a3*b3^3 + a0*a1^4*a3^5*b0^2*b5 +   a0*a1^4*a3*b3^4*b5 + a0*a1^3*a2^8*b0*b5 + a0*a1^3*a2^8*b1*b4 +   a0*a1^3*a2^7*a3*b1*b3 + a0*a1^3*a2^6*a3^2*b0*b3 + a0*a1^3*a2^6*b2^2*b5 +   a0*a1^3*a2^6*b3^3 + a0*a1^3*a2^4*a3^2*b1^2*b5 +   a0*a1^3*a2^4*a3^2*b2^2*b3 + a0*a1^3*a2^2*a3^4*b0^2*b5 +   a0*a1^3*a2^2*b3^4*b5 + a0*a1^3*a3^6*b0^2*b3 + a0*a1^3*a3^2*b3^5 +   a0*a1^2*a2^9*b1*b3 + a0*a1^2*a2^8*a3*b0*b3 + a0*a1^2*a2^7*a3^2*b1^2 +   a0*a1^2*a2^6*a3^3*b0*b1 + a0*a1^2*a2^6*a3*b1*b3^2 +   a0*a1^2*a2^6*a3*b2^2*b3 + a0*a1^2*a2^4*a3^3*b1^2*b3 +   a0*a1^2*a2^4*a3^3*b1*b2^2 + a0*a1^2*a2^2*a3^5*b0^2*b3 +   a0*a1^2*a2^2*a3*b3^5 + a0*a1^2*a3^7*b0^2*b1 + a0*a1^2*a3^3*b1*b3^4 +   a0*a1*a2^10*b0*b3 + a0*a1*a2^10*b1*b2 + a0*a1*a2^9*a3*b1^2 +   a0*a1*a2^8*a3^2*b0*b1 + a0*a1*a2^8*b1*b3^2 + a0*a1*a2^8*b2^2*b3 +   a0*a1*a2^6*a3^2*b1^2*b3 + a0*a1*a2^4*a3^4*b0^2*b3 + a0*a1*a2^4*b3^5 +   a0*a2^11*b1^2 + a0*a2^10*a3*b0*b1 + a0*a2^8*a3*b1*b2^2 +   a0*a2^6*a3^3*b1^3 + a0*a2^4*a3^5*b0^2*b1 + a0*a2^4*a3*b1*b3^4 +   a1^12*b6^2 + a1^11*a2*b5*b6 + a1^11*a3*b5^2 + a1^10*a2^2*b4*b6 +   a1^10*a2*a3*b3*b6 + a1^10*a2*a3*b4*b5 + a1^10*a3^2*b4^2 +   a1^9*a2^3*b3*b6 + a1^9*a2^2*a3*b3*b5 + a1^9*a2*a3^2*b1*b6 +   a1^9*a2*a3^2*b2*b5 + a1^9*a2*a3^2*b3*b4 + a1^9*a2*b4^2*b5 +   a1^9*a3^3*b3^2 + a1^8*a2^4*b2*b6 + a1^8*a2^3*a3*b1*b6 +   a1^8*a2^3*a3*b2*b5 + a1^8*a2^2*a3^2*b0*b6 + a1^8*a2^2*a3^2*b2*b4 +   a1^8*a2^2*b3^2*b6 + a1^8*a2^2*b4^3 + a1^8*a2*a3^3*b0*b5 +   a1^8*a2*a3^3*b1*b4 + a1^8*a2*a3^3*b2*b3 + a1^8*a2*a3*b3^2*b5 +   a1^8*a2*a3*b3*b4^2 + a1^8*a3^4*b2^2 + a1^8*b4^4 + a1^7*a2^5*b1*b6 +   a1^7*a2^4*a3*b1*b5 + a1^7*a2^3*a3^2*b0*b5 + a1^7*a2^3*a3^2*b1*b4 +   a1^7*a2^3*b3^2*b5 + a1^7*a2^3*b3*b4^2 + a1^7*a2^2*a3^3*b1*b3 +   a1^7*a2*a3^4*b0*b3 + a1^7*a2*a3^4*b1*b2 + a1^7*a2*a3^2*b1*b4^2 +   a1^7*a2*a3^2*b3^3 + a1^7*a3^5*b1^2 + a1^6*a2^6*b0*b6 +   a1^6*a2^5*a3*b0*b5 + a1^6*a2^4*a3^2*b0*b4 + a1^6*a2^4*b0*b5^2 +   a1^6*a2^4*b2*b4^2 + a1^6*a2^4*b3^2*b4 + a1^6*a2^3*a3^3*b0*b3 +   a1^6*a2^3*a3*b1*b4^2 + a1^6*a2^3*a3*b3^3 + a1^6*a2^2*a3^4*b0*b2 +   a1^6*a2^2*a3^2*b0*b4^2 + a1^6*a2^2*a3^2*b2*b3^2 + a1^6*a2^2*b3^2*b4^2 +   a1^6*a2*a3^5*b0*b1 + a1^6*a2*a3^3*b1*b3^2 + a1^6*a3^6*b0^2 +   a1^6*a3^2*b3^4 + a1^5*a2^7*b0*b5 + a1^5*a2^5*b1*b4^2 +   a1^5*a2^5*b2^2*b5 + a1^5*a2^5*b3^3 + a1^5*a2*a3^4*b0^2*b5 +   a1^5*a2*b3^4*b5 + a1^4*a2^8*b0*b4 + a1^4*a2^7*a3*b0*b3 +   a1^4*a2^6*b1^2*b6 + a1^4*a2^6*b2^2*b4 + a1^4*a2^6*b2*b3^2 +   a1^4*a2^5*a3*b1^2*b5 + a1^4*a2^5*a3*b1*b3^2 + a1^4*a2^5*a3*b2^2*b3 +   a1^4*a2^4*a3^2*b0*b3^2 + a1^4*a2^4*b1^2*b5^2 + a1^4*a2^2*a3^4*b0^2*b4 +   a1^4*a2^2*b3^4*b4 + a1^4*a2*a3^5*b0^2*b3 + a1^4*a2*a3*b3^5 +   a1^3*a2^9*b0*b3 + a1^3*a2^7*a3^2*b0*b1 + a1^3*a2^7*b1*b3^2 +   a1^3*a2^7*b2^2*b3 + a1^3*a2^5*a3^2*b1^2*b3 + a1^3*a2^5*a3^2*b1*b2^2 +   a1^3*a2^3*a3^4*b0^2*b3 + a1^3*a2^3*b3^5 + a1^3*a2*a3^6*b0^2*b1 +   a1^3*a2*a3^2*b1*b3^4 + a1^2*a2^10*b0*b2 + a1^2*a2^9*a3*b0*b1 +   a1^2*a2^8*a3^2*b0^2 + a1^2*a2^8*b0*b3^2 + a1^2*a2^8*b2^3 +   a1^2*a2^7*a3*b1*b2^2 + a1^2*a2^6*a3^2*b0*b2^2 + a1^2*a2^6*a3^2*b1^2*b2 +   a1^2*a2^6*b2^2*b3^2 + a1^2*a2^5*a3^3*b1^3 + a1^2*a2^4*a3^4*b0^2*b2 +   a1^2*a2^4*a3^4*b0*b1^2 + a1^2*a2^4*a3^2*b1^2*b3^2 + a1^2*a2^4*b2*b3^4 +   a1^2*a2^3*a3^5*b0^2*b1 + a1^2*a2^3*a3*b1*b3^4 + a1^2*a2^2*a3^6*b0^3 +   a1^2*a2^2*a3^4*b0^2*b3^2 + a1^2*a2^2*a3^2*b0*b3^4 + a1^2*a2^2*b3^6 +   a1*a2^11*b0*b1 + a1*a2^9*b1*b2^2 + a1*a2^7*a3^2*b1^3 +   a1*a2^5*a3^4*b0^2*b1 + a1*a2^5*b1*b3^4 + a2^12*b0^2 + a2^8*b2^4 +   a2^4*a3^4*b1^4 + a3^8*b0^4 + b3^8
   E = a0^10*a3^4*b6^3 + a0^9*a1*a3^4*b5*b6^2 + a0^9*a2*a3^4*b5^2*b6 +   a0^9*a3^5*b3*b6^2 + a0^9*a3^5*b4*b5*b6 + a0^9*a3^5*b5^3 +   a0^9*a3^3*b5^3*b6 + a0^8*a1^2*a3^4*b4*b6^2 + a0^8*a1*a2*a3^4*b3*b6^2 +   a0^8*a1*a2*a3^4*b4*b5*b6 + a0^8*a1*a2*a3^2*b5^3*b6 +   a0^8*a1*a3^5*b3*b5*b6 + a0^8*a1*a3^5*b4*b5^2 + a0^8*a1*a3^3*b5^4 +   a0^8*a2^2*a3^4*b4^2*b6 + a0^8*a2^2*b5^4*b6 + a0^8*a2*a3^5*b1*b6^2 +   a0^8*a2*a3^5*b2*b5*b6 + a0^8*a2*a3^5*b3*b4*b6 + a0^8*a2*a3^5*b4^2*b5 +   a0^8*a2*a3^3*b3*b5^2*b6 + a0^8*a2*a3*b5^5 + a0^8*a3^6*b0*b6^2 +   a0^8*a3^6*b1*b5*b6 + a0^8*a3^6*b2*b4*b6 + a0^8*a3^6*b2*b5^2 +   a0^8*a3^6*b3^2*b6 + a0^8*a3^6*b3*b4*b5 + a0^8*a3^6*b4^3 +   a0^8*a3^4*b2*b5^2*b6 + a0^8*a3^4*b3^2*b6^2 + a0^8*a3^4*b3*b5^3 +   a0^8*a3^4*b4^2*b5^2 + a0^8*a3^2*b4*b5^4 + a0^8*b5^6 +   a0^7*a1^3*a3^4*b3*b6^2 + a0^7*a1^2*a2^2*a3*b5^3*b6 +   a0^7*a1^2*a2*a3^4*b3*b5*b6 + a0^7*a1^2*a2*a3^2*b5^4 +   a0^7*a1^2*a3^5*b1*b6^2 + a0^7*a1^2*a3^5*b2*b5*b6 +   a0^7*a1^2*a3^5*b3*b5^2 + a0^7*a1^2*a3^3*b4*b5^3 + a0^7*a1^2*a3*b5^5 +   a0^7*a1*a2^2*a3^4*b1*b6^2 + a0^7*a1*a2^2*a3^4*b2*b5*b6 +   a0^7*a1*a2^2*a3^4*b3*b4*b6 + a0^7*a1*a2^2*a3^2*b3*b5^2*b6 +   a0^7*a1*a2*a3^5*b1*b5*b6 + a0^7*a1*a2*a3^5*b2*b5^2 +   a0^7*a1*a2*a3^5*b3^2*b6 + a0^7*a1*a2*a3^5*b3*b4*b5 +   a0^7*a1*a2*a3^3*b3*b5^3 + a0^7*a1*a3^6*b1*b4*b6 +   a0^7*a1*a3^6*b2*b3*b6 + a0^7*a1*a3^6*b2*b4*b5 + a0^7*a1*a3^6*b3*b4^2 +   a0^7*a1*a3^4*b1*b5^2*b6 + a0^7*a1*a3^4*b2*b5^3 + a0^7*a1*a3^2*b3*b5^4 +   a0^7*a2^3*a3^4*b3^2*b6 + a0^7*a2^2*a3^5*b0*b5*b6 +   a0^7*a2^2*a3^5*b1*b4*b6 + a0^7*a2^2*a3^5*b2*b3*b6 +   a0^7*a2^2*a3^5*b3^2*b5 + a0^7*a2^2*a3^3*b1*b5^2*b6 +   a0^7*a2^2*a3^3*b3^2*b5*b6 + a0^7*a2*a3^6*b0*b5^2 + a0^7*a2*a3^6*b1*b3*b6 +   a0^7*a2*a3^6*b1*b4*b5 + a0^7*a2*a3^6*b2*b3*b5 + a0^7*a2*a3^6*b3^2*b4 +   a0^7*a2*a3^4*b1*b5^3 + a0^7*a3^7*b0*b4*b5 + a0^7*a3^7*b1*b2*b6 +   a0^7*a3^7*b1*b3*b5 + a0^7*a3^7*b1*b4^2 + a0^7*a3^7*b2^2*b5 +   a0^7*a3^7*b2*b3*b4 + a0^7*a3^7*b3^3 + a0^7*a3^5*b0*b5^3 +   a0^7*a3^5*b2*b3*b5^2 + a0^7*a3^5*b3^2*b4*b5 + a0^7*a3^3*b1*b5^4 +   a0^7*a3^3*b3^2*b5^3 + a0^6*a1^4*a2^4*b6^3 + a0^6*a1^4*a3^4*b2*b6^2 +   a0^6*a1^4*b5^4*b6 + a0^6*a1^3*a2^3*b5^3*b6 + a0^6*a1^3*a2^2*a3*b5^4 +   a0^6*a1^3*a2*a3^4*b1*b6^2 + a0^6*a1^3*a2*a3^4*b2*b5*b6 +   a0^6*a1^3*a2*a3^2*b4*b5^3 + a0^6*a1^3*a2*b5^5 + a0^6*a1^3*a3^5*b1*b5*b6 +   a0^6*a1^3*a3^5*b2*b5^2 + a0^6*a1^3*a3^3*b3*b5^3 +   a0^6*a1^2*a2^3*a3*b3*b5^2*b6 + a0^6*a1^2*a2^2*a3^4*b0*b6^2 +   a0^6*a1^2*a2^2*a3^4*b2*b4*b6 + a0^6*a1^2*a2^2*a3^2*b3*b5^3 +   a0^6*a1^2*a2*a3^5*b0*b5*b6 + a0^6*a1^2*a2*a3^5*b2*b3*b6 +   a0^6*a1^2*a2*a3^5*b2*b4*b5 + a0^6*a1^2*a2*a3^3*b3*b4*b5^2 +   a0^6*a1^2*a2*a3*b3*b5^4 + a0^6*a1^2*a3^6*b0*b4*b6 +   a0^6*a1^2*a3^6*b0*b5^2 + a0^6*a1^2*a3^6*b1*b3*b6 +   a0^6*a1^2*a3^6*b1*b4*b5 + a0^6*a1^2*a3^6*b2*b4^2 +   a0^6*a1^2*a3^4*b0*b5^2*b6 + a0^6*a1^2*a3^4*b2*b4*b5^2 +   a0^6*a1^2*a3^4*b3^2*b5^2 + a0^6*a1*a2^3*a3^4*b0*b5*b6 +   a0^6*a1*a2^3*a3^4*b1*b4*b6 + a0^6*a1*a2^3*a3^4*b2*b3*b6 +   a0^6*a1*a2^3*a3^2*b1*b5^2*b6 + a0^6*a1*a2^3*a3^2*b3^2*b5*b6 +   a0^6*a1*a2^2*a3^5*b0*b5^2 + a0^6*a1*a2^2*a3^5*b1*b4*b5 +   a0^6*a1*a2^2*a3^5*b2*b3*b5 + a0^6*a1*a2^2*a3^3*b1*b5^3 +   a0^6*a1*a2^2*a3^3*b3^2*b5^2 + a0^6*a1*a2*a3^6*b0*b4*b5 +   a0^6*a1*a2*a3^6*b1*b2*b6 + a0^6*a1*a2*a3^6*b1*b4^2 +   a0^6*a1*a2*a3^6*b2^2*b5 + a0^6*a1*a2*a3^6*b2*b3*b4 +   a0^6*a1*a2*a3^4*b0*b5^3 + a0^6*a1*a2*a3^4*b2*b3*b5^2 +   a0^6*a1*a2*a3^4*b3^2*b4*b5 + a0^6*a1*a2*a3^2*b1*b5^4 +   a0^6*a1*a2*a3^2*b3^2*b5^3 + a0^6*a1*a3^7*b0*b3*b5 +   a0^6*a1*a3^7*b1^2*b6 + a0^6*a1*a3^7*b1*b2*b5 + a0^6*a1*a3^7*b1*b3*b4 +   a0^6*a1*a3^7*b2*b3^2 + a0^6*a1*a3^5*b1*b3*b5^2 + a0^6*a1*a3^5*b3^3*b5 +   a0^6*a2^4*a3^4*b2^2*b6 + a0^6*a2^3*a3^5*b0*b3*b6 +   a0^6*a2^3*a3^5*b1*b2*b6 + a0^6*a2^3*a3^5*b2^2*b5 +   a0^6*a2^3*a3^3*b3^3*b6 + a0^6*a2^2*a3^6*b0*b2*b6 +   a0^6*a2^2*a3^6*b0*b3*b5 + a0^6*a2^2*a3^6*b1^2*b6 +   a0^6*a2^2*a3^6*b1*b2*b5 + a0^6*a2^2*a3^6*b2^2*b4 +   a0^6*a2^2*a3^4*b1^2*b6^2 + a0^6*a2^2*a3^4*b2^2*b5^2 +   a0^6*a2^2*a3^4*b2*b3^2*b6 + a0^6*a2^2*a3^4*b3^3*b5 +   a0^6*a2*a3^7*b0*b2*b5 + a0^6*a2*a3^7*b0*b3*b4 + a0^6*a2*a3^7*b1*b2*b4 +   a0^6*a2*a3^7*b2^2*b3 + a0^6*a2*a3^5*b0*b3*b5^2 + a0^6*a2*a3^5*b1^2*b5*b6 +   a0^6*a2*a3^5*b1*b2*b5^2 + a0^6*a2*a3^5*b2*b3^2*b5 + a0^6*a2*a3^5*b3^3*b4 +   a0^6*a2*a3^3*b3^3*b5^2 + a0^6*a3^8*b0^2*b6 + a0^6*a3^8*b0*b1*b5 +   a0^6*a3^8*b0*b2*b4 + a0^6*a3^8*b0*b3^2 + a0^6*a3^8*b1^2*b4 +   a0^6*a3^8*b1*b2*b3 + a0^6*a3^8*b2^3 + a0^6*a3^6*b0*b2*b5^2 +   a0^6*a3^6*b1^2*b4*b6 + a0^6*a3^6*b1*b3^2*b5 + a0^6*a3^6*b2*b3^2*b4 +   a0^6*a3^6*b3^4 + a0^6*a3^4*b1^2*b5^2*b6 + a0^6*a3^4*b2*b3^2*b5^2 +   a0^6*a3^4*b3^4*b6 + a0^5*a1^5*a2^4*b5*b6^2 + a0^5*a1^5*a3^4*b1*b6^2 +   a0^5*a1^5*b5^5 + a0^5*a1^4*a2^5*b5^2*b6 + a0^5*a1^4*a2^4*a3*b3*b6^2 +   a0^5*a1^4*a2^4*a3*b4*b5*b6 + a0^5*a1^4*a2^4*a3*b5^3 +   a0^5*a1^4*a2^3*b5^4 + a0^5*a1^4*a2^2*a3*b4*b5^3 +   a0^5*a1^4*a2*a3^4*b1*b5*b6 + a0^5*a1^4*a2*a3^2*b3*b5^3 +   a0^5*a1^4*a3^5*b0*b5*b6 + a0^5*a1^4*a3^5*b1*b5^2 +   a0^5*a1^4*a3^3*b2*b5^3 + a0^5*a1^4*a3*b3*b5^4 +   a0^5*a1^3*a2^4*b3*b5^2*b6 + a0^5*a1^3*a2^3*a3*b3*b5^3 +   a0^5*a1^3*a2^2*a3^4*b0*b5*b6 + a0^5*a1^3*a2^2*a3^4*b1*b4*b6 +   a0^5*a1^3*a2^2*a3^2*b3*b4*b5^2 + a0^5*a1^3*a2^2*b3*b5^4 +   a0^5*a1^3*a2*a3^5*b0*b5^2 + a0^5*a1^3*a2*a3^5*b1*b3*b6 +   a0^5*a1^3*a2*a3^5*b1*b4*b5 + a0^5*a1^3*a2*a3^3*b3^2*b5^2 +   a0^5*a1^3*a3^6*b0*b3*b6 + a0^5*a1^3*a3^6*b0*b4*b5 +   a0^5*a1^3*a3^6*b1*b4^2 + a0^5*a1^3*a3^4*b0*b5^3 +   a0^5*a1^3*a3^4*b1*b4*b5^2 + a0^5*a1^3*a3^4*b2*b3*b5^2 +   a0^5*a1^2*a2^4*a3*b1*b5^2*b6 + a0^5*a1^2*a2^4*a3*b3^2*b5*b6 +   a0^5*a1^2*a2^3*a3^4*b1*b3*b6 + a0^5*a1^2*a2^3*a3^2*b1*b5^3 +   a0^5*a1^2*a2^3*a3^2*b3^2*b5^2 + a0^5*a1^2*a2^2*a3^5*b0*b3*b6 +   a0^5*a1^2*a2^2*a3^5*b1*b3*b5 + a0^5*a1^2*a2^2*a3^3*b1*b4*b5^2 +   a0^5*a1^2*a2^2*a3^3*b3^2*b4*b5 + a0^5*a1^2*a2^2*a3*b1*b5^4 +   a0^5*a1^2*a2^2*a3*b3^2*b5^3 + a0^5*a1^2*a2*a3^6*b1^2*b6 +   a0^5*a1^2*a2*a3^6*b1*b2*b5 + a0^5*a1^2*a2*a3^6*b1*b3*b4 +   a0^5*a1^2*a2*a3^4*b3^3*b5 + a0^5*a1^2*a3^7*b0*b1*b6 +   a0^5*a1^2*a3^7*b0*b2*b5 + a0^5*a1^2*a3^7*b0*b3*b4 +   a0^5*a1^2*a3^7*b1*b3^2 + a0^5*a1^2*a3^5*b0*b3*b5^2 +   a0^5*a1^2*a3^5*b1^2*b5*b6 + a0^5*a1^2*a3^5*b1*b2*b5^2 +   a0^5*a1^2*a3^5*b2*b3^2*b5 + a0^5*a1*a2^4*a3^4*b0*b3*b6 +   a0^5*a1*a2^4*a3^4*b1*b2*b6 + a0^5*a1*a2^4*a3^2*b3^3*b6 +   a0^5*a1*a2^3*a3^5*b0*b3*b5 + a0^5*a1*a2^3*a3^5*b1^2*b6 +   a0^5*a1*a2^3*a3^5*b1*b2*b5 + a0^5*a1*a2^3*a3^3*b3^3*b5 +   a0^5*a1*a2^2*a3^6*b0*b1*b6 + a0^5*a1*a2^2*a3^6*b0*b3*b4 +   a0^5*a1*a2^2*a3^6*b1*b2*b4 + a0^5*a1*a2^2*a3^4*b0*b3*b5^2 +   a0^5*a1*a2^2*a3^4*b1^2*b5*b6 + a0^5*a1*a2^2*a3^4*b1*b2*b5^2 +   a0^5*a1*a2^2*a3^4*b1*b3^2*b6 + a0^5*a1*a2^2*a3^4*b3^3*b4 +   a0^5*a1*a2^2*a3^2*b3^3*b5^2 + a0^5*a1*a2*a3^7*b0*b1*b5 +   a0^5*a1*a2*a3^7*b0*b3^2 + a0^5*a1*a2*a3^7*b1^2*b4 +   a0^5*a1*a2*a3^7*b1*b2*b3 + a0^5*a1*a2*a3^5*b1*b3^2*b5 +   a0^5*a1*a2*a3^5*b3^4 + a0^5*a1*a3^8*b0^2*b5 + a0^5*a1*a3^8*b0*b1*b4 +   a0^5*a1*a3^8*b0*b2*b3 + a0^5*a1*a3^8*b1*b2^2 + a0^5*a1*a3^6*b0*b1*b5^2 +   a0^5*a1*a3^6*b1^2*b3*b6 + a0^5*a1*a3^6*b1^2*b4*b5 +   a0^5*a1*a3^6*b1*b3^2*b4 + a0^5*a1*a3^6*b2*b3^3 + a0^5*a1*a3^4*b1^2*b5^3 +   a0^5*a1*a3^4*b1*b3^2*b5^2 + a0^5*a1*a3^4*b3^4*b5 +   a0^5*a2^5*a3^4*b1^2*b6 + a0^5*a2^4*a3^5*b0*b1*b6 +   a0^5*a2^4*a3^5*b1^2*b5 + a0^5*a2^4*a3^3*b1^2*b5*b6 +   a0^5*a2^4*a3^3*b1*b3^2*b6 + a0^5*a2^3*a3^6*b0*b1*b5 +   a0^5*a2^3*a3^6*b1^2*b4 + a0^5*a2^3*a3^4*b1*b3^2*b5 +   a0^5*a2^2*a3^7*b0^2*b5 + a0^5*a2^2*a3^7*b0*b1*b4 +   a0^5*a2^2*a3^7*b1^2*b3 + a0^5*a2^2*a3^5*b0*b1*b5^2 +   a0^5*a2^2*a3^5*b1^2*b3*b6 + a0^5*a2^2*a3^5*b1^2*b4*b5 +   a0^5*a2^2*a3^5*b1*b3^2*b4 + a0^5*a2^2*a3^3*b1^2*b5^3 +   a0^5*a2^2*a3^3*b1*b3^2*b5^2 + a0^5*a2^2*a3^3*b3^4*b5 +   a0^5*a2*a3^8*b0*b1*b3 + a0^5*a2*a3^8*b1^2*b2 + a0^5*a2*a3^6*b1^2*b3*b5 +   a0^5*a2*a3^6*b1*b3^3 + a0^5*a3^9*b0^2*b3 + a0^5*a3^9*b0*b1*b2 +   a0^5*a3^9*b1^3 + a0^5*a3^7*b1^3*b6 + a0^5*a3^7*b1^2*b3*b4 +   a0^5*a3^7*b1*b2*b3^2 + a0^5*a3^5*b1^2*b3*b5^2 + a0^5*a3^5*b3^5 +   a0^4*a1^6*a2^4*b4*b6^2 + a0^4*a1^6*a3^4*b0*b6^2 + a0^4*a1^6*b4*b5^4 +   a0^4*a1^5*a2^5*b3*b6^2 + a0^4*a1^5*a2^5*b4*b5*b6 +   a0^4*a1^5*a2^4*a3*b3*b5*b6 + a0^4*a1^5*a2^4*a3*b4*b5^2 +   a0^4*a1^5*a2^3*b4*b5^3 + a0^4*a1^5*a2^2*a3*b3*b5^3 +   a0^4*a1^5*a2*a3^4*b0*b5*b6 + a0^4*a1^5*a2*a3^2*b2*b5^3 +   a0^4*a1^5*a2*b3*b5^4 + a0^4*a1^5*a3^5*b0*b5^2 +   a0^4*a1^5*a3^3*b1*b5^3 + a0^4*a1^4*a2^6*b4^2*b6 +   a0^4*a1^4*a2^5*a3*b1*b6^2 + a0^4*a1^4*a2^5*a3*b2*b5*b6 +   a0^4*a1^4*a2^5*a3*b3*b4*b6 + a0^4*a1^4*a2^5*a3*b4^2*b5 +   a0^4*a1^4*a2^4*a3^2*b0*b6^2 + a0^4*a1^4*a2^4*a3^2*b1*b5*b6 +   a0^4*a1^4*a2^4*a3^2*b2*b4*b6 + a0^4*a1^4*a2^4*a3^2*b2*b5^2 +   a0^4*a1^4*a2^4*a3^2*b3^2*b6 + a0^4*a1^4*a2^4*a3^2*b3*b4*b5 +   a0^4*a1^4*a2^4*a3^2*b4^3 + a0^4*a1^4*a2^4*b2*b5^2*b6 +   a0^4*a1^4*a2^4*b3^2*b6^2 + a0^4*a1^4*a2^4*b4^2*b5^2 +   a0^4*a1^4*a2^3*a3*b3*b4*b5^2 + a0^4*a1^4*a2^2*a3^4*b0*b4*b6 +   a0^4*a1^4*a2^2*a3^2*b3^2*b5^2 + a0^4*a1^4*a2^2*b2*b5^4 +   a0^4*a1^4*a2*a3^5*b0*b3*b6 + a0^4*a1^4*a2*a3^5*b0*b4*b5 +   a0^4*a1^4*a2*a3^3*b2*b3*b5^2 + a0^4*a1^4*a2*a3*b1*b5^4 +   a0^4*a1^4*a3^6*b0*b4^2 + a0^4*a1^4*a3^4*b0*b4*b5^2 +   a0^4*a1^4*a3^4*b1^2*b6^2 + a0^4*a1^4*a3^4*b1*b3*b5^2 +   a0^4*a1^4*a3^2*b0*b5^4 + a0^4*a1^4*b3^2*b5^4 + a0^4*a1^3*a2^5*b1*b5^2*b6 +   a0^4*a1^3*a2^5*b3^2*b5*b6 + a0^4*a1^3*a2^4*a3*b1*b5^3 +   a0^4*a1^3*a2^4*a3*b3^2*b5^2 + a0^4*a1^3*a2^3*a3^4*b0*b3*b6 +   a0^4*a1^3*a2^3*a3^2*b1*b4*b5^2 + a0^4*a1^3*a2^3*a3^2*b3^2*b4*b5 +   a0^4*a1^3*a2^3*b1*b5^4 + a0^4*a1^3*a2^3*b3^2*b5^3 +   a0^4*a1^3*a2^2*a3^5*b0*b3*b5 + a0^4*a1^3*a2^2*a3^3*b1*b3*b5^2 +   a0^4*a1^3*a2^2*a3^3*b3^3*b5 + a0^4*a1^3*a2*a3^6*b0*b1*b6 +   a0^4*a1^3*a2*a3^6*b0*b2*b5 + a0^4*a1^3*a2*a3^6*b0*b3*b4 +   a0^4*a1^3*a2*a3^4*b0*b3*b5^2 + a0^4*a1^3*a2*a3^4*b1^2*b5*b6 +   a0^4*a1^3*a2*a3^4*b1*b2*b5^2 + a0^4*a1^3*a2*a3^4*b2*b3^2*b5 +   a0^4*a1^3*a3^7*b0*b3^2 + a0^4*a1^3*a3^5*b1*b3^2*b5 +   a0^4*a1^2*a2^5*a3*b3^3*b6 + a0^4*a1^2*a2^4*a3^4*b0*b2*b6 +   a0^4*a1^2*a2^4*a3^2*b3^3*b5 + a0^4*a1^2*a2^3*a3^5*b0*b1*b6 +   a0^4*a1^2*a2^3*a3^5*b0*b2*b5 + a0^4*a1^2*a2^3*a3^3*b3^3*b4 +   a0^4*a1^2*a2^3*a3*b3^3*b5^2 + a0^4*a1^2*a2^2*a3^6*b0^2*b6 +   a0^4*a1^2*a2^2*a3^6*b0*b2*b4 + a0^4*a1^2*a2^2*a3^4*b0*b2*b5^2 +   a0^4*a1^2*a2^2*a3^4*b0*b3^2*b6 + a0^4*a1^2*a2^2*a3^4*b1^2*b4*b6 +   a0^4*a1^2*a2^2*a3^4*b3^4 + a0^4*a1^2*a2*a3^7*b0^2*b5 +   a0^4*a1^2*a2*a3^7*b0*b1*b4 + a0^4*a1^2*a2*a3^7*b0*b2*b3 +   a0^4*a1^2*a2*a3^5*b0*b1*b5^2 + a0^4*a1^2*a2*a3^5*b0*b3^2*b5 +   a0^4*a1^2*a2*a3^5*b1^2*b3*b6 + a0^4*a1^2*a2*a3^5*b1^2*b4*b5 +   a0^4*a1^2*a2*a3^5*b2*b3^3 + a0^4*a1^2*a3^8*b0*b2^2 +   a0^4*a1^2*a3^6*b0^2*b5^2 + a0^4*a1^2*a3^6*b0*b3^2*b4 +   a0^4*a1^2*a3^6*b1^2*b4^2 + a0^4*a1^2*a3^6*b1*b3^3 +   a0^4*a1^2*a3^4*b0*b3^2*b5^2 + a0^4*a1^2*a3^4*b1^2*b4*b5^2 +   a0^4*a1^2*a3^4*b3^4*b4 + a0^4*a1*a2^5*a3^4*b0*b1*b6 +   a0^4*a1*a2^5*a3^2*b1^2*b5*b6 + a0^4*a1*a2^5*a3^2*b1*b3^2*b6 +   a0^4*a1*a2^4*a3^5*b0*b1*b5 + a0^4*a1*a2^4*a3^3*b1^2*b5^2 +   a0^4*a1*a2^4*a3^3*b1*b3^2*b5 + a0^4*a1*a2^3*a3^6*b0^2*b5 +   a0^4*a1*a2^3*a3^6*b0*b1*b4 + a0^4*a1*a2^3*a3^4*b0*b1*b5^2 +   a0^4*a1*a2^3*a3^4*b1^2*b3*b6 + a0^4*a1*a2^3*a3^4*b1^2*b4*b5 +   a0^4*a1*a2^3*a3^4*b1*b3^2*b4 + a0^4*a1*a2^3*a3^2*b1^2*b5^3 +   a0^4*a1*a2^3*a3^2*b1*b3^2*b5^2 + a0^4*a1*a2^3*a3^2*b3^4*b5 +   a0^4*a1*a2^2*a3^7*b0*b1*b3 + a0^4*a1*a2^2*a3^5*b1*b3^3 +   a0^4*a1*a2*a3^8*b0^2*b3 + a0^4*a1*a2*a3^8*b0*b1*b2 +   a0^4*a1*a2*a3^6*b1^3*b6 + a0^4*a1*a2*a3^6*b1^2*b3*b4 +   a0^4*a1*a2*a3^6*b1*b2*b3^2 + a0^4*a1*a2*a3^4*b1^2*b3*b5^2 +   a0^4*a1*a2*a3^4*b3^5 + a0^4*a1*a3^9*b0*b1^2 + a0^4*a1*a3^7*b1^3*b5 +   a0^4*a2^6*a3^4*b0^2*b6 + a0^4*a2^6*b3^4*b6 + a0^4*a2^5*a3^5*b0^2*b5 +   a0^4*a2^5*a3^3*b1^2*b3*b6 + a0^4*a2^5*a3*b3^4*b5 +   a0^4*a2^4*a3^6*b0^2*b4 + a0^4*a2^4*a3^4*b0^2*b5^2 +   a0^4*a2^4*a3^4*b1^2*b2*b6 + a0^4*a2^4*a3^4*b1^2*b3*b5 +   a0^4*a2^4*a3^2*b3^4*b4 + a0^4*a2^4*b3^4*b5^2 + a0^4*a2^3*a3^7*b0^2*b3 +   a0^4*a2^3*a3^5*b1^3*b6 + a0^4*a2^3*a3^5*b1^2*b2*b5 +   a0^4*a2^3*a3^5*b1^2*b3*b4 + a0^4*a2^3*a3^3*b1^2*b3*b5^2 +   a0^4*a2^3*a3^3*b3^5 + a0^4*a2^2*a3^8*b0^2*b2 + a0^4*a2^2*a3^6*b0*b1^2*b6 +   a0^4*a2^2*a3^6*b1^2*b2*b4 + a0^4*a2^2*a3^6*b1^2*b3^2 +   a0^4*a2^2*a3^4*b1^2*b2*b5^2 + a0^4*a2^2*a3^4*b1^2*b3^2*b6 +   a0^4*a2^2*a3^4*b2*b3^4 + a0^4*a2*a3^9*b0^2*b1 + a0^4*a2*a3^7*b0*b1^2*b5 +   a0^4*a2*a3^7*b1^3*b4 + a0^4*a2*a3^5*b1^3*b5^2 +   a0^4*a2*a3^5*b1^2*b3^2*b5 + a0^4*a2*a3^5*b1*b3^4 + a0^4*a3^10*b0^3 +   a0^4*a3^8*b0^2*b3^2 + a0^4*a3^8*b0*b1^2*b4 + a0^4*a3^8*b1^3*b3 +   a0^4*a3^8*b1^2*b2^2 + a0^4*a3^6*b0*b1^2*b5^2 + a0^4*a3^6*b0*b3^4 +   a0^4*a3^6*b1^2*b3^2*b4 + a0^4*a3^4*b1^2*b3^2*b5^2 + a0^4*a3^4*b3^6 +   a0^3*a1^7*a2^4*b3*b6^2 + a0^3*a1^7*b3*b5^4 + a0^3*a1^6*a2^5*b3*b5*b6 +   a0^3*a1^6*a2^4*a3*b1*b6^2 + a0^3*a1^6*a2^4*a3*b2*b5*b6 +   a0^3*a1^6*a2^4*a3*b3*b5^2 + a0^3*a1^6*a2^3*b3*b5^3 +   a0^3*a1^6*a2^2*a3*b2*b5^3 + a0^3*a1^6*a2*a3^2*b1*b5^3 +   a0^3*a1^6*a3^3*b0*b5^3 + a0^3*a1^6*a3*b1*b5^4 +   a0^3*a1^5*a2^6*b1*b6^2 + a0^3*a1^5*a2^6*b2*b5*b6 +   a0^3*a1^5*a2^6*b3*b4*b6 + a0^3*a1^5*a2^5*a3*b1*b5*b6 +   a0^3*a1^5*a2^5*a3*b2*b5^2 + a0^3*a1^5*a2^5*a3*b3^2*b6 +   a0^3*a1^5*a2^5*a3*b3*b4*b5 + a0^3*a1^5*a2^4*a3^2*b1*b4*b6 +   a0^3*a1^5*a2^4*a3^2*b2*b3*b6 + a0^3*a1^5*a2^4*a3^2*b2*b4*b5 +   a0^3*a1^5*a2^4*a3^2*b3*b4^2 + a0^3*a1^5*a2^4*b1*b5^2*b6 +   a0^3*a1^5*a2^4*b2*b5^3 + a0^3*a1^5*a2^4*b3*b4*b5^2 +   a0^3*a1^5*a2^3*a3*b3^2*b5^2 + a0^3*a1^5*a2^2*a3^2*b2*b3*b5^2 +   a0^3*a1^5*a2*a3^3*b1*b3*b5^2 + a0^3*a1^5*a3^4*b0*b3*b5^2 +   a0^3*a1^4*a2^7*b3^2*b6 + a0^3*a1^4*a2^6*a3*b0*b5*b6 +   a0^3*a1^4*a2^6*a3*b1*b4*b6 + a0^3*a1^4*a2^6*a3*b2*b3*b6 +   a0^3*a1^4*a2^6*a3*b3^2*b5 + a0^3*a1^4*a2^5*a3^2*b0*b5^2 +   a0^3*a1^4*a2^5*a3^2*b1*b3*b6 + a0^3*a1^4*a2^5*a3^2*b1*b4*b5 +   a0^3*a1^4*a2^5*a3^2*b2*b3*b5 + a0^3*a1^4*a2^5*a3^2*b3^2*b4 +   a0^3*a1^4*a2^5*b3^2*b5^2 + a0^3*a1^4*a2^4*a3^3*b0*b4*b5 +   a0^3*a1^4*a2^4*a3^3*b1*b2*b6 + a0^3*a1^4*a2^4*a3^3*b1*b3*b5 +   a0^3*a1^4*a2^4*a3^3*b1*b4^2 + a0^3*a1^4*a2^4*a3^3*b2^2*b5 +   a0^3*a1^4*a2^4*a3^3*b2*b3*b4 + a0^3*a1^4*a2^4*a3^3*b3^3 +   a0^3*a1^4*a2^4*a3*b0*b5^3 + a0^3*a1^4*a2^4*a3*b1*b4*b5^2 +   a0^3*a1^4*a2^4*a3*b2*b3*b5^2 + a0^3*a1^4*a2^3*a3^2*b1*b3*b5^2 +   a0^3*a1^4*a2^3*a3^2*b3^3*b5 + a0^3*a1^4*a2^2*a3^3*b1*b2*b5^2 +   a0^3*a1^4*a2^2*a3^3*b2*b3^2*b5 + a0^3*a1^4*a2*a3^4*b1^2*b5^2 +   a0^3*a1^4*a2*a3^4*b1*b3^2*b5 + a0^3*a1^4*a3^5*b0*b1*b5^2 +   a0^3*a1^4*a3^5*b0*b3^2*b5 + a0^3*a1^4*a3^3*b1^2*b5^3 +   a0^3*a1^3*a2^6*b3^3*b6 + a0^3*a1^3*a2^5*a3*b3^3*b5 +   a0^3*a1^3*a2^4*a3^2*b3^3*b4 + a0^3*a1^3*a2^4*b3^3*b5^2 +   a0^3*a1^3*a2^3*a3^3*b3^4 + a0^3*a1^3*a2^2*a3^4*b2*b3^3 +   a0^3*a1^3*a2*a3^5*b1*b3^3 + a0^3*a1^3*a3^6*b0*b3^3 +   a0^3*a1^3*a3^4*b1^2*b3*b5^2 + a0^3*a1^3*a3^4*b3^5 +   a0^3*a1^2*a2^6*a3*b1^2*b5*b6 + a0^3*a1^2*a2^6*a3*b1*b3^2*b6 +   a0^3*a1^2*a2^5*a3^2*b1^2*b5^2 + a0^3*a1^2*a2^5*a3^2*b1*b3^2*b5 +   a0^3*a1^2*a2^4*a3^3*b1^2*b4*b5 + a0^3*a1^2*a2^4*a3^3*b1*b3^2*b4 +   a0^3*a1^2*a2^4*a3*b1^2*b5^3 + a0^3*a1^2*a2^4*a3*b1*b3^2*b5^2 +   a0^3*a1^2*a2^3*a3^4*b1^2*b3*b5 + a0^3*a1^2*a2^3*a3^4*b1*b3^3 +   a0^3*a1^2*a2^2*a3^5*b1^2*b2*b5 + a0^3*a1^2*a2^2*a3^5*b1*b2*b3^2 +   a0^3*a1^2*a2*a3^6*b1^3*b5 + a0^3*a1^2*a2*a3^6*b1^2*b3^2 +   a0^3*a1^2*a3^7*b0*b1^2*b5 + a0^3*a1^2*a3^7*b0*b1*b3^2 +   a0^3*a1^2*a3^5*b1^3*b5^2 + a0^3*a1^2*a3^5*b1^2*b3^2*b5 +   a0^3*a1^2*a3^5*b1*b3^4 + a0^3*a1*a2^6*a3^2*b1^2*b3*b6 +   a0^3*a1*a2^5*a3^3*b1^2*b3*b5 + a0^3*a1*a2^4*a3^4*b1^2*b3*b4 +   a0^3*a1*a2^4*a3^2*b1^2*b3*b5^2 + a0^3*a1*a2^3*a3^5*b1^2*b3^2 +   a0^3*a1*a2^2*a3^6*b1^2*b2*b3 + a0^3*a1*a2*a3^7*b1^3*b3 +   a0^3*a1*a3^8*b0*b1^2*b3 + a0^3*a1*a3^6*b1^2*b3^3 +   a0^3*a2^6*a3^3*b1^3*b6 + a0^3*a2^5*a3^4*b1^3*b5 + a0^3*a2^4*a3^5*b1^3*b4 +   a0^3*a2^4*a3^3*b1^3*b5^2 + a0^3*a2^3*a3^6*b1^3*b3 +   a0^3*a2^2*a3^7*b1^3*b2 + a0^3*a2*a3^8*b1^4 + a0^3*a3^9*b0*b1^3 +   a0^3*a3^7*b1^4*b5 + a0^3*a3^7*b1^3*b3^2 + a0^2*a1^8*a2^4*b2*b6^2 +   a0^2*a1^8*b2*b5^4 + a0^2*a1^7*a2^5*b1*b6^2 + a0^2*a1^7*a2^5*b2*b5*b6 +   a0^2*a1^7*a2^4*a3*b1*b5*b6 + a0^2*a1^7*a2^4*a3*b2*b5^2 +   a0^2*a1^7*a2^3*b2*b5^3 + a0^2*a1^7*a2^2*a3*b1*b5^3 +   a0^2*a1^7*a2*a3^2*b0*b5^3 + a0^2*a1^7*a2*b1*b5^4 +   a0^2*a1^6*a2^6*b0*b6^2 + a0^2*a1^6*a2^6*b2*b4*b6 +   a0^2*a1^6*a2^5*a3*b0*b5*b6 + a0^2*a1^6*a2^5*a3*b2*b3*b6 +   a0^2*a1^6*a2^5*a3*b2*b4*b5 + a0^2*a1^6*a2^4*a3^2*b0*b4*b6 +   a0^2*a1^6*a2^4*a3^2*b0*b5^2 + a0^2*a1^6*a2^4*a3^2*b1*b3*b6 +   a0^2*a1^6*a2^4*a3^2*b1*b4*b5 + a0^2*a1^6*a2^4*a3^2*b2*b4^2 +   a0^2*a1^6*a2^4*b0*b5^2*b6 + a0^2*a1^6*a2^4*b2*b4*b5^2 +   a0^2*a1^6*a2^3*a3*b2*b3*b5^2 + a0^2*a1^6*a2^2*a3^2*b1*b3*b5^2 +   a0^2*a1^6*a2*a3^3*b0*b3*b5^2 + a0^2*a1^5*a2^7*b0*b5*b6 +   a0^2*a1^5*a2^7*b1*b4*b6 + a0^2*a1^5*a2^7*b2*b3*b6 +   a0^2*a1^5*a2^6*a3*b0*b5^2 + a0^2*a1^5*a2^6*a3*b1*b4*b5 +   a0^2*a1^5*a2^6*a3*b2*b3*b5 + a0^2*a1^5*a2^5*a3^2*b0*b4*b5 +   a0^2*a1^5*a2^5*a3^2*b1*b2*b6 + a0^2*a1^5*a2^5*a3^2*b1*b4^2 +   a0^2*a1^5*a2^5*a3^2*b2^2*b5 + a0^2*a1^5*a2^5*a3^2*b2*b3*b4 +   a0^2*a1^5*a2^5*b0*b5^3 + a0^2*a1^5*a2^5*b1*b4*b5^2 +   a0^2*a1^5*a2^5*b2*b3*b5^2 + a0^2*a1^5*a2^4*a3^3*b0*b3*b5 +   a0^2*a1^5*a2^4*a3^3*b1^2*b6 + a0^2*a1^5*a2^4*a3^3*b1*b2*b5 +   a0^2*a1^5*a2^4*a3^3*b1*b3*b4 + a0^2*a1^5*a2^4*a3^3*b2*b3^2 +   a0^2*a1^5*a2^3*a3^2*b1*b2*b5^2 + a0^2*a1^5*a2^3*a3^2*b2*b3^2*b5 +   a0^2*a1^5*a2^2*a3^3*b1^2*b5^2 + a0^2*a1^5*a2^2*a3^3*b1*b3^2*b5 +   a0^2*a1^5*a2*a3^4*b0*b1*b5^2 + a0^2*a1^5*a2*a3^4*b0*b3^2*b5 +   a0^2*a1^5*a2*a3^2*b1^2*b5^3 + a0^2*a1^4*a2^8*b2^2*b6 +   a0^2*a1^4*a2^7*a3*b0*b3*b6 + a0^2*a1^4*a2^7*a3*b1*b2*b6 +   a0^2*a1^4*a2^7*a3*b2^2*b5 + a0^2*a1^4*a2^6*a3^2*b0*b2*b6 +   a0^2*a1^4*a2^6*a3^2*b0*b3*b5 + a0^2*a1^4*a2^6*a3^2*b1^2*b6 +   a0^2*a1^4*a2^6*a3^2*b1*b2*b5 + a0^2*a1^4*a2^6*a3^2*b2^2*b4 +   a0^2*a1^4*a2^6*b1^2*b6^2 + a0^2*a1^4*a2^6*b2^2*b5^2 +   a0^2*a1^4*a2^6*b2*b3^2*b6 + a0^2*a1^4*a2^5*a3^3*b0*b2*b5 +   a0^2*a1^4*a2^5*a3^3*b0*b3*b4 + a0^2*a1^4*a2^5*a3^3*b1*b2*b4 +   a0^2*a1^4*a2^5*a3^3*b2^2*b3 + a0^2*a1^4*a2^5*a3*b0*b3*b5^2 +   a0^2*a1^4*a2^5*a3*b1^2*b5*b6 + a0^2*a1^4*a2^5*a3*b1*b2*b5^2 +   a0^2*a1^4*a2^5*a3*b2*b3^2*b5 + a0^2*a1^4*a2^4*a3^4*b0^2*b6 +   a0^2*a1^4*a2^4*a3^4*b0*b1*b5 + a0^2*a1^4*a2^4*a3^4*b0*b2*b4 +   a0^2*a1^4*a2^4*a3^4*b0*b3^2 + a0^2*a1^4*a2^4*a3^4*b1^2*b4 +   a0^2*a1^4*a2^4*a3^4*b1*b2*b3 + a0^2*a1^4*a2^4*a3^4*b2^3 +   a0^2*a1^4*a2^4*a3^2*b0*b2*b5^2 + a0^2*a1^4*a2^4*a3^2*b1^2*b4*b6 +   a0^2*a1^4*a2^4*a3^2*b1*b3^2*b5 + a0^2*a1^4*a2^4*a3^2*b2*b3^2*b4 +   a0^2*a1^4*a2^4*b1^2*b5^2*b6 + a0^2*a1^4*a2^4*b2*b3^2*b5^2 +   a0^2*a1^4*a2^3*a3^3*b2*b3^3 + a0^2*a1^4*a2^2*a3^4*b1*b3^3 +   a0^2*a1^4*a2*a3^5*b0*b3^3 + a0^2*a1^4*a2*a3^3*b1^2*b3*b5^2 +   a0^2*a1^4*a3^4*b2*b3^4 + a0^2*a1^3*a2^7*b1^2*b5*b6 +   a0^2*a1^3*a2^7*b1*b3^2*b6 + a0^2*a1^3*a2^6*a3*b1^2*b5^2 +   a0^2*a1^3*a2^6*a3*b1*b3^2*b5 + a0^2*a1^3*a2^5*a3^2*b1^2*b4*b5 +   a0^2*a1^3*a2^5*a3^2*b1*b3^2*b4 + a0^2*a1^3*a2^5*b1^2*b5^3 +   a0^2*a1^3*a2^5*b1*b3^2*b5^2 + a0^2*a1^3*a2^4*a3^3*b1^2*b3*b5 +   a0^2*a1^3*a2^4*a3^3*b1*b3^3 + a0^2*a1^3*a2^3*a3^4*b1^2*b2*b5 +   a0^2*a1^3*a2^3*a3^4*b1*b2*b3^2 + a0^2*a1^3*a2^2*a3^5*b1^3*b5 +   a0^2*a1^3*a2^2*a3^5*b1^2*b3^2 + a0^2*a1^3*a2*a3^6*b0*b1^2*b5 +   a0^2*a1^3*a2*a3^6*b0*b1*b3^2 + a0^2*a1^3*a2*a3^4*b1^3*b5^2 +   a0^2*a1^3*a2*a3^4*b1^2*b3^2*b5 + a0^2*a1^3*a2*a3^4*b1*b3^4 +   a0^2*a1^2*a2^7*a3*b1^2*b3*b6 + a0^2*a1^2*a2^6*a3^2*b1^2*b3*b5 +   a0^2*a1^2*a2^5*a3^3*b1^2*b3*b4 + a0^2*a1^2*a2^5*a3*b1^2*b3*b5^2 +   a0^2*a1^2*a2^4*a3^4*b1^2*b3^2 + a0^2*a1^2*a2^3*a3^5*b1^2*b2*b3 +   a0^2*a1^2*a2^2*a3^6*b1^3*b3 + a0^2*a1^2*a2*a3^7*b0*b1^2*b3 +   a0^2*a1^2*a2*a3^5*b1^2*b3^3 + a0^2*a1*a2^7*a3^2*b1^3*b6 +   a0^2*a1*a2^6*a3^3*b1^3*b5 + a0^2*a1*a2^5*a3^4*b1^3*b4 +   a0^2*a1*a2^5*a3^2*b1^3*b5^2 + a0^2*a1*a2^4*a3^5*b1^3*b3 +   a0^2*a1*a2^3*a3^6*b1^3*b2 + a0^2*a1*a2^2*a3^7*b1^4 +   a0^2*a1*a2*a3^8*b0*b1^3 + a0^2*a1*a2*a3^6*b1^4*b5 +   a0^2*a1*a2*a3^6*b1^3*b3^2 + a0^2*a2^4*a3^4*b1^4*b6 +   a0^2*a2*a3^7*b1^4*b3 + a0^2*a3^8*b1^4*b2 + a0*a1^9*a2^4*b1*b6^2 +   a0*a1^9*b1*b5^4 + a0*a1^8*a2^5*b1*b5*b6 + a0*a1^8*a2^4*a3*b0*b5*b6 +   a0*a1^8*a2^4*a3*b1*b5^2 + a0*a1^8*a2^3*b1*b5^3 +   a0*a1^8*a2^2*a3*b0*b5^3 + a0*a1^7*a2^6*b0*b5*b6 +   a0*a1^7*a2^6*b1*b4*b6 + a0*a1^7*a2^5*a3*b0*b5^2 +   a0*a1^7*a2^5*a3*b1*b3*b6 + a0*a1^7*a2^5*a3*b1*b4*b5 +   a0*a1^7*a2^4*a3^2*b0*b3*b6 + a0*a1^7*a2^4*a3^2*b0*b4*b5 +   a0*a1^7*a2^4*a3^2*b1*b4^2 + a0*a1^7*a2^4*b0*b5^3 +   a0*a1^7*a2^4*b1*b4*b5^2 + a0*a1^7*a2^3*a3*b1*b3*b5^2 +   a0*a1^7*a2^2*a3^2*b0*b3*b5^2 + a0*a1^6*a2^7*b1*b3*b6 +   a0*a1^6*a2^6*a3*b0*b3*b6 + a0*a1^6*a2^6*a3*b1*b3*b5 +   a0*a1^6*a2^5*a3^2*b1^2*b6 + a0*a1^6*a2^5*a3^2*b1*b2*b5 +   a0*a1^6*a2^5*a3^2*b1*b3*b4 + a0*a1^6*a2^5*b1*b3*b5^2 +   a0*a1^6*a2^4*a3^3*b0*b1*b6 + a0*a1^6*a2^4*a3^3*b0*b2*b5 +   a0*a1^6*a2^4*a3^3*b0*b3*b4 + a0*a1^6*a2^4*a3^3*b1*b3^2 +   a0*a1^6*a2^4*a3*b0*b3*b5^2 + a0*a1^6*a2^4*a3*b1^2*b5*b6 +   a0*a1^6*a2^3*a3^2*b1^2*b5^2 + a0*a1^6*a2^3*a3^2*b1*b3^2*b5 +   a0*a1^6*a2^2*a3^3*b0*b1*b5^2 + a0*a1^6*a2^2*a3^3*b0*b3^2*b5 +   a0*a1^6*a2^2*a3*b1^2*b5^3 + a0*a1^5*a2^8*b0*b3*b6 +   a0*a1^5*a2^8*b1*b2*b6 + a0*a1^5*a2^7*a3*b0*b3*b5 +   a0*a1^5*a2^7*a3*b1^2*b6 + a0*a1^5*a2^7*a3*b1*b2*b5 +   a0*a1^5*a2^6*a3^2*b0*b1*b6 + a0*a1^5*a2^6*a3^2*b0*b3*b4 +   a0*a1^5*a2^6*a3^2*b1*b2*b4 + a0*a1^5*a2^6*b0*b3*b5^2 +   a0*a1^5*a2^6*b1^2*b5*b6 + a0*a1^5*a2^6*b1*b2*b5^2 +   a0*a1^5*a2^6*b1*b3^2*b6 + a0*a1^5*a2^5*a3^3*b0*b1*b5 +   a0*a1^5*a2^5*a3^3*b0*b3^2 + a0*a1^5*a2^5*a3^3*b1^2*b4 +   a0*a1^5*a2^5*a3^3*b1*b2*b3 + a0*a1^5*a2^5*a3*b1*b3^2*b5 +   a0*a1^5*a2^4*a3^4*b0^2*b5 + a0*a1^5*a2^4*a3^4*b0*b1*b4 +   a0*a1^5*a2^4*a3^4*b0*b2*b3 + a0*a1^5*a2^4*a3^4*b1*b2^2 +   a0*a1^5*a2^4*a3^2*b0*b1*b5^2 + a0*a1^5*a2^4*a3^2*b1^2*b3*b6 +   a0*a1^5*a2^4*a3^2*b1^2*b4*b5 + a0*a1^5*a2^4*a3^2*b1*b3^2*b4 +   a0*a1^5*a2^4*b1^2*b5^3 + a0*a1^5*a2^4*b1*b3^2*b5^2 +   a0*a1^5*a2^3*a3^3*b1*b3^3 + a0*a1^5*a2^2*a3^4*b0*b3^3 +   a0*a1^5*a2^2*a3^2*b1^2*b3*b5^2 + a0*a1^5*a3^4*b1*b3^4 +   a0*a1^4*a2^9*b1^2*b6 + a0*a1^4*a2^8*a3*b0*b1*b6 +   a0*a1^4*a2^8*a3*b1^2*b5 + a0*a1^4*a2^7*a3^2*b0*b1*b5 +   a0*a1^4*a2^7*a3^2*b1^2*b4 + a0*a1^4*a2^7*b1^2*b5^2 +   a0*a1^4*a2^6*a3^3*b0^2*b5 + a0*a1^4*a2^6*a3^3*b0*b1*b4 +   a0*a1^4*a2^6*a3^3*b1^2*b3 + a0*a1^4*a2^6*a3*b0*b1*b5^2 +   a0*a1^4*a2^6*a3*b1^2*b3*b6 + a0*a1^4*a2^5*a3^4*b0*b1*b3 +   a0*a1^4*a2^5*a3^4*b1^2*b2 + a0*a1^4*a2^4*a3^5*b0^2*b3 +   a0*a1^4*a2^4*a3^5*b0*b1*b2 + a0*a1^4*a2^4*a3^5*b1^3 +   a0*a1^4*a2^4*a3^3*b1^3*b6 + a0*a1^4*a2^4*a3^3*b1^2*b2*b5 +   a0*a1^4*a2^4*a3^3*b1^2*b3*b4 + a0*a1^4*a2^4*a3*b1^2*b3*b5^2 +   a0*a1^4*a2^3*a3^4*b1^3*b5 + a0*a1^4*a2^3*a3^4*b1^2*b3^2 +   a0*a1^4*a2^2*a3^5*b0*b1^2*b5 + a0*a1^4*a2^2*a3^5*b0*b1*b3^2 +   a0*a1^4*a2^2*a3^3*b1^3*b5^2 + a0*a1^4*a2^2*a3^3*b1^2*b3^2*b5 +   a0*a1^3*a2^8*b1^2*b3*b6 + a0*a1^3*a2^7*a3*b1^2*b3*b5 +   a0*a1^3*a2^6*a3^2*b1^2*b3*b4 + a0*a1^3*a2^6*b1^2*b3*b5^2 +   a0*a1^3*a2^5*a3^3*b1^2*b3^2 + a0*a1^3*a2^4*a3^4*b1^2*b2*b3 +   a0*a1^3*a2^3*a3^5*b1^3*b3 + a0*a1^3*a2^2*a3^6*b0*b1^2*b3 +   a0*a1^3*a2^2*a3^4*b1^2*b3^3 + a0*a1^2*a2^8*a3*b1^3*b6 +   a0*a1^2*a2^7*a3^2*b1^3*b5 + a0*a1^2*a2^6*a3^3*b1^3*b4 +   a0*a1^2*a2^6*a3*b1^3*b5^2 + a0*a1^2*a2^5*a3^4*b1^3*b3 +   a0*a1^2*a2^4*a3^5*b1^3*b2 + a0*a1^2*a2^3*a3^6*b1^4 +   a0*a1^2*a2^2*a3^7*b0*b1^3 + a0*a1^2*a2^2*a3^5*b1^4*b5 +   a0*a1^2*a2^2*a3^5*b1^3*b3^2 + a0*a1*a2^4*a3^4*b1^4*b5 +   a0*a1*a2^2*a3^6*b1^4*b3 + a0*a1*a3^8*b1^5 + a0*a2^6*a3^3*b1^4*b5 +   a0*a2^4*a3^5*b1^4*b3 + a0*a2^2*a3^7*b1^5 + a1^10*a2^4*b0*b6^2 +   a1^10*b0*b5^4 + a1^9*a2^5*b0*b5*b6 + a1^9*a2^4*a3*b0*b5^2 +   a1^9*a2^3*b0*b5^3 + a1^8*a2^6*b0*b4*b6 + a1^8*a2^5*a3*b0*b3*b6 +   a1^8*a2^5*a3*b0*b4*b5 + a1^8*a2^4*a3^2*b0*b4^2 + a1^8*a2^4*b0*b4*b5^2 +   a1^8*a2^4*b1^2*b6^2 + a1^8*a2^3*a3*b0*b3*b5^2 + a1^8*b1^2*b5^4 +   a1^7*a2^7*b0*b3*b6 + a1^7*a2^6*a3*b0*b3*b5 + a1^7*a2^5*a3^2*b0*b1*b6 +   a1^7*a2^5*a3^2*b0*b2*b5 + a1^7*a2^5*a3^2*b0*b3*b4 + a1^7*a2^5*b0*b3*b5^2 +   a1^7*a2^5*b1^2*b5*b6 + a1^7*a2^4*a3^3*b0*b3^2 + a1^7*a2^4*a3*b1^2*b5^2 +   a1^7*a2^3*a3^2*b0*b1*b5^2 + a1^7*a2^3*a3^2*b0*b3^2*b5 +   a1^7*a2^3*b1^2*b5^3 + a1^6*a2^8*b0*b2*b6 + a1^6*a2^7*a3*b0*b1*b6 +   a1^6*a2^7*a3*b0*b2*b5 + a1^6*a2^6*a3^2*b0^2*b6 +   a1^6*a2^6*a3^2*b0*b2*b4 + a1^6*a2^6*b0*b2*b5^2 + a1^6*a2^6*b0*b3^2*b6 +   a1^6*a2^6*b1^2*b4*b6 + a1^6*a2^5*a3^3*b0^2*b5 + a1^6*a2^5*a3^3*b0*b1*b4 +   a1^6*a2^5*a3^3*b0*b2*b3 + a1^6*a2^5*a3*b0*b1*b5^2 +   a1^6*a2^5*a3*b0*b3^2*b5 + a1^6*a2^5*a3*b1^2*b3*b6 +   a1^6*a2^5*a3*b1^2*b4*b5 + a1^6*a2^4*a3^4*b0*b2^2 +   a1^6*a2^4*a3^2*b0^2*b5^2 + a1^6*a2^4*a3^2*b0*b3^2*b4 +   a1^6*a2^4*a3^2*b1^2*b4^2 + a1^6*a2^4*b0*b3^2*b5^2 +   a1^6*a2^4*b1^2*b4*b5^2 + a1^6*a2^3*a3^3*b0*b3^3 +   a1^6*a2^3*a3*b1^2*b3*b5^2 + a1^6*a3^4*b0*b3^4 + a1^5*a2^9*b0*b1*b6 +   a1^5*a2^8*a3*b0*b1*b5 + a1^5*a2^7*a3^2*b0^2*b5 + a1^5*a2^7*a3^2*b0*b1*b4 +   a1^5*a2^7*b0*b1*b5^2 + a1^5*a2^7*b1^2*b3*b6 + a1^5*a2^6*a3^3*b0*b1*b3 +   a1^5*a2^6*a3*b1^2*b3*b5 + a1^5*a2^5*a3^4*b0^2*b3 +   a1^5*a2^5*a3^4*b0*b1*b2 + a1^5*a2^5*a3^2*b1^3*b6 +   a1^5*a2^5*a3^2*b1^2*b2*b5 + a1^5*a2^5*a3^2*b1^2*b3*b4 +   a1^5*a2^5*b1^2*b3*b5^2 + a1^5*a2^4*a3^5*b0*b1^2 +   a1^5*a2^4*a3^3*b1^2*b3^2 + a1^5*a2^3*a3^4*b0*b1^2*b5 +   a1^5*a2^3*a3^4*b0*b1*b3^2 + a1^5*a2^3*a3^2*b1^3*b5^2 +   a1^5*a2^3*a3^2*b1^2*b3^2*b5 + a1^4*a2^10*b0^2*b6 + a1^4*a2^9*a3*b0^2*b5 +   a1^4*a2^8*a3^2*b0^2*b4 + a1^4*a2^8*b0^2*b5^2 + a1^4*a2^8*b1^2*b2*b6 +   a1^4*a2^7*a3^3*b0^2*b3 + a1^4*a2^7*a3*b1^3*b6 + a1^4*a2^7*a3*b1^2*b2*b5 +   a1^4*a2^6*a3^4*b0^2*b2 + a1^4*a2^6*a3^2*b0*b1^2*b6 +   a1^4*a2^6*a3^2*b1^2*b2*b4 + a1^4*a2^6*b1^2*b2*b5^2 +   a1^4*a2^6*b1^2*b3^2*b6 + a1^4*a2^5*a3^5*b0^2*b1 +   a1^4*a2^5*a3^3*b0*b1^2*b5 + a1^4*a2^5*a3^3*b1^3*b4 +   a1^4*a2^5*a3^3*b1^2*b2*b3 + a1^4*a2^5*a3*b1^3*b5^2 +   a1^4*a2^5*a3*b1^2*b3^2*b5 + a1^4*a2^4*a3^6*b0^3 +   a1^4*a2^4*a3^4*b0^2*b3^2 + a1^4*a2^4*a3^4*b0*b1^2*b4 +   a1^4*a2^4*a3^4*b1^2*b2^2 + a1^4*a2^4*a3^2*b0*b1^2*b5^2 +   a1^4*a2^4*a3^2*b1^2*b3^2*b4 + a1^4*a2^4*b1^2*b3^2*b5^2 +   a1^4*a2^3*a3^5*b0*b1^2*b3 + a1^4*a2^3*a3^3*b1^2*b3^3 +   a1^4*a3^4*b1^2*b3^4 + a1^3*a2^9*b1^3*b6 + a1^3*a2^8*a3*b1^3*b5 +   a1^3*a2^7*a3^2*b1^3*b4 + a1^3*a2^7*b1^3*b5^2 + a1^3*a2^6*a3^3*b1^3*b3 +   a1^3*a2^5*a3^4*b1^3*b2 + a1^3*a2^4*a3^5*b1^4 + a1^3*a2^3*a3^6*b0*b1^3 +   a1^3*a2^3*a3^4*b1^4*b5 + a1^3*a2^3*a3^4*b1^3*b3^2 +   a1^2*a2^4*a3^4*b1^4*b4 + a1^2*a2^3*a3^5*b1^4*b3 + a1^2*a3^8*b0*b1^4 +   a1*a2^7*a3^2*b1^4*b5 + a1*a2^5*a3^4*b1^4*b3 + a1*a2^3*a3^6*b1^5 +   a2^10*b1^4*b6 + a2^9*a3*b1^4*b5 + a2^8*a3^2*b1^4*b4 + a2^8*b1^4*b5^2 +   a2^7*a3^3*b1^4*b3 + a2^6*a3^4*b1^4*b2 + a2^5*a3^5*b1^5 +   a2^4*a3^6*b0*b1^4 + a2^4*a3^4*b1^4*b3^2 + a3^8*b1^6
+  return _igusa_char2_formulas[] = [A, B, C, D, E]
+end
+
+function igusa_char2(f::PolyRingElem{T}, h::PolyRingElem{T}) where T  <: FieldElem
+  K = base_ring(f)
+  _a0, _a1, _a2, _a3 = elem_type(K)[coeff(h, i) for i in (0:3)]
+  _b0, _b1, _b2, _b3, _b4, _b5, _b6 = elem_type(K)[coeff(f, i) for i in (0:6)]
   vals = elem_type(K)[_a0, _a1, _a2, _a3, _b0, _b1, _b2, _b3, _b4, _b5, _b6]
-  return [evaluate(A, vals), evaluate(B, vals), evaluate(C, vals), evaluate(D, vals), evaluate(E, vals)]
+  return elem_type(K)[evaluate(F, vals) for F in _get_igusa_char2_formulas()]
 end
 
 
-function igusa_general_formulas(f::PolyRingElem{T}) where T
-  K = base_ring(f)
-  _a0, _a1, _a2, _a3, _a4, _a5, _a6 = elem_type(K)[coeff(f,i) for i in (0:6)]
+const _igusa_general_formulas = Ref{Vector{ZZMPolyRingElem}}()
+
+function _get_igusa_general_formulas()
+  isassigned(_igusa_general_formulas) && return _igusa_general_formulas[]
   Ka, (a0, a1, a2, a3, a4, a5, a6) = ZZ[:a0, :a1, :a2, :a3, :a4, :a5, :a6]
   j2 = -480*a0*a6 + 80*a1*a5 - 32*a2*a4 + 12*a3^2
   j4 = 5280*a0^2*a6^2 - 1760*a0*a1*a5*a6 + 2624*a0*a2*a4*a6 - 800*a0*a2*a5^2 -
@@ -481,8 +541,13 @@ function igusa_general_formulas(f::PolyRingElem{T}) where T
    1024*a1^2*a2^3*a4^3*a5^2 - 6912*a1^2*a2^2*a3^4*a6^2 +
    4608*a1^2*a2^2*a3^3*a4*a5*a6 - 1024*a1^2*a2^2*a3^3*a5^3 -
    1024*a1^2*a2^2*a3^2*a4^3*a6 + 256*a1^2*a2^2*a3^2*a4^2*a5^2
-  vals = elem_type(K)[_a0, _a1, _a2, _a3, _a4, _a5, _a6]
-  return [evaluate(j2, vals), evaluate(j4, vals), evaluate(j6, vals), evaluate(j8, vals), evaluate(j10, vals)]
+  return _igusa_general_formulas[] = [j2, j4, j6, j8, j10]
+end
+
+function igusa_general_formulas(f::PolyRingElem{T}) where T  <: FieldElem
+  K = base_ring(f)
+  vals = elem_type(K)[coeff(f, i) for i in (0:6)]
+  return elem_type(K)[evaluate(F, vals) for F in _get_igusa_general_formulas()]
 end
 
 
@@ -491,7 +556,7 @@ function igusa_invariant_J15(C::HypellCrv)
   return igusa_invariant_J15(f+h^2/4)
 end
 
-function igusa_invariant_J15(f::PolyRingElem{T}) where T
+function igusa_invariant_J15(f::PolyRingElem{T}) where T  <: FieldElem
   K = base_ring(f)
   _a0, _a1, _a2, _a3, _a4, _a5, _a6 = elem_type(K)[coeff(f,i) for i in (0:6)]
   Ka, (a0, a1, a2, a3, a4, a5, a6) = ZZ[:a0, :a1, :a2, :a3, :a4, :a5, :a6]
@@ -606,6 +671,7 @@ function igusa_invariant_J15(f::PolyRingElem{T}) where T
         8*a2^7*a3^3*a4^3*a5^2 + 27*a2^6*a3^7*a6^2 - 18*a2^6*a3^6*a4*a5*a6 + 4*a2^6*a3^6*a5^3 + 4*a2^6*a3^5*a4^3*a6 - a2^6*a3^5*a4^2*a5^2
 
 
+    vals = elem_type(K)[_a0, _a1, _a2, _a3, _a4, _a5, _a6]
     return evaluate(J15, vals)
 
 end

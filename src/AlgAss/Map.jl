@@ -18,24 +18,25 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
     z.d_t = similar(M, 1, dim(B))
-    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:Threads.nthreads()]
-    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:Threads.nthreads()]
+    nt = _maxthreadid()
+    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:nt]
+    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:nt]
     z.mat = M
 
     function image(a)
-      if Threads.nthreads() == 1
+      if nt == 1
         zt = z.c_t
       else
         zt = z.c_t_threaded[Threads.threadid()]
       end
       for i in 1:dim(A)
-        zt[1, i] = coefficients(a, copy = false)[i]
+        zt[1, i] = coeff(a, i)
       end
       s = Vector{elem_type(base_ring(B))}(undef, dim(B))
       #mul!(z.d_t, z.c_t, M) # there is no mul! for Generic.Mat
-      z.d_t = zt*M
+      zdt = zt*M
       for i in 1:dim(B)
-        s[i] = z.d_t[1, i]
+        s[i] = zdt[1, i]
       end
       return B(s)
     end
@@ -48,18 +49,20 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     z = new{R, S, T}()
     z.c_t = similar(M, 1, dim(A))
     z.d_t = similar(M, 1, dim(B))
-    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:Threads.nthreads()]
-    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:Threads.nthreads()]
+    nt = _maxthreadid()
+    z.c_t_threaded = [similar(M, 1, dim(A)) for i in 1:nt]
+    z.d_t_threaded = [similar(M, 1, dim(B)) for i in 1:nt]
     z.mat = M
     z.imat = N
 
     function image(a)
-      if Threads.nthreads() == 1
+      if nt == 1
         zct = z.c_t
         zdt = z.d_t
       else
-        zct = z.c_t_threaded[Threads.threadid()]
-        zdt = z.d_t_threaded[Threads.threadid()]
+        tid = Threads.threadid()
+        zct = z.c_t_threaded[tid]
+        zdt = z.d_t_threaded[tid]
       end
 
       ca = coefficients(a, copy = false)
@@ -81,16 +84,17 @@ mutable struct AbsAlgAssMor{R, S, T} <: Map{R, S, HeckeMap, AbsAlgAssMor}
     end
 
     function preimage(a)
-      if Threads.nthreads() == 1
+      if nt == 1
         zct = z.c_t
         zdt = z.d_t
       else
-        zct = z.c_t_threaded[Threads.threadid()]
-        zdt = z.d_t_threaded[Threads.threadid()]
+        tid = Threads.threadid()
+        zct = z.c_t_threaded[tid]
+        zdt = z.d_t_threaded[tid]
       end
 
       for i in 1:dim(B)
-        zdt[1, i] = coefficients(a, copy = false)[i]
+        zdt[1, i] = coeff(a, i)
       end
       s = Vector{elem_type(base_ring(A))}(undef, dim(A))
       zct = zdt * N
@@ -240,26 +244,31 @@ end
 #end
 
 function has_preimage_with_preimage(m::AbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
-  if isdefined(m, :imat)
-    return true, preimage(m, a)
+  A = domain(m)
+  if isdefined(m.header, :preimage)
+    b = m.header.preimage(a)::elem_type(A)
+    @assert parent(b) === A
+    return true, b
   end
 
-  A = parent(a)
-  t = matrix(base_ring(A), 1, dim(A), coefficients(a))
-  b, p = can_solve_with_solution(m.mat, t, side = :left)
-  if b
-    return true, domain(m)([ p[1, i] for i = 1:nrows(m.mat) ])
-  else
-    return false, zero(domain(m))
+  isdefined(m, :mat) || error("No preimage function known")
+  B = codomain(m)
+  @req parent(a) === B "The element does not belong to the codomain"
+  if isdefined(m, :imat)
+    return true, A(coefficients(a; copy = false)*m.imat)
   end
+
+  t = matrix(base_ring(B), 1, dim(B), coefficients(a))
+  ok, p = can_solve_with_solution(m.mat, t; side = :left)
+  ok || return false, zero(A)
+  return true, A([p[1, i] for i in 1:nrows(m.mat)])
 end
 
-#function preimage(m::AbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
-#  @assert parent(a) === codomain(m)
-#  fl, b = has_preimage_with_preimage(m, a)
-#  !fl && error("Element has no preimage")
-#  return b
-#end
+function preimage(m::AbsAlgAssMor, a::AbstractAssociativeAlgebraElem)
+  ok, b = has_preimage_with_preimage(m, a)
+  @req ok "Element has no preimage"
+  return b
+end
 
 # inverse
 
@@ -298,7 +307,7 @@ mutable struct AbsAlgAssToNfAbsMor{S, T, U, V} <: Map{S, U, HeckeMap, AbsAlgAssT
 
     function _image(x::T)
       for i = 1:dim(A)
-        z.t[1, i] = coefficients(x, copy = false)[i]
+        z.t[1, i] = coeff(x, i)
       end
       s = z.t*M
       return K(parent(K.pol)([ s[1, i] for i = 1:degree(K) ]))
@@ -364,7 +373,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     function _image(x::AbstractAssociativeAlgebraElem)
       @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
-        z.t[1, i] = coefficients(x, copy = false)[i]
+        z.t[1, i] = coeff(x, i)
       end
       s = z.t*M
       sR = z.R([ s[1, i] for i = 1:dim(A) ])
@@ -404,7 +413,7 @@ mutable struct AbsAlgAssToFqMor{S, T, MatType, PolyRingType} <: Map{S, T, HeckeM
     function _image(x::AbstractAssociativeAlgebraElem)
       @assert typeof(x) == elem_type(A)
       for i = 1:dim(A)
-        z.t[1, i] = coefficients(x, copy = false)[i]
+        z.t[1, i] = coeff(x, i)
       end
       s = z.t*M
       sR = z.R([ s[1, i] for i = 1:dim(A) ])
@@ -459,7 +468,7 @@ function (f::AbsAlgAssMor)(O::AlgAssAbsOrd)
   B = codomain(f)
   # dirty trick, because it does not work for orders
   J = ideal_from_lattice_gens(B, elem_type(B)[f(b) for b in O.basis_alg])
-  C = order(B, basis(J), check = false, isbasis = true)
+  C = order(B, basis(J), check = false, is_basis = true)
   return C
 end
 

@@ -4,18 +4,19 @@
 #
 ################################################################################
 @doc raw"""
-    resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+    resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion} -> T
 
 A generator for the ideal of the resultant of $f$ and $g$ using a quadratic-time algorithm.
 One of the two polynomials must be monic.
 """
-function resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
   #step the same is true and we can discard the unit obtained from the fun_factor function
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   m = ZZRingElem(modulus(R))
 
   #easy = is_prime_power(m)
@@ -132,13 +133,14 @@ function resultant_ideal(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResE
 end
 
 
-function resultant_ideal_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function resultant_ideal_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   #The algorithm is the same as the resultant. We assume that one fo the 2 polynomials is monic. Under this assumption, at every
   #step the same is true and we can discard the unit obtained from the fun_factor function
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   #pn = ZZRingElem(modulus(R))
   pn = modulus(R)
 
@@ -303,7 +305,7 @@ $\{x | xa = 0\} = \langle r\rangle$.
 function annihilator(a::ResElem{T}) where T <: IntegerUnion
   R = parent(a)
   m = modulus(R)
-  return R(divexact(m, gcd(m, a.data)))
+  return R(divexact(m, gcd(m, data(a))))
 end
 
 function is_zerodivisor(f::T) where T <: Union{ZZModPolyRingElem,zzModPolyRingElem}
@@ -379,11 +381,12 @@ end
 # rres(f, g) = rres(g, f)
 # rres(uf, g) = rres(f, g)
 # rres(pf, g) mod p^n = p*(rres(f, g) mod p^(n-1)) (under right hypotheses)
-function rres_sircana(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function rres_sircana(f1::PolyRingElem{T}, g1::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   Nemo.check_parent(f1, g1)
   @assert typeof(f1) == typeof(g1)
   Rt = parent(f1)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   m = ZZRingElem(modulus(R))
   #easy = is_prime_power(m)
   #if easy
@@ -552,11 +555,12 @@ function rresx_sircana_pp(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Res
 end
 
 
-function _rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function _rresx_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   Nemo.check_parent(f, g)
 
   Rt = parent(f)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   Zx = polynomial_ring(ZZ, "x", cached = false)[1]
   m = ZZRingElem(modulus(R))
   #easy = is_prime_power(m)
@@ -776,83 +780,58 @@ end
 #
 ################################################################################
 
-@doc raw"""
-    gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+# f = u * h with h primitive and invertible leading coefficient
+function _gcd_sircana_normal_form(f::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+  u = one(parent(f))
+  iszero(f) && return u, f
 
-The 'gcd' of $f$ and $g$ together with the 'cofactors' using a quadratic-time algorithm.
-"""
-function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
-  Nemo.check_parent(f, g)
-  _F = f
-  _G = g
-  @assert typeof(f) == typeof(g)
-  iszero(g) && return f, one(parent(f)), zero(parent(f))
-  iszero(f) && return g, zero(parent(f)), one(parent(f))
-  isone(f) && return f, f, g
-  isone(g) && return g, f, g
+  if !is_unit(content(f))
+    c, f = primsplit(f)
+    u *= c
+  end
 
+  if !is_unit(leading_coefficient(f))
+    v, f = fun_factor(f)
+    u *= v
+  end
+
+  return u, f
+end
+
+# GCD of f and g in (Z/pe)[x], lifted to ZZ[x] for the crt
+function _gcd_sircana_component(f::PolyRingElem{T}, g::PolyRingElem{T}, pe::ZZRingElem) where T <: ResElem{S} where S <: IntegerUnion
+  F, mF = residue_ring(ZZ, pe; cached = false)
+  Fx, = polynomial_ring(F, :x; cached = false)
+  fp = map_coefficients(c -> mF(lift(ZZ, c)), f; parent = Fx)
+  gp = map_coefficients(c -> mF(lift(ZZ, c)), g; parent = Fx)
+
+  uf, fp = _gcd_sircana_normal_form(fp)
+  ug, gp = _gcd_sircana_normal_form(gp)
+
+  d, qf, qg = gcd_sircana(fp, gp)
+  return lift(Globals.Zx, d), lift(Globals.Zx, uf*qf), lift(Globals.Zx, ug*qg)
+end
+
+# The leading coefficient of g is a zero divisor. We split the ring into components
+#   in which both f and g have a well defined unit * (primitive monic) splitting
+function _gcd_sircana_split(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
   Rt = parent(f)
   R = base_ring(Rt)
   m = ZZRingElem(modulus(R))
-  #from Sircana: if content is nilpotent, then removing the content
-  # results in s.th. that has a non-nilpotent content
-  # one should be able to use this to split the ring
-  # recall: if the leading coeff is nilpotent, but the polynomial is not
-  #   then the polynomial splits into unit * monic. The unit is not
-  #   used for gcd.
-  # start with primitive polynomials - in contrast to fields we
-  # cannot ignore the contents as it can contribute...
-  @assert isone(content(f))
-  @assert isone(content(g))
-  local qf, qg
-  while !iszero(g)
-    if !is_unit(leading_coefficient(g))
-      cp = coprime_base(vcat(map(x->gcd(lift(x), modulus(R)), coefficients(g)), [modulus(R)]))
-      cp = [x for x in cp if !is_unit(x)]
-      gc = NTuple{3, ZZPolyRingElem}[]
-      for p in cp
-        F, mF = quo(parent(p), p^valuation(modulus(R), p))
-        gp = map_coefficients(x -> mF(lift(ZZ, x)), g; cached = false)
-        @assert base_ring(gp) == F
-        fp = map_coefficients(x -> mF(lift(ZZ, x)), f; parent = parent(gp))
-        if !is_unit(leading_coefficient(fp))
-          if iszero(fp)
-            fp = zero(parent(fp))
-          else
-            _, fp = fun_factor(fp)
-          end
-        end
-        if !is_unit(leading_coefficient(gp))
-          if iszero(gp)
-            gp = zero(parent(gp))
-          else
-            _, gp = fun_factor(gp)
-          end
-        end
-        push!(gc, map(y->map_coefficients(x->lift(x), y, cached = false), gcd_sircana(fp, gp)))
-      end
-      f = map_coefficients(R, induce_crt([x[1] for x = gc], cp), parent = parent(f))
-      qf = map_coefficients(R, induce_crt([x[2] for x = gc], cp), parent = parent(f))
-      qg = map_coefficients(R, induce_crt([x[3] for x = gc], cp), parent = parent(f))
-      break
-    else
-      f, g = g, rem(f, g)
-      if iszero(g)
-        qf = divexact(_F, f)
-        qg = divexact(_G, f)
-        break
-      end
-    end
-  end
-  c = canonical_unit(leading_coefficient(f))
-  f = divexact(f, c)
-  qf *= c
-  qg *= c
 
-  @assert f*qf == _F
-  @assert f*qg == _G
+  # NOTE: coprime base should be "fine" enough to allow BOTH f and g to admit
+  #   a Weierstrass split.
+  cp = coprime_base(vcat(map(x -> gcd(lift(x), m), coefficients(f)),
+                         map(x -> gcd(lift(x), m), coefficients(g)),
+                         [m]))
+  cp = ZZRingElem[p for p in cp if !is_unit(p)]
+  pe = ZZRingElem[p^valuation(m, p) for p in cp]
 
-  return f, qf, qg
+  gc = [_gcd_sircana_component(f, g, q) for q in pe]
+
+  return (map_coefficients(R, induce_crt([x[1] for x in gc], pe), parent = Rt),
+          map_coefficients(R, induce_crt([x[2] for x in gc], pe), parent = Rt),
+          map_coefficients(R, induce_crt([x[3] for x in gc], pe), parent = Rt))
 end
 
 function induce_crt(f::Vector{<:PolyRingElem{T}}, m::Vector{ZZRingElem}, parent::ZZPolyRing = Hecke.Globals.Zx) where {T}
@@ -865,6 +844,60 @@ function induce_crt(f::Vector{<:PolyRingElem{T}}, m::Vector{ZZRingElem}, parent:
   return g
 end
 
+@doc raw"""
+    gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+
+The 'gcd' of $f$ and $g$ together with the 'cofactors' using a quadratic-time algorithm.
+"""
+function gcd_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+  Nemo.check_parent(f, g)
+  @assert typeof(f) == typeof(g)
+
+  iszero(g) && return f, one(parent(f)), zero(parent(f))
+  iszero(f) && return g, zero(parent(f)), one(parent(f))
+  isone(f) && return f, f, g
+  isone(g) && return g, f, g
+
+  _F = f
+  _G = g
+
+  Rt = parent(f)
+
+  # In contrast to fields we cannot ignore the contents as it can contribute
+  @assert isone(content(f))
+  @assert isone(content(g))
+
+  # Do Euclid steps as long as the leading coefficient is invertible
+  # Note that we cannot update cofactors as we go: we need to store quotients
+  #   and then unwind cofactors from the final result
+  quots = typeof(f)[]
+  while !iszero(g) && is_unit(leading_coefficient(g))
+    q, r = divrem(f, g)
+    push!(quots, q)
+    f, g = g, r
+  end
+
+  if iszero(g)
+    qf, qg = one(Rt), zero(Rt)
+  else
+    f, qf, qg = _gcd_sircana_split(f, g)
+  end
+
+  # Restore cofactors: go backwards through Euclid quotients doing (f, g) <- (g, f - q*g)
+  for q in Iterators.reverse(quots)
+    qf, qg = qg + q*qf, qf
+  end
+
+  c = canonical_unit(leading_coefficient(f))
+  f = divexact(f, c)
+  qf *= c
+  qg *= c
+
+  @hassert :AbsNumFieldOrder 1 f*qf == _F
+  @hassert :AbsNumFieldOrder 1 f*qg == _G
+  return f, qf, qg
+end
+
 ################################################################################
 #
 #  Resultant
@@ -872,15 +905,16 @@ end
 ################################################################################
 
 @doc raw"""
-    resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion -> T
+    resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion} -> T
 
 The resultant of $f$ and $g$ using a quadratic-time algorithm.
 """
-function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{S} where S <: IntegerUnion
+function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: ResElem{<:IntegerUnion}
   Nemo.check_parent(f, g)
   @assert typeof(f) == typeof(g)
   Rt = parent(f)
   R = base_ring(Rt)
+  S = typeof(modulus(R))
   m = ZZRingElem(modulus(R))
   e, p = is_perfect_power_with_data(m)
   easy = is_prime(p)
@@ -968,8 +1002,8 @@ function resultant_sircana(f::PolyRingElem{T}, g::PolyRingElem{T}) where T <: Re
       R1 = residue_ring(ZZ, S(lg), cached=false)[1]
       R1t = polynomial_ring(R1, cached=false)[1]
       #g is bad in R1, so factor it
-      gR1 = R1t(lift(Zx, g))
-      fR1 = R1t(lift(Zx, f))
+      gR1 = change_base_ring(R1, lift(Zx, g); parent = R1t)
+      fR1 = change_base_ring(R1, lift(Zx, f); parent = R1t)
     else
       gR1 = g
       fR1 = f
@@ -1255,8 +1289,9 @@ function unit_group_1_part(f::fqPolyRepPolyRingElem, k::Int)
     # 1+f^p1/1+f^p2 = f^p1/f^p2 = f^(p2-p1), latter additively
     ngens = [1+(x^i)*f1*c for i=0:(degree(f)*(p2-p1)-1) for c = b]
     nr = matrix(ZZ, 0, length(ngens), [])
-    for j=1:nrows(rels)
-      g = rem(prod(powermod(gens[k], rels[j, k], f2) for k=1:ncols(rels)), f2) - 1
+    rl = rels
+    for j=1:nrows(rl)
+      g = rem(prod(powermod(gens[k], rl[j, k], f2) for k=1:ncols(rl)), f2) - 1
       q,r = divrem(g, f1)
       @assert iszero(r)
       nr = vcat(nr, matrix(ZZ, 1, ncols(nr), [(coeff(coeff(q, k), l)) for k = 0:degree(f)*(p2-p1)-1 for l = 0:degree(K)-1]))
@@ -1270,7 +1305,8 @@ end
 function euler_phi(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
   lf = factor(f)
   q = size(base_ring(f))
-  return prod((q^degree(p)-1)*q^(degree(p)*k) for (p,k) = lf.fac)
+  return prod((q^degree(p)-1)*q^(degree(p)*(k-1)) for (p,k) in lf;
+              init = ZZ(1))
 end
 
 function carmichael_lambda(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPolyRingElem, FpPolyRingElem}}
@@ -1278,7 +1314,7 @@ function carmichael_lambda(f::T) where {T <: Union{fpPolyRingElem, fqPolyRepPoly
   pp = characteristic(base_ring(f))
   q = size(base_ring(f))
   #ala Auer... (Diss, DOI:10.4064/aa-95-2-97-122)
-  l = reduce(lcm, [(q^degree(p)-1)*pp^ceil(Int, log(k)/log(pp)) for (p,k) = lf.fac], init = ZZRingElem(1))
+  l = reduce(lcm, [(q^degree(p)-1)*pp^clog(ZZ(k), pp) for (p, k) in lf], init = ZZRingElem(1))
   #l = reduce(lcm, [(q^degree(p)-1)*largest_elementary_divisor(unit_group_1_part(p, k)[2]) for (p,k) = lf.fac], init = ZZRingElem(1))
   return l
 end
@@ -1353,7 +1389,7 @@ function is_primitive(f::ZZModPolyRingElem)
   g = ZZRingElem()
   GC.@preserve f begin
     for i = 0:degree(f)
-      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), z, f, i, f.parent.base_ring.ninv)
+      ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), z, f, i, base_ring(parent(f)).ninv)
       gcd!(g, g, z)
       if isone(g)
         return true, R(g)

@@ -197,7 +197,19 @@
     @test is_isomorphic(K, abelian_group([60]))
     K2 = direct_sum(H, G)[1]
     @test is_isomorphic(K, K2)
-    K3, proj, inj = biproduct(G, H)
+
+    # Exercise the explicit ring with nonempty and empty collections of groups.
+    @test is_isomorphic(first(direct_sum(ZZ, H, G)), K)
+    @test is_isomorphic(first(direct_product(ZZ, [G, H])), K)
+    @test is_isomorphic(first(biproduct(ZZ, G, H)), K)
+    @test is_trivial(first(direct_sum(ZZ, FinGenAbGroup[])))
+    @test is_trivial(first(direct_product(ZZ)))
+    @test is_trivial(first(biproduct(ZZ)))
+
+    # Check the maps returned for a vector of factors, including the empty case.
+    Z, empty_proj, empty_inj = biproduct(FinGenAbGroup[])
+    @test is_trivial(Z) && isempty(empty_proj) && isempty(empty_inj)
+    K3, proj, inj = biproduct([G, H])
     for i in 1:2, j in 1:2
       if i == j
         @test is_injective(inj[i])
@@ -213,6 +225,28 @@
     h = hom(G, G, gens(G))
     hh = hom_direct_sum(K, K, [h;])
     @test hh(K[1]) == K[1]
+
+    G = abelian_group(ZZ[2 0; 0 0])
+    H = abelian_group(ZZ[3 0; 0 0])
+    D = direct_product(G, H, task = :none)
+    inj = canonical_injections(D)
+    proj = canonical_projections(D)
+    factors = (G, H)
+    for i in 1:2, j in 1:2, g in gens(factors[i])
+      @test proj[j](inj[i](g)) == (i == j ? g : factors[j][0])
+    end
+    h = hom_direct_sum(D, D, [id_hom(G), id_hom(H)])
+    @test all(h(g) == g for g in gens(D))
+  end
+
+  @testset "Empty diagonal map" begin
+    # An empty vector of maps induces the zero map between empty products.
+    Z = direct_product(FinGenAbGroup[]; task = :none)
+    W = direct_product(FinGenAbGroup[]; task = :none)
+    f = hom_direct_sum(Z, W, Hecke.FinGenAbGroupHom[])
+    @test domain(f) === Z
+    @test codomain(f) === W
+    @test matrix(f) == zero_matrix(ZZ, 0, 0)
   end
 
   @testset "Torsion" begin
@@ -355,6 +389,35 @@
     @test length(l) == 66
   end
 
+  @testset "Isomorphism with automorphism groups" begin
+    K, _ = quadratic_field(2)
+    L, _ = cyclotomic_field(8)
+    M, _ = cyclotomic_field(5)
+    # K and L have bad reduction at 2, so the prime search must construct a
+    # new finite field and polynomial ring. M has good reduction at 2 and
+    # requires higher powers of a generator.
+    for (F, invariants) in ((K, [2]), (L, [2, 2]), (M, [4]))
+      G = automorphism_list(F)
+      A, GtoA, AtoG = Hecke.find_isomorphism_with_abelian_group(G)
+      @test elementary_divisors(A) == invariants
+      @test order(A) == length(G)
+      @test length(GtoA) == length(AtoG) == length(G)
+
+      for g in G
+        @test AtoG[GtoA[g]] == g
+      end
+      for a in A
+        @test GtoA[AtoG[a]] == a
+      end
+      for g in G, h in G
+        @test AtoG[GtoA[g] + GtoA[h]] == g * h
+      end
+      for a in A, b in A
+        @test AtoG[a + b] == AtoG[a] * AtoG[b]
+      end
+    end
+  end
+
   @testset "HomAlg" begin
     G = abelian_group([3 1; 0 3])
     S, mS = snf(G)
@@ -394,6 +457,14 @@
   end
 
   @testset "Complement" begin
+    A = abelian_group([4])
+    B = abelian_group([6])
+    G, _, inj = biproduct(A, B)
+    fl, mC = Hecke.has_complement(inj[1])
+    @test fl
+    @test is_isomorphic(domain(mC), B)
+    @test is_trivial(intersect(inj[1], mC, false)[1])
+
     d = rand(2:1000)
     d1 = rand(2:1000)
     while !is_squarefree(d) || !is_squarefree(d1)

@@ -86,13 +86,8 @@ end
 end
 
 (O::AbsNumFieldOrder{S, T})(a::T, arr::ZZMatrix, check::Bool = false) where {S, T} = begin
-  if check
-    (x, y) = _check_elem_in_order(a,O)
-    (!x || arr != y ) && error("Number field element not in the order")
-    return AbsNumFieldOrderElem(O, deepcopy(a), y)
-  else
-    return AbsNumFieldOrderElem(O, deepcopy(a), deepcopy(arr))
-  end
+  @req nrows(arr) == 1 || ncols(arr) == 1 "Matrix must have 1 row or 1 column"
+  return O(a, ZZRingElem[arr[i] for i in 1:length(arr)], check)
 end
 
 @doc raw"""

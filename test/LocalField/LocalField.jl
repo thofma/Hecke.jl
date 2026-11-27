@@ -8,6 +8,8 @@
     @test characteristic(K) == 0
     @test prime(K) == 2
 
+    ConformanceTests.test_Field_interface(K)
+
     Kt, t = polynomial_ring(K, "t")
     g = t^2+2
     L, b = local_field(g, "b", Hecke.EisensteinLocalField, check = false)
@@ -40,8 +42,12 @@
 
   @testset "Norm" begin
     K = qadic_field(3, 4, precision = 10)[1]
+    ConformanceTests.test_Field_interface(K)
+
     Kx, x = polynomial_ring(K, "x")
     L = eisenstein_extension(x^20+3)[1]
+    ConformanceTests.test_Field_interface(L)
+
     b = @inferred basis(L)
     for i = 1:10
       r = 1+2*uniformizer(L)^i * sum([rand(1:10)*b[i] for i in 1:5])
@@ -50,6 +56,45 @@
       @test n == det(M)
       @test trace(r) == trace(M)
     end
+  end
+
+  @testset "Minimal polynomial" begin
+    K, a = qadic_field(3, 2, precision = 20)
+    Qp = base_field(K)
+    Qpx, x = polynomial_ring(Qp, "x")
+    U, u = unramified_extension(x^2 + 1)
+    L, b = eisenstein_extension(x^2 - 3)
+    Kt, t = polynomial_ring(K, "t")
+    M, c = eisenstein_extension(t^2 - 3)
+    Lt, t = polynomial_ring(L, "t")
+    N, d = eisenstein_extension(t^2 - b)
+
+    for (F, z) in ((K, a), (U, u), (L, b), (M, c), (N, d))
+      R, y = polynomial_ring(base_field(F), "y", cached = false)
+      f = minpoly(R, z)
+      @test parent(f) === R
+      @test f == R(collect(coefficients(defining_polynomial(F))))
+      @test iszero(f(z))
+
+      g = minpoly(z)
+      @test base_ring(g) === base_field(F)
+      @test collect(coefficients(g)) == collect(coefficients(f))
+      @test minpoly(R, zero(F)) == y
+      @test minpoly(R, one(F)) == y - 1
+      @test minpoly(R, F(2)) == y - 2
+
+      Fx, _ = polynomial_ring(F, "x", cached = false)
+      @test_throws ArgumentError minpoly(Fx, z)
+    end
+
+    f = absolute_minpoly(d)
+    @test base_ring(f) === Qp
+    @test f == gen(parent(f))^4 - 3
+
+    # absolute_minpoly of a p-adic number with the default polynomial ring
+    f = absolute_minpoly(Qp(2))
+    @test base_ring(f) === Qp
+    @test f == gen(parent(f)) - 2
   end
 
   @testset "Completions" begin
@@ -187,6 +232,20 @@
       @test g(f(z)) == z
     end
 
+    # Composition of maps whose domain is a LocalField over a p-adic field
+    Qp = padic_field(3, precision = 20)
+    Qpx, x = polynomial_ring(Qp, "x")
+    U, u = unramified_extension(x^2 + 1)
+    f = hom(U, U, -u)
+    @test f * f == id_hom(U)
+    @test (f * f)(u + 2) == u + 2
+    Ut, t = polynomial_ring(U, "t")
+    M, c = eisenstein_extension(t^2 - 3, "c")
+    h = hom(M, M, f, -c)
+    @test h(c) == -c
+    @test h(M(u)) == -M(u)
+    @test (h * h)(c + M(u)) == c + M(u)
+
     # QadicField -> LocalField
     Qqt, t = Qq["t"]
     L, b = eisenstein_extension(t^3 + 2, "b")
@@ -212,6 +271,40 @@
     for i in 1:10
       w = mk\(rand(k))
       @test f(g(w)) == w
+    end
+
+    # Inverse of an automorphism of a LocalField, also in towers
+    Qp = padic_field(3, precision = 20)
+    Qpx, x = polynomial_ring(Qp, "x")
+    L, b = eisenstein_extension(x^2 - 3, "b")
+    f = hom(L, L, -b)
+    g = @inferred inv(f)
+    @test g(b) == -b
+    for y in (b + 1, b^3 - 2*b + 5, L(Qp(7)))
+      @test g(f(y)) == y
+      @test f(g(y)) == y
+    end
+
+    U, u = unramified_extension(x^2 + 1)
+    Ut, t = polynomial_ring(U, "t")
+    M, c = eisenstein_extension(t^2 - 3, "c")
+    f = hom(M, M, hom(U, M, -M(u)), -c)
+    g = @inferred inv(f)
+    @test g(c) == -c
+    @test g(M(u)) == -M(u)
+    for y in (c + M(u), c^3 - u*c + 5, M(u)^3)
+      @test g(f(y)) == y
+      @test f(g(y)) == y
+    end
+
+    Qq, a = qadic_field(3, 2, precision = 20)
+    Qqt, t = polynomial_ring(Qq, "t")
+    M, c = eisenstein_extension(t^2 - 3, "c")
+    f = hom(M, M, -c)
+    g = @inferred inv(f)
+    @test g(c) == -c
+    for y in (c + M(a), a*c^3 + 2)
+      @test g(f(y)) == y
     end
   end
 

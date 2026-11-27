@@ -9,6 +9,10 @@
   @test !is_simple(K)
   @test !is_simple(AbsNonSimpleNumField)
 
+  @testset "conformance" begin
+    ConformanceTests.test_Field_interface_recursive(K)
+  end
+
   @testset "Basics" begin
     @test QQ == @inferred base_ring(K)
     @test 6 == @inferred degree(K)
@@ -177,6 +181,10 @@
     @test_throws ArgumentError QQ(a)
   end
 
+  # variable name given as a Char
+  K, (a, b) = number_field([x^2 - 2, x^2 - 3], 'a')
+  @test string(a) == "a1" && string(b) == "a2"
+
   K, (a,) = @inferred number_field([x])
   @test tr(a) == 0
   @test tr(one(K)) == 1
@@ -203,6 +211,53 @@
   let
     K, = cyclotomic_field(NonSimpleNumField, 100)
     @test degree(K) == 40
+  end
+
+  @testset "mod" begin
+    # mod(c, m) is congruent to c modulo m: c - mod(c, m) has denominator
+    # coprime to m and numerator divisible by m, as for simple fields
+    L, (s, t) = number_field([x^2 - 2, x^2 - 5]; cached = false)
+    @test mod((s + 3 * t) // 2, ZZ(9)) == 5 * s + 6 * t
+    @test mod((s + 3 * t) // 6, ZZ(9)) == QQ(14, 3) * s + 5 * t
+    @test mod((s + 3 * t) // 6, ZZ(-9)) == -QQ(13, 3) * s - 4 * t
+    @test iszero(mod(s // 2, ZZ(-1)))
+    for m in ZZ.([2, 9, 10, 131769]), i in 1:20
+      c = rand(L, -100:100) // rand(1:60)
+      r = mod(c, m)
+      d = c - r
+      D = denominator(d)
+      @test is_coprime(D, m)
+      @test all(z -> is_divisible_by(numerator(z), m), coordinates(D * d))
+      @test isone(ppio(denominator(r), m)[2])
+    end
+
+    # simplify reduces the second generator of a 2-normal presentation
+    # modulo the square of the first, which must keep it normal; the ring of
+    # integers has index 4 over Z[s, t], so its elements can have
+    # denominators coprime to 363
+    O = maximal_order(L)
+    a = O(3011258217 * s * t - 1501549643 * s - QQ(1630201243, 2) * t +
+          QQ(13379788587, 2))
+    A = ideal(O, ZZ(363), a)
+    @test Hecke.defines_2_normal(A)
+    A.gens_normal = ZZ(363)
+    B = basis_matrix(A)
+    simplify(A)
+    @test Hecke.defines_2_normal(A)
+    C = ideal(O, A.gen_one, O(L(A.gen_two)))
+    @test basis_matrix(C) == B
+  end
+
+  @testset "simplify over a nonmaximal order" begin
+    # The second generator must remain in the order after reduction.
+    L, (t,) = number_field([x^2 - 5]; cached = false)
+    w = (1 + t) // 2
+    O = order([one(L), 3 * w]; is_basis = true)
+    A = ideal(O, 5, O(15 * w))
+    simplify(A)
+    @test L(A.gen_two) in O
+    C = ideal(O, A.gen_one, O(L(A.gen_two)))
+    @test C == ideal(O, 5)
   end
 
   @testset "consistency check" begin

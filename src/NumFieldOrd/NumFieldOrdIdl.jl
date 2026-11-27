@@ -21,6 +21,8 @@ Returns the order of $I$.
 
 _algebra(a::NumFieldOrderIdeal) = nf(a)
 
+fractional_ideal(I::NumFieldOrderFractionalIdeal) = I
+
 ################################################################################
 #
 #   Degree and ramification index
@@ -350,7 +352,7 @@ end
 
 is_integral(I::NumFieldOrderIdeal) = true
 
-function is_integral(I::AbsSimpleNumFieldOrderFractionalIdeal)
+function is_integral(I::AbsNumFieldOrderFractionalIdeal)
   @assert is_maximal(order(I))
   simplify(I)
   return denominator(I) == 1

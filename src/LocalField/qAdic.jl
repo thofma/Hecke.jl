@@ -21,13 +21,13 @@ function residue_field(Q::QadicField)
     return k(_z)
   end
   lif = function(x::FqFieldElem)
-    z = Q()
+    res = Q()
     for i=0:degree(Q)-1
-      setcoeff!(z, i, lift(ZZ, coeff(x, i)))
+      setcoeff!(res, i, lift(ZZ, coeff(x, i)))
     end
-    return z
+    return res
   end
-  mk = MapFromFunc(Q, k, pro, lif)
+  mk = map_from_func(Q, k, pro, lif)
   set_attribute!(Q, :ResidueFieldMap => mk)
   return k, mk
 end
@@ -49,7 +49,7 @@ function residue_field(Q::PadicField)
     z = Q(lift(ZZ, x))
     return z
   end
-  mp = MapFromFunc(Q, k, pro, lif)
+  mp = map_from_func(Q, k, pro, lif)
   set_attribute!(Q, :ResidueField => mp)
   return k, mp
 end
@@ -57,7 +57,7 @@ end
 function getUnit(a::PadicFieldElem)
   u = ZZRingElem()
   u = set!(u, a.u)
-  return u, a.v, a.N
+  return u, a.v, precision(a)
 end
 
 function lift_reco(::QQField, a::PadicFieldElem; reco::Bool = false)
@@ -89,7 +89,7 @@ function defining_polynomial(Q::QadicField, P::Ring = base_field(Q))
   for i=0:Q.len-1
     j = unsafe_load(reinterpret(Ptr{Int}, Q.j), i+1)
     a = ZZRingElem()
-    ccall((:fmpz_set, libflint), Nothing, (Ref{ZZRingElem}, Int64), a, Q.a+i*sizeof(Ptr))
+    set!(a, Ptr{ZZRingElem}(Q.a + i*sizeof(Ptr)))
     setcoeff!(f, j, P(a))
   end
   return f

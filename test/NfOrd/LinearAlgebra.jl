@@ -14,6 +14,51 @@
   @testset "Pseudo matrices" begin
     Qx, x = polynomial_ring(QQ, "x")
 
+    @testset "Base ring is set by construction" begin
+      K, a = quadratic_field(5)
+      Kt, t = polynomial_ring(K, :t)
+      L, b = number_field(t^2 + 1, :b)
+      for O in (maximal_order(K), equation_order(K), maximal_order(L))
+        F = Hecke.nf(O)
+        I = F(1)*O
+        M = identity_matrix(F, 2)
+        C = [I, I]
+        P = pseudo_matrix(M, C)
+        for Q in (P, pseudo_matrix(O, M, C),
+                  Hecke.PMat{elem_type(F), typeof(I)}(M, C),
+                  Hecke.PMat{elem_type(F), typeof(I)}(O, M, C),
+                  pseudo_matrix(M, [ideal(O, 1), ideal(O, 1)]))
+          @test Q.base_ring === O
+          @test base_ring(Q) === O
+        end
+
+        Z = pseudo_matrix(O, zero_matrix(F, 0, 2), typeof(I)[])
+        for Q in (P, Z, pseudo_matrix(O, zero_matrix(F, 0, 0), typeof(I)[]))
+          @test base_ring(deepcopy(Q)) === O
+          @test base_ring(sub(Q, 1:0, 1:ncols(Q))) === O
+          @test base_ring(vcat(Q, Q)) === O
+          @test base_ring(hcat(Q, Q)) === O
+          for shape in (:upperright, :lowerleft)
+            H, _ = pseudo_hnf_with_transform(Q, shape)
+            @test base_ring(H) === O
+          end
+        end
+        @test base_ring(pseudo_hnf(Z, :lowerleft)) === O
+        @test base_ring(vcat(P, Z)) === O
+        @test_throws ArgumentError pseudo_matrix(zero_matrix(F, 0, 2), typeof(I)[])
+        @test_throws ArgumentError Hecke.PMat{elem_type(F), typeof(I)}(zero_matrix(F, 0, 2), typeof(I)[])
+        Q = deepcopy(P)
+        Hecke.matrix(Q)[1, 1] = F(2)
+        @test Hecke.matrix(P)[1, 1] == one(F)
+        copies = deepcopy([P, P])
+        @test copies[1] === copies[2]
+        @test copies[1] !== P
+      end
+      O, R = maximal_order(K), equation_order(K)
+      I = K(1)*R
+      @test_throws ArgumentError pseudo_matrix(O, K[1;;], [I])
+    end
+
     # Compute a pseudo-hnf of a matrix over Z and check result against the HNF
 
     K,  a = number_field(x - 1, "a")
@@ -34,7 +79,7 @@
       0 0 0 0 37684868701591492337245802520684209569420259]
 
     de = ZZRingElem(37684868701591492337245802520684209569420259)
-    AoverO = matrix_space(O, 5, 5)(map(z -> O(z), A))
+    AoverO = matrix_space(O, 5, 5)(map(O, A))
 
     Apm = Hecke.pseudo_matrix( AoverO, [(O(1)*O)::Hecke.AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem} for i in 1:5])
 
@@ -141,8 +186,8 @@
       K, a = quadratic_field(-5)
       O = maximal_order(K)
       ide = fractional_ideal(O, one(O))
-      pmat00 = pseudo_matrix(identity_matrix(K, 0), [])
-      pmat02 = pseudo_matrix(matrix(K, 0, 2, []), [])
+      pmat00 = pseudo_matrix(O, identity_matrix(K, 0), typeof(ide)[])
+      pmat02 = pseudo_matrix(O, matrix(K, 0, 2, []), typeof(ide)[])
       pmat20 = pseudo_matrix(matrix(K, 2, 0, []), [ide, ide])
       pmat11 = pseudo_matrix(identity_matrix(K, 1), [ide])
       pmat23 = pseudo_matrix(matrix(K, 2, 3, [1, 2, 3, a, 2*a, 3*a]), [ide, ide])
@@ -214,4 +259,14 @@
   H = pseudo_hnf(M, :lowerleft)
   @test all(is_one, H.coeffs)
   @test is_one(H.matrix)
+
+  # bit sizes of the ideals and entries of a pseudo matrix
+  let
+    Qx, x = QQ["x"]
+    K, a = number_field(x^2 + 5, "a")
+    OK = maximal_order(K)
+    pm = pseudo_matrix(matrix(K, 2, 2, [1, 0, 0, a//2]),
+                       [fractional_ideal(OK, 1*OK), fractional_ideal(OK, 3*OK)])
+    @test Hecke._bit_sizes(pm) == ["1" "1 1" "1 1" "0"; "2" "4 1" "0" "1 2"]
+  end
 end

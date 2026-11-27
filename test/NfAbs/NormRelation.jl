@@ -1,4 +1,15 @@
 @testset "NormRel" begin
+  @testset "GRH keyword" begin
+    for GRH in (false, true)
+      K, _ = cyclotomic_field(12; cached = false)
+      S = prime_ideals_over(maximal_order(K), 2)
+      U, mU = Hecke.NormRel._sunit_group_fac_elem_via_brauer(K, S; GRH)
+      C, mC = Hecke.sunit_group_fac_elem(S; GRH)
+      Q, _ = quo(C, [mC\mU(U[i]) for i in 1:ngens(U)])
+      @test order(Q) == 1
+    end
+  end
+
   Qx, x = polynomial_ring(QQ, "x")
   f = x^8 - x^4 + 1
   K, a = number_field(f, "a", cached = false)
@@ -56,4 +67,33 @@
   S, mS = Hecke.sunit_group_fac_elem(lP)
   V = quo(S, [(mS\(mU(U[i]))) for i in 1:ngens(U)])
   @test order(V[1]) == 1
+end
+
+@testset "Cached action on prime ideals" begin
+  K, a = cyclotomic_field(12; cached = false)
+  fl, N = Hecke.NormRel.norm_relation(K; cached = false)
+  @test fl
+  @test Hecke.NormRel.check_relation(N, a + 2)
+  @test isempty(N.induced)
+  O = maximal_order(K)
+  FB = Hecke.NfFactorBase(O, prime_ideals_over(O, 13))
+  for i in 1:length(N)
+    L, mL = Hecke.NormRel.subfield(N, i)
+    S = prime_ideals_over(maximal_order(L), 13)
+    for j in eachindex(N.coefficients_gen[i])
+      _, _, auto = N.coefficients_gen[i][j]
+      cache = Vector{Tuple{Int, ZZRingElem}}[]
+      action = Hecke.NormRel.induce_action(N, i, j, S, FB, cache)
+      @test haskey(N.induced, auto)
+      permutation = N.induced[auto]
+      for (l, P) in enumerate(S)
+        J = ideal(O, [O(auto(mL(elem_in_nf(b)))) for b in basis(P)])
+        for k in eachindex(FB.ideals)
+          @test action[l, k] == valuation(J, FB.ideals[k])
+        end
+      end
+      @test Hecke.NormRel.induce_action(N, i, j, S, FB, cache) == action
+      @test N.induced[auto] === permutation
+    end
+  end
 end

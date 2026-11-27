@@ -53,7 +53,16 @@
     @test a_invariants(EE) == (0, 0, 0, o^4 + 2*o^3 + o^2, o^3 + o + 2)
     P = rand(EE)
     @test P == f(g(P))
+  end
 
+  @testset "is_integral_model" begin
+    # integrality is with respect to O_K, not the power basis Z[sqrt(17)]
+    let K = quadratic_field(17)[1], w = (1 + gen(K))//2
+      E = elliptic_curve(K, [w, 0, 1, -1, 0])
+      @test is_integral_model(E)
+      @test !is_integral_model(elliptic_curve(K, [w//2, 0, 1, -1, 0]))
+      @test is_integral_model(Hecke.reduce_model(E))
+    end
   end
 
 end

@@ -117,7 +117,9 @@ end
 
 ==(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = B==A
 
-==(A::AbsSimpleNumFieldOrderFractionalIdeal, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = isone(A*inv(B))
+==(A::AbsSimpleNumFieldOrderFractionalIdeal, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = B == FacElem(Dict(A => ZZRingElem(1)))
+
+==(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::AbsSimpleNumFieldOrderFractionalIdeal) = B == A
 
 function *(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
   @assert order(base_ring(A)) === order(base_ring(B)) "Elements must be defined over the same order"
@@ -130,7 +132,7 @@ end
 *(A::FacElem{AbsSimpleNumFieldOrderFractionalIdeal,AbsNumFieldOrderFractionalIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, B::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem},AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}) = B*A
 
 function isone(A::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
-  if all(x -> iszero(x), values(A.fac))
+  if all(iszero, values(A.fac))
     return true
   end
   simplify!(A)
@@ -254,7 +256,7 @@ end
 function simplify!(x::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}; refine::Bool = false)
   if length(x.fac) <= 1
     return nothing
-  elseif all(x -> iszero(x), values(x.fac))
+  elseif all(iszero, values(x.fac))
     x.fac = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
     return nothing
   end

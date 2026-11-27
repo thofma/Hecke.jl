@@ -3,6 +3,16 @@
   Q = Hecke.quaternion_algebra2(K, -1, -1)
   @test (@inferred Hecke.ramified_infinite_places(Q)) == real_places(K)
 
+  @testset "Cyclic algebra with one ramified real place" begin
+    # The cyclic algebra splits exactly where a is positive.
+    K, a = quadratic_field(5)
+    _, x = K[:x]
+    L, i = number_field(x^2 + 1, "i")
+    A = cyclic_algebra(L, hom(L, L, -i), a)
+    ram_plc = only(p for p in real_places(K) if sign(a, p) == -1)
+    @test Hecke.ramified_infinite_places(A) == [ram_plc]
+  end
+
   Q = Hecke.quaternion_algebra2(QQ, -1, -1)
   QQQ = direct_product(Q, Q)[1]
   C, = center(QQQ)
@@ -109,6 +119,28 @@
   A = matrix_algebra(K, 3)
   @test is_eichler(A)
 
+  # Ramified infinite places of a MatAlgebra: the left regular representation
+  # of (-1, -1) over Q(sqrt(5)) is ramified at both real places, M_2 at none;
+  # representatives_of_maximal_orders of M_n(K), which needs them, agrees with
+  # the StructureConstantAlgebra and, for M_2, gives one per class of
+  # Cl R / (Cl R)^2 (Voight, Quaternion Algebras, 28.5.11): two for Q(sqrt(-5))
+  # and Q(sqrt(10)), of class number 2, and one for Q(sqrt(-23)), of class
+  # number 3
+  S, = StructureConstantAlgebra(Hecke.QuaternionAlgebra(K, K(-1), K(-1)))
+  B = matrix_algebra(K, [representation_matrix(b, :left) for b in basis(S)])
+  @test Hecke.ramified_infinite_places(B) == real_places(K)
+  @test Hecke.ramified_infinite_places(B) == Hecke.ramified_infinite_places(S)
+  @test isempty(Hecke.ramified_infinite_places(matrix_algebra(K, 2)))
+  reps(A) = length(Hecke.representatives_of_maximal_orders(maximal_order(A)))
+  for (d, h) in [(-5, 2), (10, 2), (-23, 1)]
+    A = matrix_algebra(quadratic_field(d)[1], 2)
+    @test reps(A) == h == reps(StructureConstantAlgebra(A)[1])
+  end
+  for d in [-5, -23]
+    A = matrix_algebra(quadratic_field(d)[1], 3)
+    @test reps(A) == reps(StructureConstantAlgebra(A)[1])
+  end
+
   Qx, x = QQ["x"]
   K, a = number_field(x^3 - 2, "a")
   A = Hecke.QuaternionAlgebra(K, K(-1), K(-1))
@@ -150,6 +182,35 @@
   @test is_eichler(QG)
   QG = QQ[small_group(8, 4)]
   @test !is_eichler(QG)
+
+  # Eichler condition for group algebras over number fields
+  let
+    K, = quadratic_field(2)
+    @test is_eichler(group_algebra(K, abelian_group([2])))
+    @test is_eichler(group_algebra(K, abelian_group([3])))
+    # (-1, -1)_K is totally definite, since K is totally real
+    KG = group_algebra(K, small_group(8, 4))
+    @test !is_eichler(KG)
+    @test !is_eichler(restrict_scalars(StructureConstantAlgebra(KG)[1], QQ)[1])
+    K, = quadratic_field(-1)
+    KG = group_algebra(K, small_group(8, 4))
+    @test is_eichler(KG)
+    @test is_eichler(restrict_scalars(StructureConstantAlgebra(KG)[1], QQ)[1])
+  end
+
+  # Eichler condition over a relative totally real field
+  let
+    Qx, x = QQ["x"]
+    K, = number_field(x^2 - 2, "a")
+    Ky, y = K["y"]
+    L, = number_field(y^2 - 3, "b")
+    @test is_eichler(matrix_algebra(L, 2))
+    @test !is_eichler(quaternion_algebra(L, -1, -1))
+    # 3 is totally positive, so (-1, 3)_L is split at every real place
+    @test is_eichler(quaternion_algebra(L, -1, 3))
+    @test !is_eichler(group_algebra(L, small_group(8, 4)))
+    @test is_eichler(group_algebra(L, abelian_group([2])))
+  end
 
   # bug in positive root calculation
   m = Array{Rational{Int}, 3}(undef, 4, 4, 4)

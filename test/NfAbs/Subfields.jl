@@ -435,6 +435,63 @@ end
   @test isone(denominator(defining_polynomial(L)))
   @test mL(gen(L))^2 == mL(gen(L)^2)
 end
+
+@testset "Integral subfield generators" begin
+  Qx, x = QQ[:x]
+  K, a = number_field(x^2 - 5; cached = false)
+  s = (1 + a)//2
+  L, mL = subfield(K, [s])
+  @test collect(coefficients(defining_polynomial(L))) == [-1, -1, 1]
+  @test mL(gen(L)) == s
+
+  L, mL = subfield(K, [a//2])
+  @test collect(coefficients(defining_polynomial(L))) == [-5, 0, 1]
+  @test mL(gen(L)) == a
+  @test Hecke.get_attribute(K, :subfield_data) === nothing
+
+  L, mL = subfield(K, [zero(K)])
+  @test degree(L) == 1
+  @test iszero(mL(gen(L)))
+
+  K, a = number_field(x^3 - x - 1; cached = false)
+  L, mL = subfield(K, [(a + 1)//3])
+  @test collect(coefficients(defining_polynomial(L))) == [-1, 2, -3, 1]
+  @test mL(gen(L)) == a + 1
+
+  K, a = number_field(x^16 - 7*x^12 + 48*x^8 - 7*x^4 + 1; cached = false)
+  L, mL = subfield(K, [a^3])
+  @test collect(coefficients(defining_polynomial(L))) == [1, 0, 0, 0, 322, 0, 0, 0, 1]
+  @test mL(gen(L)) == a^3
+  @test Hecke.get_attribute(K, :subfield_data) === nothing
+
+  # Keep coverage for integral generators reconstructed from blocks.
+  L, mL = subfield(K, [a^3, one(K)])
+  @test collect(coefficients(defining_polynomial(L))) == [1, 0, 0, 0, 7, 0, 0, 0, 1]
+  @test !isone(denominator(mL(gen(L))))
+  @test has_preimage_with_preimage(mL, a^3)[1]
+end
+
+@testset "Small subfield generators" begin
+  Qx, x = QQ[:x]
+  K, a = number_field(x^16 - 7*x^12 + 48*x^8 - 7*x^4 + 1; cached = false)
+  u = 5*a^14 - 36*a^10 + 246*a^6 - 71*a^2
+  L, mL = subfield(K, [one(K), u//5])
+  @test collect(coefficients(defining_polynomial(L))) == [-540, 0, 1]
+  @test mL(gen(L)) == u
+
+  u = 7*a^14 - 48*a^10 + 330*a^6 - a^2
+  L, mL = subfield(K, [one(K), u//7])
+  @test collect(coefficients(defining_polynomial(L))) == [324, 0, 1]
+  @test mL(gen(L)) == u
+
+  # Equal heights are resolved by T2, including integral inputs with denominators.
+  K, a = number_field(x^4 - 18*x^2 + 9; cached = false)
+  u = (a^2 - 9)//2
+  L, mL = subfield(K, [one(K), u + 10, u])
+  @test collect(coefficients(defining_polynomial(L))) == [-18, 0, 1]
+  @test mL(gen(L)) == u
+end
+
 @testset "Subfields" begin
   @testset "Relative_Subfields" begin
     Qx,x = polynomial_ring(QQ,"x")
@@ -444,6 +501,96 @@ end
 
     @test length(subfields(K)) == 4
     @test length(Hecke.principal_subfields(K)) == 4
+
+    # no element of the basis 1, sqrt(2), sqrt(3), sqrt(6) is primitive
+    k, _ = number_field(x^2 + 1, :i)
+    kt, t = k[:t]
+    K, _ = number_field(t^8 - 8*t^6 + 18*t^4 - 104*t^2 + 1, :b)
+    r2, r3 = roots(K, t^2 - 2)[1], roots(K, t^2 - 3)[1]
+    L, _ = subfield(K, [one(K), r2, r3, r2*r3], is_basis = true)
+    @test degree(L) == 4
+  end
+
+  # Compare basis generators with coefficients of the minimal polynomial of
+  # gen(K) over each subfield, which often give smaller defining polynomials.
+  @testset "Relative principal subfields: small generators" begin
+    Qx, x = QQ[:x]
+    bits(f) = maximum(nbits(y) for c in coefficients(f) for i in 0:degree(parent(c))-1
+                      for y in (numerator(coeff(c, i)), denominator(coeff(c, i))))
+
+    k, a = number_field(x^2 - 5, :a)
+    kt, t = k[:t]
+    h = t^2 + a*t + 1
+    for f in [h^3 + a*h + 1, (t^3 + a*t^2 + 2)^2 + 3, t^6 + a]
+      K, _ = number_field(f, :b)
+      ps = principal_subfields(K)
+      ba = Hecke._principal_subfields_basis(K)
+      @test length(ps) == length(ba)
+      for ((L, mL), M) in zip(ps, ba)
+        @test rref(basis_matrix([mL(gen(L))^i for i in 0:degree(L)-1]))[2] == M
+        @test bits(defining_polynomial(L)) <= 6
+      end
+    end
+
+    # A primitive coefficient need not be small. The basis generator satisfies
+    # x^2 - 2, while the coefficient generator satisfies x^2 - 2*N^2.
+    # N = 1 also checks that equal heights retain the basis generator.
+    for N in (1, 10, 1000, 1//1000)
+      K, b = number_field((t^2 + N*t)^2 - 2*N^2, :b; cached = false)
+      ps = principal_subfields(K)
+      L, mL = only(p for p in ps if degree(p[1]) == 2)
+      @test defining_polynomial(L) == parent(defining_polynomial(L))([-2, 0, 1])
+      @test mL(gen(L)) == b + b^2/N
+      @test mL(gen(L))^2 == 2
+      F, mF = only(p for p in ps if degree(p[1]) == degree(K))
+      @test defining_polynomial(F) == defining_polynomial(K)
+      @test mF(gen(F)) == b
+      @test principal_subfields(K) === ps
+    end
+
+    # The relative degree-one field represents the base field by x - 1.
+    K, _ = number_field(t - 7, :b; cached = false)
+    L, mL = only(principal_subfields(K))
+    @test defining_polynomial(L) == parent(defining_polynomial(L))([-1, 1])
+    @test isone(mL(gen(L)))
+
+    # The ambient generator's minimal polynomial is monic even if the input
+    # defining polynomial is not.
+    K, b = number_field(3*(t^4 - 2), :b; cached = false)
+    L, mL = only(p for p in principal_subfields(K) if degree(p[1]) == 4)
+    @test collect(coefficients(defining_polynomial(L))) == collect(coefficients(minpoly(b)))
+    @test mL(gen(L)) == b
+
+    # Height comparison also works when the base field is itself relative.
+    k2, c = number_field(t^2 - 2, :c)
+    k2u, u = k2[:u]
+    for N in (k2(10), (c+1)/1000)
+      K, b = number_field((u^2 + N*u)^2 - 3*N^2, :b; cached = false)
+      L, mL = only(p for p in principal_subfields(K) if degree(p[1]) == 2)
+      @test collect(coefficients(defining_polynomial(L))) == [k2(-3), k2(0), k2(1)]
+      @test mL(gen(L)) == b + b^2/N
+    end
+
+    # gen(K) = sqrt(2) + 3^(1/4); over L = k(sqrt(2), sqrt(3)) its minimal
+    # polynomial has no coefficient that generates L
+    k, _ = number_field(x^2 + 1, :i)
+    kt, t = k[:t]
+    K, _ = number_field(t^8 - 8*t^6 + 18*t^4 - 104*t^2 + 1, :b)
+    bas = Hecke._subfield_basis(K, [roots(K, t^2 - 2)[1], roots(K, t^2 - 3)[1]])
+    M = rref(basis_matrix(bas))[2]
+    @test degree(minpoly(Hecke._subfield_small_primitive_element(K, M))) == 4
+
+    # Oscar issue #5678: 5-division polynomial of y^2 = x^3 + x + 1
+    # (@long_test does not escape its body, which thus only sees globals)
+    @long_test begin
+      k, z = cyclotomic_field(5, :z)
+      kt, t = k[:t]
+      K, _ = number_field(t^12 + 62//5*t^10 + 76*t^9 - 21*t^8 + 48*t^7 - 108*t^6 -
+                          696//5*t^5 - 409*t^4 - 336*t^3 - 58*t^2 - 148*t - 287//5, :b)
+      L, _ = only(L for L in principal_subfields(K) if degree(L[1]) == 6)
+      cs = [coeff(c, i) for c in coefficients(defining_polynomial(L)) for i in 0:3]
+      @test all(c -> nbits(numerator(c)) <= 16 && nbits(denominator(c)) <= 16, cs)
+    end
   end
 end
 
@@ -452,4 +599,50 @@ let
   L, a = number_field(x^4 + 6*x^2 + 4, :a)
   LL, b = number_field(x^2 + 1, :b)
   @test_throws ArgumentError Hecke.subfield(L, [b])
+end
+
+@testset "Primitive elements from blocks" begin
+  Qx, x = QQ[:x]
+  K, a = number_field(x^8 - x^4 + 1, :a)
+  u, v = sqrt(K(2)), sqrt(K(3))
+  for lincomb in (true, false)
+    b = Hecke._subfield_primitive_element_from_basis(K, [u, v], lincomb)
+    @test degree(minpoly(b)) == 4
+    b = Hecke._subfield_primitive_element_from_basis(K, [u, u + v, a^6], lincomb)
+    @test degree(minpoly(b)) == 8
+    @test isone(Hecke._subfield_primitive_element_from_basis(K, [zero(K)], lincomb))
+  end
+
+  K, a = number_field(x^2 - 2, :a)
+  C = Hecke.qAdicConj(K, 1031; splitting_field = true)
+  Hecke.set_attribute!(K, :subfield_data => C)
+  for u in [1031*a, ZZ(1031)^128*a, a//1031]
+    @test length(Hecke.block_system(u, C)) == 2
+    # Use two generators to exercise reconstruction from blocks.
+    L, mL = Hecke.subfield(K, [u, u + 1])
+    @test degree(L) == 2
+    @test has_preimage_with_preimage(mL, u)[1]
+  end
+
+  K, a = number_field(x^4 + 1, :a; cached = false)
+  u = a^3 + a
+  subfield(K, [u, u + 1])
+
+  # Another field can lower the precision of the shared q-adic parent.
+  F, b = number_field(x^2 + 1, :b; cached = false)
+  subfield(F, [one(F), 2*one(F)])
+  L, mL = subfield(K, [u, u + 1])
+  @test collect(coefficients(defining_polynomial(L))) == [2, 0, 1]
+  @test mL(gen(L)) == u
+
+  for f in [x^2 - 1//2, x^4 - 1//2, 2*x^4 - 4*x^2 - 1]
+    K, a = number_field(f, :a)
+    L, mL = Hecke.subfield(K, [a])
+    @test degree(L) == degree(K)
+    @test has_preimage_with_preimage(mL, a)[1]
+    L, mL = Hecke.subfield(K, [a^2, one(K)])
+    @test degree(L) == degree(minpoly(a^2))
+    @test has_preimage_with_preimage(mL, a^2)[1]
+    @test isone(denominator(defining_polynomial(L)))
+  end
 end

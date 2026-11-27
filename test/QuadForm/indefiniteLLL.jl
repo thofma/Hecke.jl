@@ -181,4 +181,24 @@ end
   gamma_H = find_gamma(change_base_ring(QQ,H))
   gamma_G = find_gamma(change_base_ring(QQ,G))
   @test gamma_H < gamma_G
+  # U must be the base change from G to H
+  @test U*G*transpose(U) == H
+  @test abs(det(U)) == 1
+  @test Hecke.lll_gram_indef_ternary_hyperbolic(G; check = true) == (H, U)
+
+  for G0 in [ZZ[1 0 0; 0 4 3; 0 3 2], ZZ[0 0 1; 0 1 0; 1 0 0],
+             ZZ[1 0 0; 0 1 0; 0 0 -1], ZZ[-1 0 0; 0 4 3; 0 3 2]]
+    for T in [ZZ[1 0 0; 1 1 0; 0 0 1], ZZ[1 2 0; 0 1 0; -1 0 1],
+              ZZ[1 0 -2; 0 1 1; 0 0 1], ZZ[1 1 1; 0 1 2; 0 0 1]]
+      GG = T*G0*transpose(T)
+      HH, UU = Hecke.lll_gram_indef_ternary_hyperbolic(GG)
+      @test UU*GG*transpose(UU) == HH
+      @test abs(det(UU)) == 1
+    end
+  end
+
+  # wrong rank, or not unimodular indefinite of signature (2, 1) or (1, 2)
+  @test_throws ArgumentError Hecke.lll_gram_indef_ternary_hyperbolic(ZZ[1 0; 0 -1]; check = true)
+  @test_throws ArgumentError Hecke.lll_gram_indef_ternary_hyperbolic(ZZ[1 0 0; 0 1 0; 0 0 1]; check = true)
+  @test_throws ArgumentError Hecke.lll_gram_indef_ternary_hyperbolic(ZZ[2 1 0; 1 2 0; 0 0 -1]; check = true)
 end

@@ -17,6 +17,17 @@
   @test z6^2 == res[2]
 end
 
+@testset "Serialization" begin
+  Qx, x = QQ["x"]
+  K, a = number_field(x^3 + 2, "a")
+  A = [K(1), a, a^2//3 - 5, K(0)]
+  mktemp() do path, io
+    close(io)
+    Hecke.write(path, A)
+    @test Hecke.read(path, K, AbsSimpleNumFieldElem) == A
+  end
+end
+
 @testset "Splitting Field" begin
 
   Qx, x = polynomial_ring(QQ, "x")
@@ -78,7 +89,7 @@ end
  Qx, x = polynomial_ring(QQ, "x")
  f = x^12 + 4*x^10 + 11*x^8 + 4*x^6 - 41*x^4 - 8*x^2 + 37
  K, a = number_field(f)
- @test length(factor(K, f).fac) == 4
+ @test length(factor(K, f)) == 4
 end
 
 @testset "automorphisms" begin
@@ -158,5 +169,30 @@ end
 
   @test !Hecke.has_embedding(C, K)
   @test !Hecke.has_embedding(K, L)
-end
 
+  D, mC, mL_again = compositum(C, L)
+  @test D === C
+  @test domain(mC) === C
+  @test codomain(mC) === C
+  @test mC(gen(C)) == gen(C)
+  @test domain(mL_again) === L
+  @test codomain(mL_again) === C
+  @test mL_again(b) == mL(b)
+
+  D, mC1, mC2 = compositum(C, C)
+  @test D === C
+  @test mC1(gen(C)) == gen(C)
+  @test mC2(gen(C)) == gen(C)
+
+  Ly, y = polynomial_ring(L, "y", cached = false)
+  R, _ = number_field(y^3 - 2, cached = false)
+  @test Hecke.has_embedding(L, R)
+  @test Hecke.force_coerce(R, b) == R(b)
+
+  A, _ = absolute_simple_field(R, cached = false)
+  @test Hecke.has_embedding(L, A)
+  @test Hecke.force_coerce(A, b) == Hecke.force_coerce(A, R(b))
+  chains = Hecke.collect_all_chains(A)
+  @test haskey(chains, objectid(L))
+  @test !haskey(chains, objectid(A))
+end

@@ -369,7 +369,7 @@ function unit_group(c::ClassGrpCtx, U::UnitGrpCtx)
   U, mU = unit_group_fac_elem(U)
 
   r = MapUnitGrp{typeof(O)}()
-  r.header = Hecke.MapHeader(U, O,
+  r.header = MapHeader(U, O,
     x->O(evaluate(image(mU, x))),
     x->preimage(mU, FacElem([K(x)], ZZRingElem[1])))
   return U, r
@@ -414,9 +414,29 @@ function class_group(O::AbsSimpleNumFieldOrder; bound::Int = -1, method::Int = 3
   return class_group(c, O)::Tuple{FinGenAbGroup, MapClassGrp}
 end
 
+@doc raw"""
+    class_number(O::AbsSimpleNumFieldOrder) -> ZZRingElem
+
+Return the class number of $O$: the order of its class group if $O$ is
+maximal, and otherwise the order of its Picard group, the group of
+invertible fractional ideals modulo principal ones (see
+[`picard_group(::AbsSimpleNumFieldOrder)`](@ref)).
+
+# Examples
+
+```jldoctest
+julia> K, a = quadratic_field(-11);
+
+julia> class_number(maximal_order(K))
+1
+
+julia> class_number(order(K, [a]))
+3
+```
+"""
 function class_number(O::AbsSimpleNumFieldOrder)
   if !is_maximal(O)
-    throw(ArgumentError("Class number not defined for non-maximal orders. See `picard_group`"))
+    return order(picard_group(O)[1])
   end
   return order(class_group(O)[1])
 end

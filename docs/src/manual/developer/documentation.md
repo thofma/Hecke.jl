@@ -38,3 +38,10 @@ To add files to the documentation edit directly the file
     .../Hecke/docs$ npm run docs:dev
     ```
     This keeps a live server running in the background. You can then keep your Julia session open (from Step 1) and re-run `Hecke.build_doc()` whenever you update the documentation. The server will automatically update with your changes.
+
+CI also builds the documentation as a PDF. This catches math that LaTeX
+rejects but KaTeX, which renders the math of the vitepress site, accepts. To
+build the PDF locally, run `Hecke.build_doc(format = :pdf)`; this needs
+`latexmk` and `lualatex` and writes `docs/build/Hecke.jl.pdf`. It removes the
+download badges from the generated tutorial pages in `docs/src/tutorials/`; do
+not commit that change.

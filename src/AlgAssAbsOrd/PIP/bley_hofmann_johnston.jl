@@ -399,7 +399,7 @@ function _lift_norm_one_unit_full_matrix_algebra_nice(x, F)
   Phi2 = identity_matrix(base_ring(A), n)
   Phi2[n, n] = belem * zeta
   xtrans = matrix(Phi1 * elem_in_algebra(x) * Phi2)
-  @assert all(x -> is_integral(x), xtrans)
+  @assert all(is_integral, xtrans)
   OK = base_ring(M)
   K = nf(OK)
   R, mR = quo(OK, idnu)
@@ -435,7 +435,7 @@ function _lift_norm_one_unit_full_rational_matrix_algebra(x, F)
 
   nn = ZZ(n)
 
-  R, c = nice_order(M)
+  _, c = nice_order(M)
 
   xwrtR = c * elem_in_algebra(x) * inv(c)
 

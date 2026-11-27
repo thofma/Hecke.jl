@@ -30,7 +30,7 @@ is_simple(::AbsSimpleNumField) = true
 function number_field(S::EuclideanRingResidueRing{QQPolyRingElem}; cached::Bool = true, check::Bool = true)
   Qx = parent(modulus(S))
   K, a = number_field(modulus(S), "_a", cached = cached, check = check)
-  mp = MapFromFunc(K, S, y -> S(Qx(y)), x -> K(lift(x)))
+  mp = map_from_func(K, S, y -> S(Qx(y)), x -> K(lift(x)))
   return K, mp
 end
 
@@ -568,12 +568,20 @@ Assuming $L$ is normal (which is not checked), compute the compositum $C$ of the
 2 fields together with the embedding of $K \to C$ and $L \to C$.
 """
 function compositum(K::AbsSimpleNumField, L::AbsSimpleNumField)
+  if K === L
+    identity = id_hom(K)
+    return K, identity, identity
+  end
+  if has_embedding(L, K)
+    mL = hom(L, K, force_coerce(K, gen(L)); check = false)
+    return K, id_hom(K), mL
+  end
   lf = factor(L, K.pol)
-  d = degree(first(lf.fac)[1])
-  if any(x->degree(x) != d, keys(lf.fac))
+  d = degree(first(lf)[1])
+  if any(x->degree(x[1]) != d, lf)
     error("2nd field cannot be normal")
   end
-  KK = number_field(first(lf.fac)[1])[1]
+  KK = number_field(first(lf)[1])[1]
   Ka, mKa = absolute_simple_field(KK)
   mK = hom(K, Ka, mKa\gen(KK))
   mL = hom(L, Ka, mKa\(KK(gen(L))))
@@ -603,7 +611,7 @@ function write(io::IO, A::Vector{AbsSimpleNumFieldElem})
     return
   else
     # print some useful(?) information
-    print(io, "# File created by Hecke $VERSION_NUMBER, $(Base.Dates.now()), by function 'write'\n")
+    print(io, "# File created by Hecke $HECKE_VERSION, $(Dates.now()), by function 'write'\n")
     K = parent(A[1])
     polring = parent(K.pol)
 
@@ -683,8 +691,7 @@ function read(io::IO, K::AbsSimpleNumField, ::Type{Hecke.AbsSimpleNumFieldElem})
       i = i + 1
     else
       coe = map(Hecke.ZZRingElem, split(ln, " "))
-      t = ZZPolyRingElem(Array(slice(coe, 1:(length(coe) - 1))))
-      t = Qx(t)
+      t = Qx(coe[1:end-1])
       t = divexact(t, coe[end])
       push!(A, K(t))
       i = i + 1
@@ -774,8 +781,6 @@ function splitting_field(fl::Vector{QQPolyRingElem}; coprime::Bool = false, do_r
   end
 end
 
-gcd_into!(a::QQPolyRingElem, b::QQPolyRingElem, c::QQPolyRingElem) = gcd(b, c)
-
 @doc raw"""
     splitting_field(f::PolyRingElem{AbsSimpleNumFieldElem}) -> AbsSimpleNumField
 
@@ -789,7 +794,7 @@ function splitting_field(fl::Vector{<:PolyRingElem{AbsSimpleNumFieldElem}}; do_r
   end
   ffl = eltype(fl)[]
   for x = fl
-    append!(ffl, collect(keys(factor(x).fac)))
+    append!(ffl, [p for (p, _) in factor(x)])
   end
   fl = ffl
   r = []
@@ -829,7 +834,7 @@ function _splitting_field(fl::Vector{<:PolyRingElem{<:NumFieldElem}}; do_roots::
   end
   ffl = eltype(fl)[]
   for x = fl
-    append!(ffl, collect(keys(factor(x).fac)))
+    append!(ffl, [p for (p, _) in factor(x)])
   end
   fl = ffl
   K = base_ring(fl[1])
@@ -960,35 +965,44 @@ end
 #this traverses the lattice downwards collecting all chains of embeddings
 function collect_all_chains(a::NumField, filter::Function = x->true)
   s = get_attribute(a, :subs)::Union{Nothing, Vector{Any}}
-  s === nothing && return s
-  all_chain = Dict{UInt, Array{Any}}(objectid(domain(f)) => [f] for f = s if filter(f))
+  has_base = isa(base_field(a), NumField)
+  s === nothing && !has_base && return nothing
+  direct = s === nothing ? Any[] : Any[f for f = s if filter(f)]
+  all_chain = Dict{UInt, Array{Any}}(
+    objectid(domain(f)) => [f] for f = direct)
+  seen = Set{UInt}(keys(all_chain))
+  push!(seen, objectid(a))
+  new_k = Any[domain(f) for f = direct]
   if isa(base_field(a), NumField)
-    all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
+    b = base_field(a)
+    ob = objectid(b)
+    all_chain[ob] = [map_from_func(b, a, a)]
+    push!(seen, ob)
+    push!(new_k, b)
   end
-  new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
+    if isa(base_field(k), NumField)
+      b = base_field(k)
+      ob = objectid(b)
+      if !(ob in seen)
+        g = map_from_func(b, k, k)
+        all_chain[ob] = vcat([g], all_chain[objectid(k)])
+        push!(seen, ob)
+        push!(new_k, b)
+      end
+    end
     s = get_attribute(k, :subs)::Union{Nothing, Vector{Any}}
     s === nothing && continue
     for f in s
       if filter(domain(f))
         o = objectid(domain(f))
-        if haskey(all_chain, o)
+        if o in seen
           continue
         end
-        @assert !haskey(all_chain, o)
         all_chain[o] = vcat([f], all_chain[objectid(codomain(f))])
-        @assert !(o in new_k)
+        push!(seen, o)
         push!(new_k, domain(f))
-        if isa(base_field(domain(f)), NumField)
-          b = base_field(domain(f))
-          ob = objectid(b)
-          if !haskey(all_chain, ob)
-            g = MapFromFunc(b, domain(f), x->domain(f)(x))
-            all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
-            push!(new_k, b)
-          end
-        end
       end
     end
   end
@@ -998,19 +1012,38 @@ end
 #tries to find one chain (array of embeddings) from a -> .. -> t
 function find_one_chain(t::NumField, a::NumField)
   s = get_attribute(a, :subs)::Union{Nothing, Vector{Any}}
-  s === nothing && return s
+  has_base = isa(base_field(a), NumField)
+  s === nothing && !has_base && return nothing
+  direct = s === nothing ? Any[] : s
   ot = objectid(t)
-  all_chain = Dict{UInt, Vector{Any}}(objectid(domain(f)) => Any[f] for f = s)
+  all_chain = Dict{UInt, Vector{Any}}(
+    objectid(domain(f)) => Any[f] for f = direct)
+  seen = Set{UInt}(keys(all_chain))
+  push!(seen, objectid(a))
+  new_k = Any[domain(f) for f = direct]
   if isa(base_field(a), NumField)
-    all_chain[objectid(base_field(a))] = [MapFromFunc(base_field(a), a, x->a(x))]
+    b = base_field(a)
+    ob = objectid(b)
+    all_chain[ob] = [map_from_func(b, a, a)]
+    push!(seen, ob)
+    push!(new_k, b)
   end
-  new_k = Any[domain(f) for f = s]
   if haskey(all_chain, ot)
     return all_chain[ot]
   end
-  new_k = Any[domain(f) for f = s]
   while length(new_k) > 0
     k = pop!(new_k)
+    if isa(base_field(k), NumField)
+      b = base_field(k)
+      ob = objectid(b)
+      if !(ob in seen)
+        g = map_from_func(b, k, k)
+        all_chain[ob] = vcat([g], all_chain[objectid(k)])
+        ob == ot && return all_chain[ob]
+        push!(seen, ob)
+        push!(new_k, b)
+      end
+    end
     s = get_attribute(k, :subs)::Union{Nothing, Vector{Any}}
     s === nothing && continue
     for f in s
@@ -1018,25 +1051,12 @@ function find_one_chain(t::NumField, a::NumField)
       if o == ot
         return vcat([f], all_chain[objectid(codomain(f))])
       end
-      if o in keys(all_chain)
+      if o in seen
         continue
       end
-      @assert !haskey(all_chain, o)
       all_chain[o] = vcat([f], all_chain[objectid(codomain(f))])
-      @assert !(o in new_k)
+      push!(seen, o)
       push!(new_k, domain(f))
-      if isa(base_field(domain(f)), NumField)
-        b = base_field(domain(f))
-        ob = objectid(b)
-        if !haskey(all_chain, ob)
-          g = MapFromFunc(b, domain(f), x->domain(f)(x))
-          all_chain[ob] = vcat([g], all_chain[objectid(domain(f))])
-          push!(new_k, b)
-        end
-        if ob == ot
-          return all_chain[ob]
-        end
-      end
     end
   end
   return nothing

@@ -133,7 +133,7 @@ julia> additive_generators(J)
     push!(mats, reduce(vcat, [RtoQ(data(FiniteRingElem(R, g) * FiniteRingElem(R, h))).coeff for h in liftgens]))
   end
   F = GF(p; cached = false, check = false)
-  J = radical(matrix_algebra(F, map_entries.(Ref(F), mats); isbasis = true)) # isbasis = true is important
+  J = radical(matrix_algebra(F, map_entries.(Ref(F), mats); is_basis = true)) # is_basis = true is important
   BJ = basis(J)
   ss = FiniteRingElem[]
   for b in BJ
@@ -275,9 +275,9 @@ function quo(I::FiniteRingIdeal, J::FiniteRingIdeal)
     !fl && error("Ideal not containing second argument")
     push!(gensJinI, x)
   end
-  Q, ItoQ = quo(I.B, gensJinI)
-  SQ, SQtoQ = snf(Q)
-  Q, ItoQ = SQ, ItoQ * inv(SQtoQ)
+  Q0, ItoQ0 = quo(I.B, gensJinI)
+  Q, SQtoQ = snf(Q0)
+  ItoQ = ItoQ0 * inv(SQtoQ)
   gensQ = gens(Q)
   homs = FinGenAbGroupHom[]
   for a in gensQ
@@ -290,7 +290,7 @@ function quo(I::FiniteRingIdeal, J::FiniteRingIdeal)
   quoring = FiniteRing(Q, homs)
   pr = x -> FiniteRingElem(quoring, ItoQ(I.BtoA\(x.a)))
   lf = y -> FiniteRingElem(R, I.BtoA(ItoQ\(y.a)))
-  return quoring, MapFromFunc(R, quoring, pr, lf)
+  return quoring, map_from_func(R, quoring, pr, lf)
 end
 
 ################################################################################

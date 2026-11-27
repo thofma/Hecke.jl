@@ -5,7 +5,7 @@
 ###############################################################################
 
 mutable struct MapRayClassGrp <: Map{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, HeckeMap, MapRayClassGrp}
-  header::Hecke.MapHeader{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
+  header::MapHeader{FinGenAbGroup, FacElemMon{Hecke.AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}}
   defining_modulus::Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Vector{InfPlc{AbsSimpleNumField, AbsSimpleNumFieldEmbedding}}}
   fact_mod::Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int} #The factorization of the finite part of the defining modulus
 
@@ -24,11 +24,21 @@ mutable struct MapRayClassGrp <: Map{FinGenAbGroup, FacElemMon{Hecke.AbsNumField
   function MapRayClassGrp()
     z = new()
     z.prime_ideal_preimage_cache = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, FinGenAbGroupElem}()
+    z.disc_log_inf_plc = Dict{InfPlc, FinGenAbGroupElem}()
     return z
   end
 end
 
 defining_modulus(mR) = mR.defining_modulus
+
+function _simplify_for_ray_class_map(J::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem})
+  for (I, e) in J
+    if !iszero(e) && !is_coprime(I, m)
+      return simplify(J)
+    end
+  end
+  return J
+end
 
 ################################################################################
 #
@@ -198,7 +208,7 @@ function class_as_ray_class(C::FinGenAbGroup, mC::MapClassGrp, exp_class::Functi
     end
 
     mp1 = Hecke.MapRayClassGrp()
-    mp1.header = Hecke.MapHeader(Q, FacElemMon(parent(m)), expo_map, disclog1)
+    mp1.header = MapHeader(Q, FacElemMon(parent(m)), expo_map, disclog1)
     mp1.fact_mod = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
     mp1.defining_modulus = (m, InfPlc[])
     mp1.clgrpmap = mC
@@ -221,7 +231,7 @@ function class_as_ray_class(C::FinGenAbGroup, mC::MapClassGrp, exp_class::Functi
   end
 
   mp = Hecke.MapRayClassGrp()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)), exp_class, disclog)
+  mp.header = MapHeader(X, FacElemMon(parent(m)), exp_class, disclog)
   mp.fact_mod = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}()
   mp.defining_modulus = (m, InfPlc[])
   mp.clgrpmap = mC
@@ -248,7 +258,7 @@ function empty_ray_class(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
   end
 
   mp = Hecke.MapRayClassGrp()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
+  mp.header = MapHeader(X, FacElemMon(parent(m)) , exp, disclog)
   mp.defining_modulus = (m, InfPlc[])
   return X,mp
 
@@ -376,13 +386,13 @@ function _powermod(a::AbsSimpleNumFieldElem, i::Int, p::ZZRingElem)
   end
 end
 
-function _ev_quo(Q, mQ, elems, p, exponent, multiplicity::Int)
+# mF is a residue map at p, used to detect factors that are units at p
+function _ev_quo(Q, mQ, mF, elems, p, exponent, multiplicity::Int)
   el = elem_type(Q)[one(Q) for i = 1:length(elems)]
   anti_uni = anti_uniformizer(p)
   powers = Dict{Int, AbsSimpleNumFieldElem}()
   powers[1] = anti_uni
   O = order(p)
-  F, mF = residue_field(O, p)
   for i = 1:length(elems)
     J = elems[i]
     vp = ZZRingElem(0)
@@ -442,19 +452,18 @@ end
 
 function _eval_quo(elems::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, p::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, q::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, exponent::ZZRingElem)
   O = order(p)
-  if p == q
-    if fits(Int, p.minimum)
-      Q, mQ = ResidueFieldSmall(O, p)
-      return _ev_quo(Q, mQ, elems, p, exponent, 1)
-    else
-      Q, mQ = residue_field(O, p)
-      return _ev_quo(Q, mQ, elems, p, exponent, 1)
-    end
+  # ResidueFieldSmall avoids the fq_default (possibly Zech log) setup cost
+  if fits(Int, p.minimum)
+    F, mF = ResidueFieldSmall(O, p)
   else
-    Q, mQ = quo(O, q)
-    mult = Int(clog(norm(q), norm(p)))
-    return _ev_quo(Q, mQ, elems, p, exponent, mult)
+    F, mF = residue_field(O, p)
   end
+  if p == q
+    return _ev_quo(F, mF, mF, elems, p, exponent, 1)
+  end
+  Q, mQ = quo(O, q)
+  mult = Int(clog(norm(q), norm(p)))
+  return _ev_quo(Q, mQ, mF, elems, p, exponent, mult)
 end
 
 ################################################################################
@@ -491,7 +500,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
 
     mp=Hecke.MapClassGrp()
     mp.quo = n
-    mp.header=Hecke.MapHeader(G, mC.header.codomain, exp1, disclog1)
+    mp.header=MapHeader(G, mC.header.codomain, exp1, disclog1)
     mp.princ_gens = Tuple{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}[]
     return G, mp
   end
@@ -532,7 +541,7 @@ function n_part_class_group(mC::Hecke.MapClassGrp, n::Integer)
   end
 
   mp = Hecke.MapClassGrp()
-  mp.header = Hecke.MapHeader(G, mC.header.codomain, exp2, disclog2)
+  mp.header = MapHeader(G, mC.header.codomain, exp2, disclog2)
   mp.quo = Int(exponent(G))
   if isdefined(mC, :princ_gens)
     princ_gens = Vector{Tuple{FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}}, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}}(undef, length(mC.princ_gens))
@@ -784,7 +793,8 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
     function disclog(J::FacElem{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, AbsNumFieldOrderIdealSet{AbsSimpleNumField, AbsSimpleNumFieldElem}})
       @vprintln :RayFacElem 1 "Disc log of element $J"
       a = id(X)
-      for (f, k) in J
+      for (f, k) in _simplify_for_ray_class_map(J, m)
+        iszero(k) && continue
         a += k*disclog(f)
       end
       return a
@@ -952,7 +962,7 @@ function ray_class_group(m::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNu
   end
 
   mp = MapRayClassGrp()
-  mp.header = Hecke.MapHeader(X, FacElemMon(parent(m)), expo, disclog)
+  mp.header = MapHeader(X, FacElemMon(parent(m)), expo, disclog)
   mp.fact_mod = lp
   mp.defining_modulus = (m, inf_plc)
   mp.powers = powers
@@ -992,7 +1002,7 @@ function ray_class_groupQQ(O::AbsSimpleNumFieldOrder, modulus::Int, inf_plc::Boo
     end
 
     mp=Hecke.MapRayClassGrp()
-    mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
+    mp.header = MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon1, disc_log1)
     mp.defining_modulus = (ideal(O, modulus), real_places(nf(O)))
     return U, mp
 
@@ -1012,7 +1022,7 @@ function ray_class_groupQQ(O::AbsSimpleNumFieldOrder, modulus::Int, inf_plc::Boo
     end
 
     mp = Hecke.MapRayClassGrp()
-    mp.header = Hecke.MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon2, disc_log2)
+    mp.header = MapHeader(U, FacElemMon(parent(ideal(O,1))) , expon2, disc_log2)
     mp.defining_modulus = (ideal(O, modulus), InfPlc[])
     return U,mp
 
@@ -1032,7 +1042,7 @@ function ray_class_groupQQ(O::AbsSimpleNumFieldOrder, modulus::Int, inf_plc::Boo
     end
 
     mp=Hecke.MapRayClassGrp()
-    mp.header = Hecke.MapHeader(Q, FacElemMon(parent(ideal(O,1))) , expon, disc_log)
+    mp.header = MapHeader(Q, FacElemMon(parent(ideal(O,1))) , expon, disc_log)
     mp.defining_modulus = (ideal(O, modulus), InfPlc[])
     return Q,mp
 
@@ -1155,6 +1165,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
     for i=1:length(mR.defining_modulus[2])
       pl = mR.defining_modulus[2][i]
       if is_complex(pl)
+        error("only real places legal")
         continue
       end
       f = mR.disc_log_inf_plc[pl]
@@ -1176,7 +1187,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
           q, mq = quo(R, sR, false)
           s, ms = snf(q)
           if order(s)==1
-	          if !isdefined(mR, :gens)
+	    if !isdefined(mR, :gens)
               mR.gens = (lp, sR)
             end
             return lp, sR
@@ -1202,6 +1213,7 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
   end
   Q1, mQ1 = quo(C, disc_log_primes_class_grp, false)
   S1, mS1 = snf(Q1)
+  
   p1 = ZZRingElem(2)
   while order(S1) != 1
     p1 = next_prime(p1)
@@ -1234,6 +1246,29 @@ function find_gens(mR::MapRayClassGrp; coprime_to::ZZRingElem = ZZRingElem(-1))
   for i = 1:length(primes_class_group)
     push!(lp, primes_class_group[i])
     push!(sR, mR\primes_class_group[i])
+  end
+ 
+  #catch all: if not complete yet, add...
+  #
+  q, mq = quo(R, sR, false)
+  s, ms = snf(q)
+  while !is_trivial(s)
+    p1 = next_prime(p1)
+    if !is_coprime(p1, mm)
+      continue
+    end
+    lP = prime_decomposition(O, p1, 1)
+    for (x, _) = lP
+      y = mR\x
+      if iszero(mq(y))
+        continue
+      end
+      push!(lp, x)
+      push!(sR, y)
+      q, mq = quo(R, sR, false)
+      s, ms = snf(q)
+      is_trivial(s) && break
+    end
   end
   if !isdefined(mR, :gens)
     mR.gens = (lp, sR)
@@ -1268,7 +1303,7 @@ function induce_action(mR::Union{MapRayClassGrp, MapClassGrp}, Aut::Vector{<:Hec
     end
 
     if mp == id_hom(R)
-      G[k] = hom(parent(first(genstot)), parent(first(images)), genstot, images, check = true)
+      G[k] = hom(R, R, genstot, images, check = true)
     else
       G[k] = hom(codomain(mp), codomain(mp), FinGenAbGroupElem[mp(x) for x = genstot], FinGenAbGroupElem[mp(x) for x = images], check = true)
     end
@@ -1369,7 +1404,7 @@ function has_principal_generator_1_mod_m(I::Union{AbsNumFieldOrderIdeal{AbsSimpl
   # of the ray class group, but only in the case of the full ray_class_group
   # and not in the quotient.
 
-  @assert all(x -> isreal(x), inf_plc)
+  @assert all(isreal, inf_plc)
 
   O = order(m)
   C, mC = class_group(O, GRH = GRH)
@@ -1415,9 +1450,9 @@ function has_principal_generator_1_mod_m(I::Union{AbsNumFieldOrderIdeal{AbsSimpl
     ii += ngens(groups_and_maps[i][1])
   end
   if !isempty(inf_plc)
-    H, eH, lH = infinite_primes_map(O, inf_plc, m)
-    for t = 1:length(tobeeval)
-      el = lH(tobeeval[i])
+    H, eH, lH = sign_map(O, _embedding.(inf_plc), m)
+    for t = 1:length(tobeeval1)
+      el = lH(tobeeval1[t])
       for s = 1:ngens(H)
         coeffs[t][1, ii-1+s] = el[s]
       end

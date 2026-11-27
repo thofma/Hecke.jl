@@ -128,14 +128,19 @@ function local_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, v::InfPlc, p
 end
 
 function _local_height(P::EllipticCurvePoint{T}, p, v::DiscreteValuation{T}, prec::Int) where T
-  ld = tates_algorithm_local(parent(P), p, EllipticCurveLocalData)
-  E = ld.minimal_model
-  P = isomorphism(parent(P), E)(P)
+  Eorig = parent(P)
+  ld = tates_algorithm_local(Eorig, p, EllipticCurveLocalData)
 
+  # NOTE: In the Silverman/Cremona normalization, the local height is model-dependent;
+  #   only the sum over all places is not.
+  h_offset = 2 * divexact(ZZ(valuation(v, discriminant(Eorig))) - ld.discriminant_valuation, 12)
+
+  E = ld.minimal_model
+  P = ld.isomorphism(P)
   x, y = P[1], P[2]
 
-  a1, a2, a3, a4, a6 = map(numerator, a_invariants(E))
-  b2, b4, b6, b8 = _ellcrv_b_invariants(a1, a2, a3, a4, a6)
+  a1, a2, a3, a4, a6 = a_invariants(E)
+  b2, b4, b6, b8 = b_invariants(E)
 
   delta = discriminant(E)
 
@@ -161,6 +166,8 @@ function _local_height(P::EllipticCurvePoint{T}, p, v::DiscreteValuation{T}, pre
   else
     L = ZZ(-valuation(v, C)) // 4
   end
+
+  L = L - h_offset
 
   attempt = 2
 
@@ -197,8 +204,8 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
 
   #P = phi(P)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(F)))
-  b2, b4, b6, b8 = _ellcrv_b_invariants(a1, a2, a3, a4, a6)
+  a1, a2, a3, a4, a6 = a_invariants(E)
+  b2, b4, b6, b8 = b_invariants(E)
   H = max(ZZ(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
   _b2 = b2-12
   _b4 = b4-b2+6
@@ -224,11 +231,11 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
 
   wprec = prec + 1
 
-  N = ceil(Int,
-            Rc(5)/3 * log(Rc(2))/log(Rc(10)) * (wprec + 1) + Rc(1)/2 +
-            Rc(3)/4 * log(Rc(7) + Rc(4)/3 * log(Rc(H)) +
-                                 Rc(1)/3 * log(max(Rc(1), inv(Rc(discriminant(E))))))
-          )
+  abs_disc = Rc(abs(discriminant(E)))
+  bound = Rc(5)/3 * log(Rc(2))/log(Rc(10)) * (wprec + 1) + Rc(1)/2 +
+          Rc(3)/4 * log(Rc(7) + Rc(4)/3 * log(Rc(H)) +
+                               Rc(1)/3 * log(max(Rc(1), inv(abs_disc))))
+  N = Int(upper_bound(ZZRingElem, bound))
 
   while true
     R = ArbField(attempt*wprec)
@@ -270,7 +277,7 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
       end
     end
 
-    !(isfinite(mu)  && radiuslttwopower(mu, wprec)) && (attempt *= 2; continue)
+    !(isfinite(mu) && radiuslttwopower(mu, -wprec)) && (attempt *= 2; continue)
 
     # Algorithm is only precise up to wprec bits
     error_arf = arf_struct(0, 0, 0, 0)
@@ -280,7 +287,7 @@ function _real_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
             (Ref{ArbFieldElem}, Ref{arf_struct}), mu, error_arf)
     ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
-    @assert radiuslttwopower(mu, prec)
+    @assert radiuslttwopower(mu, -prec)
     return mu
   end
 end
@@ -297,7 +304,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
 
   #P = phi(P)
 
-  a1, a2, a3, a4, a6 = map(numerator,(a_invariants(F)))
+  a1, a2, a3, a4, a6 = a_invariants(E)
   R = ArbField(prec)
   b2, b4, b6, b8 = map(t -> evaluate(t, v,  prec), _ellcrv_b_invariants(a1, a2, a3, a4, a6))
   H = max(R(4), abs(b2), 2*abs(b4), 2*abs(b6), abs(b8))
@@ -321,13 +328,20 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
 
   wprec = prec + 1
 
-  abs_disc = abs(evaluate(discriminant(E), v, 53))
+  # evaluate takes *absolute* precision! Refine unless we can exclude 0
+  disc = discriminant(E)
+  dprec = 53
+  abs_disc = abs(evaluate(disc, v, dprec))
+  while contains_zero(abs_disc)
+    dprec *= 2
+    abs_disc = abs(evaluate(disc, v, dprec))
+  end
 
-  N = ceil(Int,
+  N = Int(upper_bound(ZZRingElem,
             Rc(5)/3 * log(Rc(2))/log(Rc(10)) * (wprec + 1) + Rc(1)/2 +
             Rc(3)/4 * log(Rc(7) + Rc(4)/3 * log(Rc(H)) +
                                  Rc(1)/3 * log(max(Rc(1), inv(Rc(abs_disc)))))
-          )
+          ))
 
   while true
     newprec = attempt*wprec
@@ -341,15 +355,12 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
     x = evaluate(P[1], v, newprec)
     y = evaluate(P[2], v, newprec)
 
-    if abs(x)<0.5
-      t = 1/(x+1)
-      beta = 0
-    elseif abs(x) >= 0.5
+    if abs(x) >= 0.5
       t = 1/x
       beta = 1
     else
-      attempt = 2 * attempt
-      continue
+      t = 1/(x+1)
+      beta = 0
     end
 
     mu = -log(abs(t))
@@ -376,7 +387,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
       end
     end
 
-    !(isfinite(mu)  && radiuslttwopower(mu, wprec)) && (attempt *= 2; continue)
+    !(isfinite(mu) && radiuslttwopower(mu, -wprec)) && (attempt *= 2; continue)
 
     # Algorithm is only precise up to wprec bits
     error_arf = arf_struct(0, 0, 0, 0)
@@ -386,7 +397,7 @@ function archimedean_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, _v::In
             (Ref{ArbFieldElem}, Ref{arf_struct}), mu, error_arf)
     ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), error_arf)
     expand!(mu, -prec)
-    @assert radiuslttwopower(mu, prec)
+    @assert radiuslttwopower(mu, -prec)
     return mu
   end
 end
@@ -416,21 +427,29 @@ Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over $\mathbb{Q}$.
 """
 function canonical_height(P::EllipticCurvePoint{QQFieldElem}, prec = 100)
+  E = parent(P)
+
+  is_infinite(P) && return zero(ArbField(prec, cached = false))
+  if !is_integral_model(E)
+    # local height formulas depend on model integrality
+    return canonical_height(integral_model(E)[2](P), prec)
+  end
+
+  # the local heights at all primes where E is minimal with good reduction
+  #   add up to the logarithm of the denominator of x
+  d = denominator(P[1])
+
   attempt = 1
-
   while true
-    R = ArbField(attempt*prec, cached = false)
-    E = P.parent
-    disc = discriminant(E)
-    d = (denominator(P[1]))
-    h = local_height(P, 0, attempt*prec) + log(R(d))
-    plist = bad_primes(E)
+    wprec = attempt*prec + 16
+    R = ArbField(wprec, cached = false)
+    h = local_height(P, 0, wprec) + log(R(d))
 
-    for p in plist
-      if !divides(d,p)[1]
-       h = h + local_height(P,p, attempt*prec)
-      end
+    for p in _bad_prime_candidates(E)
+      # replace the contribution counted in log(d) by the local height
+      h = h + local_height(P, p, wprec) - valuation(d, p)*log(R(p))
     end
+
     if radiuslttwopower(h, -prec)
       expand!(h, -prec)
       @assert radiuslttwopower(h, -prec)
@@ -448,33 +467,43 @@ Compute the Néron-Tate height (or canonical height) of a point $P$ on an
 elliptic curve defined over a number field
 """
 function canonical_height(P::EllipticCurvePoint{AbsSimpleNumFieldElem}, prec = 100)
-  attempt = 1
-  K = base_field(parent(P))
-  OK = ring_of_integers(K)
-  while true
-    R = ArbField(attempt*prec, cached = false)
-    E = P.parent
-    disc = discriminant(E)
+  E = parent(P)
 
-    #d should be the norm of J where I/J = P[1]*OK is the unique decomposition
-    #of prime integer ideals
-    d = (denominator(P[1]*OK))
-    h = log(d)
+  is_infinite(P) && return zero(ArbField(prec, cached = false))
+  if !is_integral_model(E)
+    # local height formulas depend on model integrality
+    return canonical_height(integral_model(E)[2](P), prec)
+  end
+
+  K = base_field(E)
+  OK = ring_of_integers(K)
+
+  # x*OK + OK = J^-1 for the denominator ideal J of x,
+  # so the local heights at the primes of good reduction sum to log N(J)
+  Jinv = P[1]*OK + 1*OK
+
+  attempt = 1
+  while true
+    # add some guard bits, since the sum rounds to the given precision.
+    # This should depend on the magnitude of heights, but 16 seems enough
+    #   for most "normal" cases
+    wprec = attempt*prec + 16
+    R = ArbField(wprec, cached = false)
+
+    h = -log(R(norm(Jinv)))
 
     for v in real_places(K)
-      h = h + local_height(P, v, attempt*prec)
+      h = h + local_height(P, v, wprec)
     end
 
     for v in complex_places(K)
-      h = h + 2*local_height(P, v, attempt*prec)
+      h = h + 2*local_height(P, v, wprec)
     end
 
-
-    plist = bad_primes(E)
-
-    #Removed the divides check
-    for p in plist
-      h = h + local_height(P,p, attempt*prec)
+    for p in _bad_prime_candidates(E)
+      # replace the contribution counted in log N(J) by the local height
+      # NOTE: since we use J^-1, we invert the sign
+      h = h + local_height(P, p, wprec) + valuation(Jinv, p)*log(R(norm(p)))
     end
 
     h = h//degree(K)
@@ -743,20 +772,8 @@ function CPS_dvev_complex(E::EllipticCurve{T}, v::V, prec::Int = 100) where T wh
   H_fg = [max(abs(f(z)), abs(g(z))) for z in M]
   H_FG = [max(abs(F(z)), abs(G(z))) for z in M]
 
-  # minimum and maximum of Vector{ArbFieldElem} are bugged, even reduec(min/max, ...)
-  alpha_start_fg = H_fg[1]
-  beta_start_fg = H_fg[1]
-  for x in H_fg
-    alpha_start_fg = _min(alpha_start_fg, x)
-    beta_start_fg = _max(beta_start_fg, x)
-  end
-
-  alpha_start_FG = H_FG[1]
-  beta_start_FG = H_FG[1]
-  for x in H_FG
-    alpha_start_FG = _min(alpha_start_FG, x)
-    beta_start_FG = _max(beta_start_FG, x)
-  end
+  alpha_start_fg, beta_start_fg = extrema(H_fg)
+  alpha_start_FG, beta_start_FG = extrema(H_FG)
 
   #Determines precision. Choosing a smaller mu makes the function a lot slower as
   #alpha_bound converges very slowly. When I tested different values it took 0.5s for

@@ -282,7 +282,7 @@ end
 
 function divexact(a::LocalFieldValuationRingResidueRingElem, b::LocalFieldValuationRingResidueRingElem; check::Bool = true)
   @req parent(a) === parent(b) "Parents do not match"
-  @req !is_zero(b) "Division by 0"
+  is_zero(b) && !is_trivial(parent(b)) && throw(DivideError())
   if is_zero(a)
     return zero(parent(a))
   end

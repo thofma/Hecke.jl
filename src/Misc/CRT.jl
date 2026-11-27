@@ -491,7 +491,7 @@ function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::ZZRingElem)
 end
 
 function _num_setcoeff!(a::AbsSimpleNumFieldElem, n::Int, c::UInt)
-  K = a.parent
+  K = parent(a)
   @assert n < degree(K) && n >=0
 
   ra = Ptr{ZZRingElem}(pointer_from_objref(a))
@@ -623,10 +623,10 @@ function modular_init(K::AbsSimpleNumField, p::ZZRingElem; lazy::Bool = false, d
       pols = [x-Fp(r) for r = _roots]
     else
       lp = factor(fp)
-      if any(!isequal(1), values(lp.fac))
+      if any(x -> !isone(x[2]), lp)
         throw(BadPrime(p))
       end
-      pols = collect(keys(lp.fac))
+      pols = [g for (g, _) in lp]
       if deg_limit > 0
         pols = pols[findall(x -> degree(x) <= deg_limit, pols)]
       end
@@ -673,9 +673,7 @@ function modular_proj(a::AbsSimpleNumFieldElem, me::modular_env)
     else
       u = F()
     end
-    ccall((:fq_nmod_set, libflint), Nothing,
-                (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
-                u, me.rp[i], F)
+    set!(u, me.rp[i])
     me.res[i] = u
   end
   return me.res
@@ -701,9 +699,7 @@ function modular_proj(A::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, me::
     for i=1:me.ce.n
       F = me.fld[i]
       u = F()
-      ccall((:fq_nmod_set, libflint), Nothing,
-                  (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
-                  u, me.rp[i], F)
+      set!(u, me.rp[i])
       eee = mod(v, size(F)-1)
       if abs(eee-size(F)+1) < div(eee, 2)
         eee = eee+1-size(F)
@@ -735,9 +731,7 @@ function modular_proj_vec(A::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, 
     for i=1:me.ce.n
       F = me.fld[i]
       u = F()
-      ccall((:fq_nmod_set, libflint), Nothing,
-                  (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
-                  u, me.rp[i], F)
+      set!(u, me.rp[i])
       eee = mod(v, size(F)-1)
 
       if abs(eee-size(F)+1) < div(eee, 2)
@@ -771,16 +765,11 @@ function modular_proj_vec(A::FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}, 
   return res
 end
 
-@inline function mul_raw!(a::fqPolyRepFieldElem, b::fqPolyRepFieldElem, c::fqPolyRepFieldElem, K::fqPolyRepField)
-  ccall((:fq_nmod_mul, libflint), Nothing, (Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepFieldElem}, Ref{fqPolyRepField}), a, b, c, K)
-end
-
 @inbounds function inner_eval(z::Vector{Tuple{fqPolyRepFieldElem, Int, Int}})
   sort!(z, lt = (a,b) -> isless(b[2], a[2]))
   t = z[1][3] #should be largest...
   it = 1<<(t-1)
   u = one(z[1][1])
-  K = parent(u)
 #    @show map(i->nbits(i[2]), z)
   while t > 0
     i = 1
@@ -788,15 +777,15 @@ end
     while z[i][3] >= t
 #        @show i, is[i][1]
       if (z[i][2] & it) != 0
-        mul_raw!(v, v, z[i][1], K)
+        mul!(v, z[i][1])
       end
       i += 1
       if i > length(z)
         break
       end
     end
-    mul_raw!(u, u, u, K)
-    mul_raw!(u, u, v, K)
+    mul!(u, u)
+    mul!(u, v)
     t -= 1
     it = it >> 1
   end
@@ -809,7 +798,6 @@ end
   it = [bits(i[2]) for i=z]
   is = map(iterate, it)
   u = one(z[1][1])
-  K = parent(u)
 #    @show map(i->nbits(i[2]), z)
   while t > 0
     i = 1
@@ -817,7 +805,7 @@ end
     while z[i][3] >= t
 #        @show i, is[i][1]
       if is[i][1]
-        mul_raw!(v, v, z[i][1], K)
+        mul!(v, z[i][1])
       end
 
       if t > 1
@@ -834,8 +822,8 @@ end
         break
       end
     end
-    mul_raw!(u, u, u, K)
-    mul_raw!(u, u, v, K)
+    mul!(u, u)
+    mul!(u, v)
     t -= 1
   end
   return u
@@ -856,7 +844,7 @@ function modular_lift(a::Vector{fqPolyRepFieldElem}, me::modular_env)
   ap = crt(me.rp, me.ce)
   r = me.K()
   for i=0:ap.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{zzModPolyRingElem}, Int), ap, i)
+    u = Nemo.coeff_raw(ap, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -892,9 +880,7 @@ function modular_proj(a::Generic.Poly{AbsSimpleNumFieldElem}, me::modular_env)
     crt_inv!(me.rp, r, me.ce)
     for j=1:me.ce.n
       u = coeff(me.Rp[j], i)
-      ccall((:fq_nmod_set, libflint), Nothing,
-                   (Ref{fqPolyRepFieldElem}, Ref{zzModPolyRingElem}, Ref{fqPolyRepField}),
-                   u, me.rp[j], me.fld[j])
+      set!(u, me.rp[j])
       setcoeff!(me.Rp[j], i, u)
     end
   end
@@ -909,7 +895,7 @@ Computes a polynomial over the number field.
 """
 function modular_lift(a::Vector{fqPolyRepPolyRingElem}, me::modular_env)
   res = me.Kx()
-  d = maximum([x.length for x = a])
+  d = maximum([length(x) for x = a])
   for i=0:d-1
     for j=1:me.ce.n
       ccall((:nmod_poly_set, libflint), Nothing, (Ref{zzModPolyRingElem}, Ref{fqPolyRepFieldElem}), me.rp[j], coeff(a[j], i))
@@ -917,7 +903,7 @@ function modular_lift(a::Vector{fqPolyRepPolyRingElem}, me::modular_env)
     ap = crt(me.rp, me.ce)
     r = coeff(res, i)
     for j=0:ap.length-1
-      u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{zzModPolyRingElem}, Int), ap, j)
+      u = Nemo.coeff_raw(ap, j)
       _num_setcoeff!(r, j, u)
     end
     setcoeff!(res, i, r)

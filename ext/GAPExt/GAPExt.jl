@@ -22,6 +22,8 @@ import Hecke:
   is_automorphisms_known,
   is_fixed_point_free,
   IdGroup,
+  morphism_type,
+  automorphism_list,
   number_field,
   AbsSimpleNumFieldEmbedding,
   permutation_group1,

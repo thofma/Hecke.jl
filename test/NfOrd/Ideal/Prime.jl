@@ -86,6 +86,79 @@ end
   @assert length(prime_decomposition_type(OK, 5)) == 4
 end
 
+@testset "Approximation at real places" begin
+  # Check the supplied signs and congruence of the correction factor.
+  K, a = quadratic_field(2)
+  O = maximal_order(K)
+  I = ideal(O, 3)
+  places = real_places(K)
+  vals = [!is_positive(a, p) for p in places]
+  for (x, to_field) in ((a, identity), (FacElem(a), evaluate))
+    @test isone(to_field(Hecke.approximate_factor(x, I, places, [true, true])))
+    c = Hecke.approximate_factor(x, I, places, vals)
+    @test [is_positive(c, p) for p in places] == vals
+    @test O(to_field(c) - 1) in I
+
+    b = Hecke.approximate(x, I, places)
+    @test is_positive(b, places)
+    @test O(to_field(b) - a) in I
+  end
+
+  p = first(places)
+  c = Hecke.approximate_factor(a, I, [p, p], [false, false])
+  @test sign(c, p) == -1
+  @test O(c - 1) in I
+  @test_throws ArgumentError Hecke.approximate_factor(a, I, [p, p], [true, false])
+  @test_throws ArgumentError Hecke.approximate_factor(a, I, [p], Bool[])
+
+  zero_ideal = ideal(O, 0)
+  @test isone(Hecke.approximate_factor(a, zero_ideal, [p], [true]))
+  @test_throws ArgumentError Hecke.approximate_factor(a, zero_ideal, [p], [false])
+
+  @testset "Unit ideal" begin
+    # Replay a zero first sample using the current Julia version's RNG.
+    unit_ideal = ideal(O, 1)
+    seed = findfirst(1:10_000) do trial
+      Random.seed!(trial)
+      return iszero(1 + rand(unit_ideal, 5))
+    end
+    @test seed !== nothing
+    Random.seed!(seed)
+    c = Hecke.approximate_factor(a, unit_ideal, [p], [false])
+    @test sign(c, p) == -1
+  end
+end
+
+@testset "Subgroups at finite places" begin
+  K, a = quadratic_field(-1)
+  O = maximal_order(K)
+  G, mG = automorphism_group(K)
+
+  # Also exercise a group type whose sub constructor has no complete keyword.
+  A = abelian_group([2])
+  identity = id_hom(K)
+  sigma = hom(K, K, -a)
+  mA = MapFromFunc(A, codomain(mG),
+                  g -> iszero(g) ? identity : sigma,
+                  f -> f(a) == a ? zero(A) : A[1])
+
+  for m in (mG, mA)
+    for (p, d, i, r) in [(2, 2, 2, 2), (3, 2, 1, 1), (5, 1, 1, 1)]
+      P = prime_decomposition(O, p)[1][1]
+      groups = [decomposition_group(K, P, m),
+                inertia_subgroup(K, P, m),
+                ramification_group(K, P, 0, m),
+                ramification_group(K, P, 1, m),
+                ramification_group(K, P, 2, m)]
+      for ((H, mH), n) in zip(groups, [d, i, i, r, 1])
+        @test order(H) == n
+        @test codomain(mH) === domain(m)
+        @test Set(m(mH(h))(a) for h in H) == Set(n == 2 ? [a, -a] : [a])
+      end
+    end
+  end
+end
+
 @testset "Prime Decomposition (AbsSimple)" begin
   # Q(sqrt(-5))
   K, a = quadratic_field(-5, cached = false)
@@ -168,6 +241,65 @@ end
   end
 end
 
+# Count distinct degree-one primes without changing the order or cached ideals.
+@testset "Number of degree-one primes" begin
+  Qx, x = polynomial_ring(QQ, "x")
+
+  function degree_one_snapshot(O)
+    cached = [(deepcopy(p), [(deepcopy(P.gen_one), deepcopy(P.gen_two),
+                             P.splitting_type, e) for (P, e) in lp])
+              for (p, lp) in sort!(collect(O.index_div); by = first)]
+    return (deepcopy(defining_polynomial(Hecke.nf(O))), basis(O),
+            basis_matrix(O), deepcopy(discriminant(O)), Hecke.gen_index(O),
+            cached)
+  end
+
+  function check_degree_one_count(O, p, expected)
+    decomposition = prime_decomposition(O, p; cached = true)
+    @test count(P -> degree(P[1]) == 1, decomposition) == expected
+    @test count(P -> P[1] == 1, prime_decomposition_type(O, p)) == expected
+    before = degree_one_snapshot(O)
+    inputs = p isa Int ? (p, Int32(p), BigInt(p), ZZ(p)) : (p, BigInt(p))
+    for q in inputs
+      q_before = deepcopy(q)
+      actual = Hecke._number_of_degree_one_primes(O, q)
+      @test actual isa Int
+      @test actual == expected
+      @test q == q_before
+      @test degree_one_snapshot(O) == before
+      @test Hecke._number_of_degree_one_primes(O, q) == expected
+    end
+    q = deepcopy(ZZ(p))
+    actual = Hecke._number_of_degree_one_primes(O, q)
+    add!(q, q, 2)
+    @test actual == expected
+    @test degree_one_snapshot(O) == before
+  end
+
+  examples = ((x - 1, 2, 1), (x^2 + 1, 2, 1), (x^2 + 1, 3, 0),
+              (x^2 + 1, 5, 2), (x^3 - 2, 5, 1), (x^3 - 2, 7, 0),
+              (x^3 - 2, 31, 3), (x^4 + x + 2, 2, 2),
+              (x^3 - x^2 - 2*x - 8, 2, 3), (2*x^2 + 1, 2, 1),
+              (2*x^2 + 1, 3, 2), (2*x^2 + 1, 5, 0),
+              (x^2 - 1//2, 2, 1), (x^2 - 1//2, 7, 2))
+  for (f, p, expected) in examples
+    K, _ = number_field(f; cached = false)
+    O = maximal_order(K)
+    check_degree_one_count(O, p, expected)
+  end
+
+  K, _ = number_field(x^2 - 5; cached = false)
+  O = equation_order(K)
+  @test !is_maximal(O)
+  check_degree_one_count(O, 3, 0)
+  check_degree_one_count(O, 11, 2)
+
+  K, _ = number_field(x^2 + 1; cached = false)
+  O = maximal_order(K)
+  p = next_prime(ZZ(2)^65)
+  check_degree_one_count(O, p, isone(mod(p, 4)) ? 2 : 0)
+end
+
 @testset "Prime Decomposition (AbsNonSimple)" begin
   x = QQ[:x][2]
 
@@ -181,6 +313,56 @@ end
     @test e in (3,6)
     @test P.gen_one == 3
     @test Hecke.defines_2_normal(P)
+  end
+
+  # A random weak second generator at 521 can have valuation greater than one.
+  # Repeat the decomposition to exercise the randomized search.
+  for _ in 1:20
+    PP = prime_decomposition(OK, 521)
+    @test sort([(e, degree(P)) for (P, e) in PP]) == [(1, 1), (1, 2), (2, 1), (2, 2)]
+    for (P, e) in PP
+      @test !iszero(mod(norm(P.gen_two), 521*norm(P)))
+      @test valuation(anti_uniformizer(P), P) == -1
+      @test valuation(K(521), P) == e
+    end
+  end
+end
+
+@testset "Equality of prime ideals (AbsNonSimple)" begin
+  # distinct primes over the same unramified p compare unequal
+  x = QQ[:x][2]
+  K, = number_field([x^2 - 2, x^2 - 3])
+  OK = maximal_order(K)
+  lp = prime_decomposition(OK, 23)
+  @test length(lp) == 4
+  for (P, _) in lp, (Q, _) in lp
+    @test (P == Q) == (P === Q)
+  end
+end
+
+@testset "Prime decomposition along an embedding" begin
+  # P*O_L for primes P of k ramified, split and inert over QQ, small and large
+  x = QQ[:x][2]
+  L, c = number_field(x^4 - 2)
+  k, m = subfield(L, [c^2])
+  OL = maximal_order(L)
+  Ok = maximal_order(k)
+  ps = ZZRingElem[2, 3, 7]
+  q = next_prime(ZZ(2)^70)
+  for split in (true, false)
+    while (mod(q, 8) in (1, 7)) != split
+      q = next_prime(q)
+    end
+    push!(ps, q)
+  end
+  for p in ps, (P, _) in prime_decomposition(Ok, p)
+    lQ = prime_decomposition(m, P)
+    POL = ideal(OL, P.gen_one, OL(m(P.gen_two.elem_in_nf)))
+    @test prod(Q^e for (Q, e) in lQ) == POL
+    @test all(minimum(Q) == p for (Q, _) in lQ)
+    t = [(divexact(degree(Q), degree(P)), e) for (Q, e) in lQ]
+    @test sum(f*e for (f, e) in t) == 2
+    @test sort(prime_decomposition_type(m, P)) == sort(t)
   end
 end
 
@@ -218,6 +400,18 @@ A = P1^2 * P2
 lf = Hecke.factor_easy(A)
 @test prod(x^y for (x, y) in lf) == A
 @test Hecke.is_pairwise_coprime([x^y for (x, y) in lf])
+
+@testset "factor_easy omits unit residuals" begin
+  K, _ = quadratic_field(2, cached = false)
+  O = maximal_order(K)
+  p = next_prime(ZZ(10)^10)
+  q = next_prime(p)
+  I = ideal(O, p*q, O(1))
+  lf = Hecke.factor_easy(I)
+  @test isone(I)
+  @test isempty(lf)
+  @test prod(x^y for (x, y) in lf; init = 1*O) == I
+end
 
 # primary decomposition
 K, a = quadratic_field(5)
@@ -266,4 +460,31 @@ let
   @test length(lp) == 4
   @test issetequal([norm(x[1]) for x = lp], [2, 2, 4, 4])
 
+end
+
+@testset "Prime ideals" begin
+  Qx, x = polynomial_ring(QQ, "x")
+
+  @testset "Prime Decomposition" begin
+    L = number_field(x^30-x^29+x^28-x^27+x^26+743*x^25-1363*x^24-3597*x^23-22009*x^22+458737*x^21+2608403*x^20+6374653*x^19-1890565*x^18-112632611*x^17-467834081*x^16-1365580319*x^15-1188283908*x^14+3831279180*x^13+28661663584*x^12+89106335984*x^11+226912479680*x^10+443487548480*x^9+719797891328*x^8+946994403328*x^7+1015828094976*x^6+878645952512*x^5+555353440256*x^4+124983967744*x^3+67515711488*x^2-5234491392*x+400505700352)[1]
+    OL = maximal_order(L)
+    @test length(prime_decomposition(OL, 2)) == 30
+    Lns1 = number_field([x^2 - 2])[1]
+    @test length(prime_decomposition(maximal_order(Lns1), 3)) == 1
+    Lns, gLns = number_field([x^2-5, x^2-13])
+    OLns = maximal_order(Lns)
+    lP = prime_decomposition(OLns, 5)
+    @test length(lP) == 1
+  end
+
+  @testset "Frobenius automorphism" begin
+    K = number_field(x^2+1)[1]
+    OK = maximal_order(K)
+    lp = prime_decomposition(OK, 5)
+    P = lp[1][1]
+    @test Hecke.frobenius_automorphism(P) == id_hom(K)
+    lp = prime_decomposition(OK, 7)
+    P = lp[1][1]
+    @test Hecke.frobenius_automorphism(P) != id_hom(K)
+  end
 end

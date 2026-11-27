@@ -4,18 +4,24 @@ const additive = EllipticCurveReduction.additive
 const split_mult = EllipticCurveReduction.split_multiplicative
 const nonsplit_mult = EllipticCurveReduction.nonsplit_multiplicative
 
-function _check_reduction_impl(ld, ks, cv, tn, rt)
+function _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
   @test ld.kodaira_symbol == ks
   @test ld.conductor_valuation == cv
   @test ld.tamagawa_number == tn
   @test ld.reduction_type == rt
+  @test domain(ld.isomorphism) === E
+  @test codomain(ld.isomorphism) === ld.minimal_model
+
+  @test kodaira_symbol(E, p) == ks
+  @test tamagawa_number(E, p) == tn
+  @test reduction_type(E, p) == "$rt"
 end
 
 _good_reduction(p) = (p, "I0", 0, 1, good)
 
 function _check_reduction(E, p, ks, cv, tn, rt)
   ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
-  _check_reduction_impl(ld, ks, cv, tn, rt)
+  _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
 end
 
 @testset "Local Data" begin
@@ -30,7 +36,7 @@ end
 
     function _check_reduction_minimal(E, p, ks, cv, tn, rt)
       ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
-      _check_reduction_impl(ld, ks, cv, tn, rt)
+      _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
       @test a_invariants(tidy_model(ld.minimal_model)) == a_invariants(E)
     end
 
@@ -134,7 +140,7 @@ end
 
     function _check_reduction_nf(E, p, ks, cv, tn, rt)
       ld = tates_algorithm_local(E, p, EllipticCurveLocalData)
-      _check_reduction_impl(ld, ks, cv, tn, rt)
+      _check_reduction_impl(E, p, ld, ks, cv, tn, rt)
 
       d_E  = valuation(discriminant(E), p)
       d_Em = ld.discriminant_valuation
@@ -413,6 +419,49 @@ end
     @test issetequal(conductor(E), [(t, 5), (t^2 + t + 1, 1), (1//t, 1)])
   end
 
+  @testset "Bad primes of non-integral models" begin
+    # a minimal model with v_p(disc) = 12 rescaled by u = p:
+    # not integral at p, v_p(disc) = 0, but p is still bad prime
+
+    let E = elliptic_curve([1, 0, 0, 0, 5^12])
+      F = transform_rstu(E, [0, 0, 0, 5])[1]
+      @assert valuation(discriminant(F), 5) == 0
+      @assert 5 in bad_primes(E)
+
+      @test @inferred(bad_primes(F)) == @inferred(bad_primes(E))
+      @test @inferred(conductor(F)) == @inferred(conductor(E))
+      @test @inferred(tamagawa_numbers(F)) == @inferred(tamagawa_numbers(E))
+      @test @inferred(minimal_discriminant(F)) == @inferred(minimal_discriminant(E))
+    end
+
+    let x = gen(Hecke.Globals.Qx),
+        (K, a) = number_field(x^2 - 2; cached = false),
+        OK = ring_of_integers(K),
+        E = elliptic_curve(K, [1, 0, 0, 0, 5^12])
+      F = transform_rstu(E, [0, 0, 0, 5])[1]
+      P = 5*OK
+      @assert valuation(discriminant(F), P) == 0
+      @assert P in bad_primes(E)
+
+      @test @inferred(bad_primes(F)) == @inferred(bad_primes(E))
+      @test @inferred(conductor(F)) == @inferred(conductor(E))
+      @test @inferred(tamagawa_numbers(F)) == @inferred(tamagawa_numbers(E))
+      @test @inferred(minimal_discriminant(F)) == @inferred(minimal_discriminant(E))
+    end
+
+    let (K, t) = rational_function_field(QQ, :t; cached = false),
+        E = elliptic_curve(K, [1, 0, 0, 0, t^12])
+      F = transform_rstu(E, [0, 0, 0, t])[1]
+      @assert valuation(discriminant(F), numerator(t)) == 0
+      @assert t in bad_primes(E)
+
+      @test issetequal(@inferred(bad_primes(F)), @inferred(bad_primes(E)))
+      @test issetequal(@inferred(conductor(F)), @inferred(conductor(E)))
+      @test issetequal(@inferred(tamagawa_numbers(F)), @inferred(tamagawa_numbers(E)))
+      @test issetequal(@inferred(minimal_discriminant(F)), @inferred(minimal_discriminant(E)))
+    end
+  end
+
   @testset "LocalData caching" begin
     # check that good primes are not cached and that primes are ZZ for curves over Q
     let E = elliptic_curve([0, 0, 0, 1, 0])
@@ -441,6 +490,47 @@ end
       ld2 = tates_algorithm_local(E, 1//t, EllipticCurveLocalData)
       @test ld1 === ld2
     end
+  end
+
+  @testset "Input validation" begin
+    # we check that non-primes (or primes/places from wrong order)
+    #   cause an error and do not pollute the cache
+    E = elliptic_curve([0, 0, 1, 0, 0])
+    for p in [4, 9, 27, ZZ(9), 6, 1, 0, -3]
+      @test_throws ArgumentError tates_algorithm_local(E, p)
+    end
+    @test bad_primes(E) == [3]
+
+    x = gen(Hecke.Globals.Qx)
+    K, c = number_field(x^2 - 5; cached = false)
+    L, = number_field(x^2 - 2; cached = false)
+    E = elliptic_curve(K, [0, 0, 0, 1, 0])
+    OK = ring_of_integers(K)
+    Oeq = equation_order(K)
+    @test_throws ArgumentError kodaira_symbol(E, 4*OK)
+    @test_throws ArgumentError kodaira_symbol(E, 1*OK)
+    @test_throws ArgumentError kodaira_symbol(E, prime_decomposition(ring_of_integers(L), 3)[1][1])
+    @test_throws ArgumentError kodaira_symbol(E, ideal(Oeq, 2, Oeq(c - 1)))
+    @test length(bad_primes(E)) == 1
+
+    K, t = rational_function_field(GF(5), :t; cached = false)
+    L, s = rational_function_field(GF(5), :s; cached = false)
+    E = elliptic_curve(K, [0, 0, 0, t, t^2 + 1])
+    @test_throws ArgumentError kodaira_symbol(E, 1//(t + 1))
+    @test_throws ArgumentError tates_algorithm_local(E, 1//(t + 1))
+    @test_throws ArgumentError kodaira_symbol(E, t^2)
+    @test length(bad_primes(E)) == 2
+    # note that hash(s) == hash(t)
+    @test_throws ArgumentError kodaira_symbol(E, s)
+    @test_throws ArgumentError tates_algorithm_local(E, numerator(s))
+
+    # check Kodaira symbol parsing
+    for str in ["I-3", "I-4", "I-3*", "I+3", "I 3", "I03", "In", "I", "Ix*", "V"]
+      @test_throws ArgumentError KodairaSymbol(str)
+    end
+
+    @test KodairaSymbol("I3") == KodairaSymbol(7)
+    @test KodairaSymbol("I5*") == KodairaSymbol(-9)
   end
 end
 

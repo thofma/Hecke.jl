@@ -52,7 +52,7 @@ end
 
 _elem_to_polynomial(x) = numerator(x)(gen(parent(defining_polynomial(parent(x)))))/denominator(x)
 
-function absolute_frobenius_inverse(x::Generic.FunctionFieldElem)
+function absolute_frobenius_inverse(x::Generic.AbsSimpleFunctionFieldElem)
   # We need to write x as a polynomial in alpha^p
   # we have as a polynomial in alpha
   # so lets write alpha as a polynomial in alpha^p

@@ -25,7 +25,7 @@
     end
     if length(action_of_gens) > 0
       z.action_of_gens = action_of_gens
-      if !isdefined(z.dim)
+      if length(action_of_basis) == 0
         z.dim = nrows(action_of_gens[1])
       end
     end
@@ -447,8 +447,6 @@ function trivial_module(A::AbstractAssociativeAlgebra)
 end
 
 function regular_module(A::AbstractAssociativeAlgebra)
-  K = base_ring(A)
-  n = dim(A)
   B = basis(A)
   action_of_basis = [representation_matrix(b, :right) for b in B]
   M = Amodule(A, action_of_basis)
@@ -458,7 +456,6 @@ function regular_module(A::AbstractAssociativeAlgebra)
 end
 
 function regular_module(A::AbstractAssociativeAlgebra, p)#::AbsAlgAssMor)
-  K = base_ring(A)
   action_of_basis = [representation_matrix(p(b), :right) for b in basis(A)]
   M = Amodule(A, action_of_basis)
   # We do some more, because we know the endomorphism algbera
@@ -487,7 +484,6 @@ end
 
 function free_module(A::AbstractAssociativeAlgebra, r::Int)
   K = base_ring(A)
-  n = dim(A)
   B = basis(A)
   action_of_basis = Vector{dense_matrix_type(K)}()
   for b in B
@@ -649,21 +645,139 @@ end
 #end
 
 function is_isomorphic_with_isomorphism(V::ModAlgAss, W::ModAlgAss)
-  B = _basis_of_hom(W, V)
-  if length(B) == 0
-    return false, hom(V, W, basis(W))
+  br = W.base_ring
+  if V == W
+    return true, hom(V, W, identity_matrix(br, dim(W)); check=false)
   end
-  l = length(B)
-  for i in 1:50
-    c = sum(c * b for (c, b) in zip(rand(-1:1, l), B))
-    if !iszero(det(c))
-      return true, hom(V, W, c)
+  if dim(V) != dim(W)
+    return false, zero_map(V, W)
+  end
+  if dim(V) == 0
+    return true, zero_map(V, W)
+  end
+
+  # V and W are isomorphic if and only if Hom(V, W) is a free End(V)-module
+  # of rank 1 with an invertible generator.
+  B = _basis_of_hom(W, V)
+  E, _ = endomorphism_algebra(V)
+  if length(B) != dim(E)
+    return false, zero_map(V, W)
+  end
+
+  # Search for an isomorphism first, since the deterministic method is costly.
+  c = _find_invertible_combination(B, 50)
+  if c === nothing
+    c = _generator_of_hom(E, B)
+    if c === nothing || !is_invertible(c)
+      return false, zero_map(V, W)
     end
   end
-  return false, hom(V, W, basis(W))
+  return true, hom(V, W, c)
+end
+
+# Return an invertible random linear combination of the square matrices B,
+# or nothing if none is found in the given number of tries. If the span of B
+# contains an invertible matrix, a try succeeds with probability at least 1/2
+# over a field of characteristic zero (Schwartz-Zippel, det has degree
+# nrows(B[1])), and with positive probability over a finite field.
+function _find_invertible_combination(B::Vector{<:MatElem}, tries::Int)
+  K = base_ring(B[1])
+  N = nrows(B[1])
+  for _ in 1:tries
+    if is_finite(K)
+      c = sum(rand(K) * b for b in B)
+    else
+      c = sum(rand(-N:N) * b for b in B)
+    end
+    if is_invertible(c)
+      return c
+    end
+  end
+  return nothing
+end
+
+# Return a generator of H = Hom(V, W) as a left module over the matrix
+# algebra E = End(V), or nothing if H is not cyclic. B is a basis of H.
+# If H contains an invertible matrix, then every generator is invertible.
+#
+# Let J be the radical of E. By Nakayama's lemma, h generates H if and only
+# if its image v generates the semisimple E-module H/JH, that is, if the rank
+# dim Ev equals dim H/JH. An element v of H/JH has maximal rank if and only if
+# Ann(v) w lies in Ev for all w in H/JH. Otherwise, for such a w and the
+# E-linear projection p onto Ev, the element v + w - p(w) has larger rank.
+# See [CIK97, Sections 2.1-2.3].
+#
+# [CIK97] A. Chistov, G. Ivanyos, M. Karpinski, Polynomial time algorithms
+#         for modules over finite dimensional algebras, ISSAC 1997, 68-74.
+function _generator_of_hom(E::MatAlgebra, B::Vector{<:MatElem})
+  K = base_ring(E)
+  r = length(B)
+  BE = [matrix(e) for e in basis(E)]
+  BJ = [matrix(j) for j in basis(radical(E))]
+  C = solve_init(matrix(K, [_eltseq(b) for b in B]))
+
+  # x -> x * P is the projection H -> H/JH in coordinates with respect to B,
+  # and R * P = 1.
+  JH = zero_matrix(K, 0, r)
+  for j in BJ, b in B
+    JH = vcat(JH, matrix(K, 1, r, solve(C, _eltseq(j * b); side = :left)))
+  end
+  P = kernel(JH; side = :right)
+  s = ncols(P)
+  R = solve(P, identity_matrix(K, s); side = :left)
+
+  # The action of E on H/JH
+  T = [R * matrix(K, [solve(C, _eltseq(e * b); side = :left) for b in B]) * P
+       for e in BE]
+  # The E-endomorphisms of H/JH, computed when first needed since they are
+  # the most costly part
+  Pi = nothing
+
+  if is_finite(K)
+    v = matrix(K, 1, s, [rand(K) for _ in 1:s])
+  else
+    v = matrix(K, 1, s, [rand(-s:s) for _ in 1:s])
+  end
+  for _ in 0:s
+    U = reduce(vcat, [v * t for t in T])
+    if rank(U) == s
+      x = v * R
+      return sum(x[1, i] * B[i] for i in 1:r)
+    end
+
+    # Find a basis vector w of H/JH and a in Ann(v) with w a not in Ev.
+    N = kernel(U; side = :right)
+    Ann = kernel(U; side = :left)
+    w = nothing
+    for k in 1:nrows(Ann)
+      X = sum(Ann[k, l] * T[l] for l in 1:length(T)) * N
+      i = findfirst(i -> !is_zero_row(X, i), 1:s)
+      if i !== nothing
+        w = identity_matrix(K, s)[i:i, :]
+        break
+      end
+    end
+    if w === nothing
+      return nothing
+    end
+
+    # The projection p = sum c_k Pi_k is the identity on Ev and maps into Ev.
+    if Pi === nothing
+      Pi = _basis_of_commutator_algebra(T, T)
+    end
+    M = matrix(K, [vcat(_eltseq(U * p), _eltseq(p * N)) for p in Pi])
+    t = vcat(_eltseq(U), [zero(K) for _ in 1:(s * ncols(N))])
+    c = solve(M, matrix(K, 1, length(t), t); side = :left)
+    p = sum(c[1, k] * Pi[k] for k in 1:length(Pi))
+    v = v + w - w * p
+  end
+  error("rank did not increase")
 end
 
 function is_free(V::ModAlgAss)
+  if V.isfree == 1
+    return true
+  end
   dV = dim(V)
   A = algebra(V)
   dA = dim(A)
@@ -671,7 +785,7 @@ function is_free(V::ModAlgAss)
     return false
   end
   d = div(dV, dA)
-  fl = is_isomorphic_with_isomorphism(V, free_module(algebra(V), d))[1]
+  fl, _ = is_isomorphic_with_isomorphism(V, free_module(algebra(V), d))
   if !fl
     return false
   end
@@ -710,7 +824,7 @@ function _twist(V::ModAlgAss, a::Map)
     @assert A(g) == B[i]
     push!(rep2, action(V, A(a(g))))
   end
-  W = Amodule(A, rep2)
+  return Amodule(A, rep2)
 end
 
 function _change_group(V::ModAlgAss, a::Map; algebra = nothing)
@@ -727,6 +841,5 @@ function _change_group(V::ModAlgAss, a::Map; algebra = nothing)
     g = A.base_to_group[i]
     push!(rep2, action(V, A(a(g))))
   end
-  W = Amodule(QH, rep2)
-  return W
+  return Amodule(QH, rep2)
 end

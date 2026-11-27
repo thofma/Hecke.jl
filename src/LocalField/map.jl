@@ -233,12 +233,12 @@ function map_data_given_base_field_data(K::LocalField, L, z, y; check = true)
   if check
     setprecision(base_field(K), precision(yy)) do
       f = map_coefficients(w -> image(z, L, w), defining_polynomial(K), cached = false)
-      y = evaluate(f, yy)
-      if !iszero(y)
-        @show valuation(y), precision(y), y, precision(yy)
+      img = evaluate(f, yy)
+      if !iszero(img)
+        @show valuation(img), precision(img), img, precision(yy)
       end
 
-      !iszero(y) && error("Data does not define a morphism")
+      !iszero(img) && error("Data does not define a morphism")
     end
   end
 
@@ -430,7 +430,12 @@ function _compute_inverse_data(f#= image data =#, K, LL, L::LocalField)
   g = LL(gen(L))
   fl, prim_preimg = has_preimage_with_preimage(f, LL(g))
   @assert fl
-  return MapDataFromLocalField{typeof(prim_preimg)}(prim_preimg)
+  bd = _compute_inverse_data(f, K, LL, base_field(L))
+  return MapDataFromLocalField{typeof(prim_preimg), typeof(bd)}(prim_preimg, bd)
+end
+
+function _compute_inverse_data(f#= image data =#, K, LL, L::PadicField)
+  return MapDataFromPadicField{typeof(K)}(K)
 end
 
 
@@ -448,6 +453,10 @@ end
 ################################################################################
 
 # f : K -> L, g : L -> M
+function _compose(f::MapDataFromPadicField, g#= map data =#, K, L, M)
+  return map_data_type(K, M)(M)
+end
+
 function _compose(f::MapDataFromQadicField, g#= map data =#, K, L, M)
   return map_data_type(K, M)(image(g, M, image(f, L, gen(K))))
 end

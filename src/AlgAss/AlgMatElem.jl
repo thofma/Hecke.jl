@@ -44,6 +44,11 @@ function coefficients(a::MatAlgebraElem; copy::Bool = true)
   end
 end
 
+function coeff(a::MatAlgebraElem, i::Int)
+  assure_has_coeffs(a)
+  return a.coeffs[i]
+end
+
 ################################################################################
 #
 #  String I/O
@@ -68,7 +73,7 @@ Returns $-a$.
 function -(a::MatAlgebraElem)
   b = parent(a)(-matrix(a, copy = false))
   if a.has_coeffs
-    b.coeffs = [ -coefficients(a, copy = false)[i] for i = 1:dim(parent(a)) ]
+    b.coeffs = [ -coeff(a, i) for i in 1:dim(parent(a)) ]
     b.has_coeffs = true
   end
   return b
@@ -84,7 +89,7 @@ function +(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) + matrix(b, copy = false), check = false)
   if a.has_coeffs && b.has_coeffs
-    c.coeffs = [ coefficients(a, copy = false)[i] + coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
+    c.coeffs = [ coeff(a, i) + coeff(b, i) for i in 1:dim(parent(a)) ]
     c.has_coeffs = true
   end
   return c
@@ -94,7 +99,7 @@ function -(a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
   c = parent(a)(matrix(a, copy = false) - matrix(b, copy = false); check = false)
   if a.has_coeffs && b.has_coeffs
-    c.coeffs = [ coefficients(a, copy = false)[i] - coefficients(b, copy = false)[i] for i = 1:dim(parent(a)) ]
+    c.coeffs = [ coeff(a, i) - coeff(b, i) for i in 1:dim(parent(a)) ]
     c.has_coeffs = true
   end
   return c
@@ -113,6 +118,7 @@ end
 
 function zero!(a::MatAlgebraElem)
   a.matrix = zero!(a.matrix)
+  a.has_coeffs = false
   return a
 end
 
@@ -129,13 +135,6 @@ end
 
 function mul!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   parent(a) != parent(b) && error("Parents don't match.")
-  A = parent(a)
-
-  if c === a || c === b
-    d = parent(a)()
-    mul!(d, a, b)
-    return d
-  end
 
   c.matrix = mul!(c.matrix, a.matrix, b.matrix)
   c.has_coeffs = false
@@ -143,7 +142,7 @@ function mul!(c::T, a::T, b::T) where {T <: MatAlgebraElem}
   return c
 end
 
-function mul!(c::MatAlgebraElem{T}, a::MatAlgebraElem{T}, b::T) where {T}
+function mul!(c::MatAlgebraElem{T}, a::MatAlgebraElem{T}, b::Union{T, Int, ZZRingElem}) where {T}
   parent(c) !== parent(a) && error("Parents don't match.")
   A = parent(a)
 

@@ -67,7 +67,7 @@
     O8 = order(K1, [a1])
     @test O8 == equation_order(K1)
 
-    @test_throws ErrorException order(K1, [a1, a1, a1], isbasis = true)
+    @test_throws ErrorException order(K1, [a1, a1, a1], is_basis = true)
     #@test_throws ErrorException order(K1, [1, a1, a1])
     #@test_throws ErrorException order(K1, [1.0, a1, a1])
     @test_throws ErrorException order(K6, Hecke.FakeFmpqMat(ZZ[0 0; 0 0], ZZ(6)))
@@ -213,6 +213,49 @@
     @test !@inferred is_index_divisor(O7, 5)
   end
 
+  @testset "Equation order containment" begin
+    # Equal covolumes do not imply containment, even before caching the inverse.
+    _, x = QQ["x"]
+    K, (s, t) = number_field([x^2 - 2, x^2 - 5]; cached = false)
+    w = (1 + t) // 2
+    O = order([one(K), w, 2 * s, 2 * s * w]; is_basis = true, check = false)
+    @test abs(gen_index(O)) == 1
+    @test !Hecke.contains_equation_order(O)
+  end
+
+  @testset "Prime decomposition without equation order containment" begin
+    # An integral generalized index must not affect containment or reduction.
+    _, x = QQ["x"]
+    K, a = number_field(x^4 - 14*x^2 + 9; cached = false)
+    s = (a^3 - 11*a) // 6
+    t = (17*a - a^3) // 6
+    w = (1 + t) // 2
+    O = order([one(K), w, 2*s, 2*s*w]; is_basis = true)
+
+    @test abs(gen_index(O)) == 12
+    @test_throws ErrorException index(O)
+    @test prime_decomposition_type(O, 7) == [(2, 1), (2, 1)]
+    @test !isdefined(O, :index)
+    @test !Hecke.contains_equation_order(O)
+    @test !(a in O)
+    @test denominator(a, O) == 2
+
+    A = simplify(ideal(O, 5, O(5*w)))
+    @test coordinates(A.gen_two) == ZZRingElem[0, 5, 0, 0]
+    @test basis_matrix(ideal(O, A.gen_one, A.gen_two)) ==
+          basis_matrix(ideal(O, 5))
+
+    for p in (3, 7)
+      @test Hecke._number_of_degree_one_primes(O, p) == 0
+      primes = prime_decomposition(O, p, 0)
+      @test [(degree(P), e) for (P, e) in primes] == [(2, 1), (2, 1)]
+      for (P, _) in primes
+        @test K(P.gen_two) in O
+        @test basis_matrix(ideal(O, p, P.gen_two)) == basis_matrix(P)
+      end
+    end
+  end
+
   @testset "Discriminant" begin
     b = @inferred discriminant(O1)
     @test b == -108
@@ -230,6 +273,14 @@
     K, a = number_field(1//4*x^3 + 3*x^2 + 2*x - 1, cached = false)
     E = any_order(K)
     @test discriminant(E) == det(trace_matrix(E))
+
+    # reduced discriminant of equation orders
+    for f in [x^2 + 5, x^2 - 8, x^3 - 2]
+      K, = number_field(f, cached = false)
+      E = equation_order(K)
+      @test Hecke.reduced_discriminant(E) ==
+            Hecke.maximal_elementary_divisor(trace_matrix(E))
+    end
   end
 
   @testset "Signature" begin
@@ -473,6 +524,27 @@
     E = equation_order(K)
     lll(E)
     @test maximal_order(E) === E
+
+    # lll of imaginary quadratic non-simple fields
+    for d in [1, 3]
+      K, = number_field([x^2 + d])
+      OK = maximal_order(K)
+      L = lll(OK)
+      @test L == OK
+      @test all(b -> norm(b) == 1, basis(L))
+    end
+
+    # Dedekind criterion for equation orders
+    K, = number_field(x^2 - 8, cached = false)
+    E = equation_order(K)
+    fl, O = Hecke.dedekind_test(E, ZZ(2))
+    @test !fl
+    @test discriminant(O) == discriminant(maximal_order(K)) == 8
+    @test !Hecke.dedekind_test(E, ZZ(2), Val(false))
+    K, = number_field(x^2 + 1, cached = false)
+    E = equation_order(K)
+    @test Hecke.dedekind_test(E, ZZ(2)) == (true, E)
+    @test Hecke.dedekind_test(E, ZZ(2), Val(false))
 
     K, a = number_field(x^5 - 5x - 1, "a")
     O = order(K, [3*a])

@@ -1,3 +1,18 @@
+@testset "Multiplicative generator" begin
+  fields = FinField[
+    GF(31),
+    GF(ZZRingElem(31)),
+    GF(ZZRingElem(31), 2, :a),
+  ]
+
+  for F in fields
+    g = multiplicative_generator(F)
+    n = order(F) - 1
+    @test all(l -> !isone(g^div(n, l)), prime_divisors(n))
+    @test multiplicative_generator(F) === g
+  end
+end
+
 @testset "fpField" begin
 
   for p in [31, 11, 101]
@@ -251,3 +266,41 @@ let # #2237
   @test order(U) == ZZ(37)^14 - 1
 end
 
+@testset "Reduction of number field elements" begin
+  Qx, x = QQ["x"]
+  k, a = number_field(x^7 - 3*x + 5, "a")
+
+  # denominators are units mod every p below; length 7 exceeds 2*degree(K),
+  # which forces the reduction to divide by the modulus
+  b = (2//3)*a^6 - 5*a^4 + (1//7)*a + 11//5
+
+  # image of b under a -> gen(K)
+  img(K, b) = sum(K(coeff(b, i)) * gen(K)^i for i in 0:degree(parent(b))-1)
+
+  let p = 11
+    K, _ = Native.finite_field(p, 2, "g")
+    for Rx in [polynomial_ring(Native.GF(p), "t")[1],
+               polynomial_ring(residue_ring(ZZ, p)[1], "t")[1]]
+      c = K()
+      Hecke._nf_to_fq!(c, b, K, Rx())
+      @test c == img(K, b)
+    end
+  end
+
+  for p in [11, next_prime(ZZ(2)^70)]
+    Fx, _ = polynomial_ring(Native.GF(ZZ(p)), "t")
+
+    K, _ = Native.finite_field(ZZ(p), 2, "g")
+    c = K()
+    Hecke._nf_to_fq!(c, b, K, Fx())
+    @test c == img(K, b)
+
+    # d = 1, 2, 5 cover all fq_default backends
+    for d in [1, 2, 5]
+      K = GF(p, d)
+      c = K()
+      Hecke._nf_to_fq!(c, b, K, Fx())
+      @test c == img(K, b)
+    end
+  end
+end

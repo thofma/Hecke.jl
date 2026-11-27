@@ -168,6 +168,8 @@ function RelOrdQuoMap(O::T1, Q::RelOrdQuoRing{T1, T2, T3}) where { T1, T2, T3 }
   return RelOrdQuoMap{T1, T2, T3, S}(O, Q)
 end
 
+kernel(f::RelOrdQuoMap{T1, T2}) where {T1, T2} = ideal(codomain(f))::T2
+
 mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdToFqFieldRelMor}
   header::MapHeader{S, FqField}
   poly_of_the_field
@@ -196,13 +198,6 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
       z.poly_of_the_field = hh
 
       FE, mE = Nemo._residue_field(hh)
-#
-#      FE = RelFinField(hh, :v)
-#      FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-#      FE2, mE2 = field_extension(hh)
-#      FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
-#      mE = compose(mE2, compose(FE2toFEabs, FEabstoFE))
-#
       M = zero_matrix(FK, dim(A), dim(A))
       t = one(A)
       for i = 1:dim(A)
@@ -243,13 +238,7 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
       ccall((:fq_default_poly_set, libflint), Nothing, (Ref{FqPolyRingElem}, Ref{FqPolyRingElem}, Ref{FqField}), hh, h, FK)
       z.poly_of_the_field = hh
 
-      FE, mE = Nemo._residue_field(hh)
-
-      #FE = RelFinField(hh, :v)
-      #FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-      #FE2, mE2 = field_extension(hh)
-      #FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
-      #mE = compose(mE2, compose(FE2toFEabs, FEabstoFE))
+      FE, mFE = Nemo._residue_field(hh)
 
       function _image(x::RelNumFieldOrderElem)
         f = parent(nf(O).pol)(elem_in_nf(x))
@@ -258,11 +247,11 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
         else
           ff = FKx([ mmK(coeff(f, i)) for i =0:degree(f)])
         end
-        return image(mE, ff)
+        return image(mFE, ff)
       end
 
       function _preimage(x::FqFieldElem)
-        f = preimage(mE, x)
+        f = preimage(mFE, x)
         immK = pseudo_inv(mmK)
         y = nf(O)([ immK(coeff(f,i)) for i=0:degree(f)])
         res = O(y)
@@ -274,208 +263,9 @@ mutable struct NfRelOrdToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelOrdT
   end
 end
 
-mutable struct NfRelOrdToRelFinFieldMor{S, T} <: Map{S, RelFinField{T}, HeckeMap, NfRelOrdToRelFinFieldMor}
-  header::MapHeader{S, RelFinField{T}}
-  poly_of_the_field
-  P
-  map_subfield::Union{NfOrdToFqMor, NfRelOrdToRelFinFieldMor}
+kernel(f::NfRelOrdToFqMor) = f.P
 
-    function NfRelOrdToRelFinFieldMor{S, T}(O::S, P, mapsub::NfOrdToFqMor) where {S, T <: FqPolyRepFieldElem}
-    z = new{S, T}()
-    z.P = P
-    z.map_subfield = mapsub
-    p = minimum(P, copy = false)
-    FK, mK = codomain(mapsub), mapsub
-    mmK = extend(mK, nf(order(p)))
-    FKx, = polynomial_ring(FK, "x", cached = false)
-    if is_index_divisor(O, p)
-      A, OtoA = StructureConstantAlgebra(O, P, p)
-      AtoO = pseudo_inv(OtoA)
-      x = rand(A)
-      h = minpoly(x)
-      while degree(h) != dim(A)
-        x = rand(A)
-        h = minpoly(x)
-      end
-      hh = FKx()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FK)
-      z.poly_of_the_field = hh
-
-      FE = RelFinField(hh, :v)
-      FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-      FE2, mE2 = field_extension(hh)
-      FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
-      mE = compose(mE2, compose(FE2toFEabs, FEabstoFE))
-
-      M = zero_matrix(FK, dim(A), dim(A))
-      t = one(A)
-      for i = 1:dim(A)
-        for j = 1:dim(A)
-          M[j, i] = t.coeffs[j]
-        end
-        t = t*x
-      end
-      Minv = inv(M)
-
-      function _image_index_div(a::RelNumFieldOrderElem)
-        b = OtoA(a)
-        bb = zero_matrix(FK, dim(A), 1)
-        for i = 1:dim(A)
-          bb[i, 1] = b.coeffs[i]
-        end
-        @assert mod(AtoO(A([ bb[i, 1] for i = 1:dim(A) ])), P) == mod(a, P)
-        bb = Minv*bb
-        g= FKx([ bb[i, 1] for i = 1:dim(A) ])
-        return mE(g)
-      end
-
-      function _preimage_index_div(a::RelFinFieldElem)
-        g = pseudo_inv(mE)(a)
-        c = zero_matrix(FK, dim(A), 1)
-        for i = 1:dim(A)
-          c[i,1] = coeff(g, i-1)
-        end
-        c = M*c
-        b = A([c[i,1] for i=1:dim(A)])
-        return AtoO(b)
-      end
-      z.header = MapHeader(O, FE, _image_index_div, _preimage_index_div)
-    else
-      h = P.non_index_div_poly
-      hh = FKx()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FK)
-      z.poly_of_the_field = hh
-
-      FE = RelFinField(hh, :v)
-      FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-      FE2, mE2 = field_extension(hh)
-      FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
-      mE = compose(mE2, compose(FE2toFEabs, FEabstoFE))
-
-      function _image(x::RelNumFieldOrderElem)
-        f = parent(nf(O).pol)(elem_in_nf(x))
-        if iszero(f)
-          ff = FKx()
-        else
-          ff = FKx([ mmK(coeff(f, i)) for i =0:degree(f)])
-        end
-        return image(mE, ff)
-      end
-
-      function _preimage(x::RelFinFieldElem)
-        f = preimage(mE, x)
-        immK = pseudo_inv(mmK)
-        y = nf(O)([ immK(coeff(f,i)) for i=0:degree(f)])
-        return O(y)
-      end
-      z.header = MapHeader(O, FE, _image, _preimage)
-    end
-    return z
-  end
-
-  function NfRelOrdToRelFinFieldMor{S, T}(O::S, P, mapsub::NfRelOrdToRelFinFieldMor) where {S, T <: RelFinFieldElem}
-    z = new{S, T}()
-    z.P = P
-    z.map_subfield = mapsub
-    p = minimum(P, copy = false)
-    FK, mK = codomain(mapsub), mapsub
-    mmK = extend(mK, nf(order(p)))
-    FKx, = polynomial_ring(FK, "x", cached = false)
-    FKabs, FKabstoFK = Hecke.absolute_field(FK, cached = false)
-    FKtoFKabs = pseudo_inv(FKabstoFK)
-    FKabsz, _ = polynomial_ring(FKabs, "z", cached = false)
-    if is_index_divisor(O, p)
-      A, OtoA = StructureConstantAlgebra(O, P, p, mK)
-      AtoO = pseudo_inv(OtoA)
-      x = rand(A)
-      h = minpoly(x)
-      while degree(h) != dim(A)
-        x = rand(A)
-        h = minpoly(x)
-      end
-      hh = FKabsz()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
-      h = map_coefficients(FKabstoFK, hh, cached = false)
-      h = FKx(collect(coefficients(h)))
-      z.poly_of_the_field = h
-
-      FE = RelFinField(h, :v)
-      FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-      FKxtoFKabsz = MapFromFunc(FKx, FKabsz, f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))))
-      FE2, mE2 = field_extension(hh)
-      FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
-      mE = compose(FKxtoFKabsz,compose(mE2, compose(FE2toFEabs, FEabstoFE)))
-
-      M = zero_matrix(FK, dim(A), dim(A))
-      t = one(A)
-      for i = 1:dim(A)
-        for j = 1:dim(A)
-          M[j, i] = t.coeffs[j]
-        end
-        t = t*x
-      end
-      Minv = inv(M)
-
-      function _image_index_div(a::RelNumFieldOrderElem)
-        b = OtoA(a)
-        bb = zero_matrix(FK, dim(A), 1)
-        for i = 1:dim(A)
-          bb[i, 1] = b.coeffs[i]
-        end
-        @assert mod(AtoO(A([ bb[i, 1] for i = 1:dim(A) ])), P) == mod(a, P)
-        bb = Minv*bb
-        g= FKx([ bb[i, 1] for i = 1:dim(A) ])
-        return mE(g)
-      end
-
-      function _preimage_index_div(a::RelFinFieldElem)
-        g = pseudo_inv(mE)(a)
-        c = zero_matrix(FK, dim(A), 1)
-        for i = 1:dim(A)
-          c[i,1] = coeff(g, i-1)
-        end
-        c = M*c
-        b = A([c[i,1] for i=1:dim(A)])
-        return AtoO(b)
-      end
-      z.header = MapHeader(O, FE, _image_index_div, _preimage_index_div)
-    else
-      h = P.non_index_div_poly
-      hh = FKabsz()
-      ccall((:fq_poly_set, libflint), Nothing, (Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepPolyRingElem}, Ref{FqPolyRepField}), hh, h, FKabs)
-      h = map_coefficients(FKabstoFK, hh, cached = false)
-      h = FKx(collect(coefficients(h)))
-      z.poly_of_the_field = h
-
-      FE = RelFinField(h, :v)
-      FEabs, FEabstoFE = Hecke.absolute_field(FE, cached = false)
-      FKxtoFKabsz = MapFromFunc(FKx, FKabsz, f -> FKabsz(FKtoFKabs.(collect(coefficients(f)))))
-      FE2, mE2 = field_extension(hh)
-      FE2toFEabs = hom(FE2, FEabs, gen(FEabs))
-      mE = compose(FKxtoFKabsz,compose(mE2, compose(FE2toFEabs, FEabstoFE)))
-
-      function _image(x::RelNumFieldOrderElem)
-        f = parent(nf(O).pol)(elem_in_nf(x))
-        if iszero(f)
-          ff = FKx()
-        else
-          ff = FKx([ mmK(coeff(f, i)) for i =0:degree(f)])
-        end
-        return image(mE, ff)
-      end
-
-      function _preimage(x::RelFinFieldElem)
-        f = preimage(mE, x)
-        immK = pseudo_inv(mmK)
-        y = nf(O)([ immK(coeff(f,i)) for i=0:degree(f)])
-        return O(y)
-      end
-      z.header = MapHeader(O, FE, _image, _preimage)
-    end
-    return z
-  end
-
-end
+kernel(f::NfRelOrdToFqFieldRelMor{S}) where {S} = f.P::ideal_type(S)
 
 mutable struct NfRelToFqFieldRelMor{S} <: Map{S, FqField, HeckeMap, NfRelToFqFieldRelMor}
   header::MapHeader{S, FqField}
@@ -519,4 +309,3 @@ function extend(f::NfRelOrdToFqFieldRelMor{S}, E::RelSimpleNumField) where {S}
 
   return g
 end
-

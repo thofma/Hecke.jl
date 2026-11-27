@@ -58,7 +58,7 @@ end
 
 base_field_type(::Type{RelFinField{S}}) where S = parent_type(S)
 
-base_field(F::RelFinField{S}) where S= base_ring(F.defining_polynomial)::parent_type(S)
+base_field(F::RelFinField{S}) where S = base_ring(F.defining_polynomial)::parent_type(S)
 
 characteristic(F::RelFinField) = characteristic(base_field(F))
 
@@ -333,8 +333,16 @@ end
 
 #TODO: resultant or conjugates?
 function norm(x::RelFinFieldElem)
-  return resultant(defining_polynomial(parent(x)), x.data)
+  f = defining_polynomial(parent(x))
+  # The resultant gives the field norm for a monic defining polynomial.
+  if !is_monic(f)
+    f = divexact(f, leading_coefficient(f))
+  end
+  return resultant(f, x.data)
 end
+
+# squares are exactly the elements whose norm is a square
+is_square(x::RelFinFieldElem) = is_square(norm(x))
 
 function norm_via_powering(x::RelFinFieldElem)
   q = order(base_field(parent(x)))
@@ -580,7 +588,7 @@ end
 ################################################################################
 
 function id_hom(F::FinField)
-  return Nemo.FinFieldMorphism(F, F, x -> identity(x), x -> identity(x))
+  return Nemo.FinFieldMorphism(F, F, identity, identity)
 end
 
 function inv(f::Nemo.FinFieldMorphism)
@@ -710,13 +718,13 @@ function absolute_field(F::RelFinField{T}; cached::Bool = true) where T <: FinFi
       aux[1, j] = coeff(x, j-1)
     end
     mul!(aux, aux, Minv)
-    el = F()
+    res = F()
     for i = 1:degree(K)
       if !iszero(aux[1, i])
-        el += F(aux[1, i])*abs_basis[i]
+        res += F(aux[1, i])*abs_basis[i]
       end
     end
-    return el
+    return res
   end
 
   Fpx = polynomial_ring(Fp)[1]
@@ -757,8 +765,9 @@ function factor(f::PolyRingElem{T}) where T <: RelFinFieldElem
 end
 
 function is_irreducible(f::PolyRingElem{T}) where T <: RelFinFieldElem
+  is_zero(f) && return false
   l = factor(f)
-  return length(l.fac) == 1
+  return sum(e for (_, e) in l; init = 0) == 1
 end
 
 

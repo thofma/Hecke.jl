@@ -493,7 +493,7 @@ function _is_maximal_integral(L::HermLat, p)
     valv = iszero(t) ? inf : valuation(t, Q)
     if valv >= 2
       # I don't want to compute the generators
-      genL = generators(L)
+      genL = gens(L)
       X = Vector{Union{Int, PosInf}}(undef, length(genL))
       for i in 1:length(genL)
         g = genL[i]

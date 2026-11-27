@@ -130,7 +130,7 @@ function _find_prime(L::RelSimpleNumField{AbsSimpleNumFieldElem})
       d1 = lcm(Int[x for (x, v) in FS])
       d = lcm(d, d1*degree(Q))
     end
-    if acceptable && d < threshold
+    if acceptable && d <= threshold
       candidates[i] = (p, d)
       i += 1
     end

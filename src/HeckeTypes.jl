@@ -227,8 +227,7 @@ mutable struct acb_root_ctx
     z.signature = (r, s)
 
     for i = 1:degree(x)
-      ccall((:acb_set, libflint), Nothing, (Ptr{acb_struct}, Ref{AcbFieldElem}),
-            z._roots + (i - 1) * sizeof(acb_struct), z.roots[i])
+      Nemo._acb_set(z._roots + (i - 1) * sizeof(acb_struct), z.roots[i])
     end
 
     z.prec = p
@@ -260,8 +259,7 @@ mutable struct acb_root_ctx
 end
 
 function _acb_root_ctx_clear_fn(x::acb_root_ctx)
-  ccall((:_acb_vec_clear, libflint), Nothing,
-              (Ptr{acb_struct}, Int), x._roots, degree(x.poly))
+  acb_vec_clear(x._roots, degree(x.poly))
 end
 
 ################################################################################
@@ -269,17 +267,6 @@ end
 #  SRow/SMat
 #
 ################################################################################
-
-mutable struct SMatSLP_add_row{T}
-  row::Int
-  col::Int
-  val::T
-end
-
-mutable struct SMatSLP_swap_row
-  row::Int
-  col::Int
-end
 
 ################################################################################
 #
@@ -374,7 +361,7 @@ mutable struct SRow{T, S} # S <: AbstractVector{T}
   function SRow{T, S}(A::SRow{T, S}; copy::Bool = false) where {T, S}
     copy || return A
     @assert Vector{T} === S
-    r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), copy(A.pos))
+    r = new{T, Vector{T}}(base_ring(A), Vector{T}(undef, length(A.pos)), Base.copy(A.pos))
     for i=1:length(r.values)
       r.values[i] = A.values[i]
     end
@@ -1455,30 +1442,26 @@ end
 function fb_int_doit(a::AbsSimpleNumFieldElem, v::Int, sP::FactorBaseSingleP)
   g = parent(sP.lf[1])(a)
   g = gcd(g, sP.pt.prod)
-  fl = is_smooth(sP.pt, g)[1]
-  if fl
-    d = factor(sP.pt, g)
-    r = Vector{Tuple{Int, Int}}()
-    vv=v
-    for x in keys(d)
-      id = something(findfirst(isequal(x), sP.lf), 0)
-      vv -= sP.lp[id][2].splitting_type[2]
-      push!(r, (sP.lp[id][1], 1))
-    end
-    if vv == 0
-      return r, vv
-    end
-    r = Vector{Tuple{Int, Int}}()
-    for x in keys(d)
-      id = something(findfirst(isequal(x), sP.lf), 0)
-      vl  = valuation(a, sP.lp[id][2])
-      v -= sP.lp[id][2].splitting_type[2]*vl
-      push!(r, (sP.lp[id][1], vl))
-    end
-    return r, v
-  else
-    return Vector{Tuple{Int, Int}}(), -1
+  # The gcd divides the factor-base product, so it is already smooth.
+  factors = _factor_divisor(sP.pt, g)
+  r = Vector{Tuple{Int, Int}}()
+  vv=v
+  for x in factors
+    id = something(findfirst(isequal(x), sP.lf), 0)
+    vv -= sP.lp[id][2].splitting_type[2]
+    push!(r, (sP.lp[id][1], 1))
   end
+  if vv == 0
+    return r, vv
+  end
+  r = Vector{Tuple{Int, Int}}()
+  for x in factors
+    id = something(findfirst(isequal(x), sP.lf), 0)
+    vl  = valuation(a, sP.lp[id][2])
+    v -= sP.lp[id][2].splitting_type[2]*vl
+    push!(r, (sP.lp[id][1], vl))
+  end
+  return r, v
 end
 
 mutable struct NfFactorBase
@@ -1993,8 +1976,8 @@ mutable struct ZpnGModule <: GModule
     z.G=G
     z.V=V
     z.R=parent(G[1][1,1])
-    fl, k, p = is_prime_power_with_data(Int(z.R.n))
-    @req fl "Modulus ($(z.R.n)) must be a prime power"
+    fl, k, p = is_prime_power_with_data(Int(modulus(z.R)))
+    @req fl "Modulus ($(modulus(z.R))) must be a prime power"
     z.p=p
     return z
   end
@@ -2066,15 +2049,14 @@ mutable struct PMat{T, S}
   coeffs::Vector{S}
 
   function PMat{T, S}(m::Generic.MatSpaceElem{T}, c::Vector{S}) where {T, S}
-    z = new{T, S}()
-    z.matrix = m
-    z.coeffs = c
-    return z
+    @req !isempty(c) "Specify the order for a pseudo-matrix without rows"
+    return PMat{T, S}(order(c[1]), m, c)
   end
 
-  function PMat{T, S}() where {T, S}
-    z = new{T, S}()
-    return z
+  function PMat{T, S}(O::Ring, m::Generic.MatSpaceElem{T}, c::Vector{S}) where {T, S}
+    @req nrows(m) == length(c) "Wrong number of coefficient ideals"
+    @req all(I -> order(I) === O, c) "Coefficient ideals must belong to the order"
+    return new{T, S}(O, m, c)
   end
 end
 

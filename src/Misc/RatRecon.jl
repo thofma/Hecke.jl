@@ -14,7 +14,7 @@
    or `false` (and garbage) if this is not possible.
 """
 function rational_reconstruction(a::PolyRingElem{S}, b::PolyRingElem{S}, n::Int, m::Int) where S
-  R = a.parent
+  R = parent(a)
   if degree(a) <= n return true, a, R(1); end
 
   M = zero_matrix(R, 2, 2)
@@ -57,7 +57,7 @@ function rational_reconstruction(a::ZZRingElem, b::ZZRingElem; error_tolerant::B
 end
 
 function rational_reconstruction(a::Integer, b::Integer; error_tolerant::Bool = false, kw...)
-  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b), error_tolerant, kw...)
+  return rational_reconstruction(ZZRingElem(a), ZZRingElem(b); error_tolerant, kw...)
 end
 
 function rational_reconstruction(a::ZZRingElem, b::ZZRingElem, N::ZZRingElem, D::ZZRingElem)
@@ -123,7 +123,7 @@ end
 
 function rational_reconstruction_subres(g::PolyRingElem{T}, f::PolyRingElem{T}, bnd::Int = -1; error_tolerant::Bool = false) where T
     # the denominator is normalized
-    R_2 = g.parent
+    R_2 = parent(g)
     r_1 = R_2(1); t_1 = R_2(0)
     r_m = r_1;t_m = r_1
     q1 = t_1; q_m = r_1
@@ -308,10 +308,10 @@ end
 function berlekamp_massey_naive(L::Vector{T}; parent = polynomial_ring(parent(L[1]), "x", cached = false)[1]) where T
      R_s = Nemo.parent(L[1])
      lg = length(L)
-     L = [R_s(L[lg-i]) for i in 0:lg-1]
+     Lrev = [R_s(L[lg-i]) for i in 0:lg-1]
      Ry = parent
      Y = gen(Ry)
-     g = Ry(L)
+     g = Ry(Lrev)
      if iszero(g)
        return true, g
      end
@@ -375,7 +375,7 @@ end
 ################################################################################
 
 function _modpResults(f, p::ZZRingElem, M::Int)
-   Rc = f.parent
+   Rc = parent(f)
    l1 = fpPolyRingElem[]; l3 = ZZRingElem[]
    Np = listprimes([f], p, M)
    for j in 1:length(Np)
@@ -415,7 +415,8 @@ function listprimes(f::Vector{QQPolyRingElem}, p::ZZRingElem, M::Int)
    i=0; L = ZZRingElem[]
    while true
     i += 1
-    if all(x-> testPrime_jl(x,p), f)
+    q = p
+    if all(x-> testPrime_jl(x,q), f)
        push!(L, p)
     end
     if i == M

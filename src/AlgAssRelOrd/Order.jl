@@ -18,7 +18,7 @@ _algebra(O::AlgAssRelOrd) = algebra(O)
 
 Returns an order $R$ in the base ring of the algebra of $O$, such that $O$ is an $R$-order.
 """
-base_ring(O::AlgAssRelOrd) = order(basis_pmatrix(O, copy = false).coeffs[1])
+base_ring(O::AlgAssRelOrd) = base_ring(basis_pmatrix(O, copy = false))
 
 base_ring_type(::Type{<:AlgAssRelOrd{S, T, U}}) where {S, T, U} = order_type(base_ring_type(U))
 
@@ -42,7 +42,7 @@ is_commutative(O::AlgAssRelOrd) = is_commutative(algebra(O))
 Returns the order of $A$ with basis matrix $M$.
 """
 function order(A::AbstractAssociativeAlgebra{S}, M::Generic.Mat{S}) where S <: NumFieldElem
-  return AlgAssRelOrd{S, fractional_ideal_type(order_type(base_ring(A))), typeof(A)}(A, deepcopy(M))
+  return order(A, pseudo_matrix(M))
 end
 
 @doc raw"""
@@ -52,7 +52,8 @@ end
 Returns the order of $A$ with basis pseudo-matrix $M$.
 """
 function order(A::AbstractAssociativeAlgebra{S}, M::PMat{S, T}) where { S <: NumFieldElem, T }
-  return AlgAssRelOrd{S, T, typeof(A)}(A, deepcopy(M))
+  MM = pseudo_hnf(M, :lowerleft, true)
+  return AlgAssRelOrd{S, T, typeof(A)}(A, MM)
 end
 
 @doc raw"""
@@ -541,7 +542,7 @@ function any_order(A::AbstractAssociativeAlgebra{T}, R::Union{ AbsNumFieldOrder,
   M = vcat(zero_matrix(K, 1, dim(A)), d*identity_matrix(K, dim(A)))
   oneA = one(A)
   for i = 1:dim(A)
-    M[1, i] = deepcopy(coefficients(oneA, copy = false)[i])
+    M[1, i] = deepcopy(coeff(oneA, i))
   end
   PM = pseudo_matrix(M)
   PM = pseudo_hnf(PM, :lowerleft, true)
@@ -592,7 +593,7 @@ function _simple_maximal_order(O::AlgAssRelOrd, make_free::Bool = true, ::Val{wi
 
 
   M = sub(PM.matrix, 1:n, 1:n)
-  PM = pseudo_matrix(M, PM.coeffs[1:n])
+  PM = pseudo_matrix(base_ring(PM), M, PM.coeffs[1:n])
   U = similar(PM.matrix, 0, 0)
   steinitz_form!(PM, U, false)
 
@@ -932,14 +933,26 @@ end
 # Returns a vector containing a system of representatives of the maximal orders
 # of A with respect to conjugation, that is, any maximal order of A is conjugated
 # to one of them and no two returned orders are conjugated.
-# Only works for algebras fulfilling the Eichler condition.
+# For a totally definite quaternion algebra these are the types of a maximal
+# order.
 representatives_of_maximal_orders(A::StructureConstantAlgebra{AbsSimpleNumFieldElem}) = representatives_of_maximal_orders(maximal_order(A))
+
+function representatives_of_maximal_orders(
+    O::AlgAssRelOrd{AbsSimpleNumFieldElem, <:Any, <:QuaternionAlgebra})
+  @req is_maximal(O) "Order must be maximal"
+  return type_set(O)
+end
 
 function representatives_of_maximal_orders(O::AlgAssRelOrd)
   A = algebra(O)
-  @assert is_simple(A)
-  @assert is_eichler(A)
-  @assert is_maximal(O)
+  @req is_simple(A) "Algebra must be simple"
+  d = dimension_over_center(A)
+  @req d == 4 || d == 1 || is_central(A) (
+    "Algebra must be central, a field or a quaternion algebra over its center")
+  @req is_maximal(O) "Order must be maximal"
+  d == 4 && return type_set(O)
+  # a number field has one maximal order, its ring of integers
+  d == 1 && return typeof(O)[ O ]
   K = base_ring(A)
   OK = base_ring(O)
   n2 = dim(A)

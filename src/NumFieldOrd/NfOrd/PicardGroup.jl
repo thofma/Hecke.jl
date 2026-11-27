@@ -162,6 +162,20 @@ function _unit_group_non_maximal(O::Union{AbsNumFieldOrder, AlgAssAbsOrd}, OK, G
   S, StoK = snf(K)
   StoG = compose(StoK, KtoG)
 
+  # Reduce the free generators before evaluating their products.
+  # Unit group domains are in SNF, with the free generators last.
+  r = torsion_free_rank(S)
+  if r > 1
+    free_S = (ngens(S) - r + 1):ngens(S)
+    free_G = (ngens(G) - torsion_free_rank(G) + 1):ngens(G)
+    _, U = lll_with_transform(matrix(StoG)[free_S, free_G])
+    C = identity_matrix(ZZ, ngens(S))
+    C[free_S, free_S] = U
+    # The inverse unit map also uses StoK.
+    StoK = compose(hom(S, S, C), StoK)
+    StoG = compose(StoK, KtoG)
+  end
+
   # Build the map from S to O
   function _image(x::FinGenAbGroupElem)
     @assert parent(x) == S

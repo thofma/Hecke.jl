@@ -50,7 +50,19 @@ function saturate(A::ZZMatrix) :: ZZMatrix
   return S
 end
 
-function _hnf(x::T, shape::Symbol = :upperright) where {T <: MatElem}
+function _hnf(x::T; shape::Symbol = :upperright, trim::Bool = false) where {T <: MatElem}
+  x = _hnf(x, shape)
+  if trim
+    if shape === :lowerleft
+      return trim_lowerleft(x)
+    else
+      return trim_upperright(x)
+    end
+  end
+  return x
+end
+
+function _hnf(x::T, shape::Symbol) where {T <: MatElem}
   if shape == :lowerleft
     h = hnf(reverse_cols(x))
     reverse_cols!(h)
@@ -73,8 +85,7 @@ function _hnf_with_transform(x::T, shape::Symbol = :upperright) where {T <: MatE
   return hnf_with_transform(x)::Tuple{T, T}
 end
 
-
-function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
+function _hnf!(x::T, shape::Symbol) where {T <: MatElem}
   if shape == :lowerleft
     reverse_cols!(x)
     hnf!(x)
@@ -86,7 +97,19 @@ function _hnf!(x::T, shape::Symbol = :upperright) where {T <: MatElem}
   return x::T
 end
 
-function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem, shape::Symbol = :upperright)
+function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem; shape::Symbol = :upperright, trim::Bool = false)
+  x = _hnf_modular_eldiv(x, m, shape)
+  if trim
+    if shape === :lowerleft
+      return trim_lowerleft(x)
+    else
+      return trim_upperright(x)
+    end
+  end
+  return x
+end
+
+function _hnf_modular_eldiv(x::ZZMatrix, m::ZZRingElem, shape::Symbol)
   if shape == :lowerleft
     h = hnf_modular_eldiv!(reverse_cols(x), m)
     reverse_cols!(h)
@@ -243,7 +266,7 @@ function reduce_mod_hnf_ur!(a::ZZMatrix, H::ZZMatrix)
         n = mat_entry_ptr(a, c, j)
         m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
-        ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
+        fdiv!(q, n, m)
         #q = fdiv(a[c, j], H[i, j])
         fl = is_zero(q)
         if fl
@@ -275,7 +298,7 @@ function reduce_mod_hnf_ll!(a::ZZMatrix, H::ZZMatrix)
         n = mat_entry_ptr(a, c, j)
         m = mat_entry_ptr(H, i, j)
         q = ZZRingElem()
-        ccall((:fmpz_fdiv_q, libflint), Nothing, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{ZZRingElem}), q, n, m)
+        fdiv!(q, n, m)
         #q = fdiv(a[c, j], H[i, j])
         fl = is_zero(q)
         if fl
@@ -389,8 +412,8 @@ function mult_by_2pow_diag!(a::Matrix{BigFloat}, d::ZZMatrix, R=_RealRings[Threa
   tmp_mpz::BigInt = R.z1
   for i = 1:s[1]
       for j = 1:s[2]
-          e = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}), tmp_mpz, a[i, j])
-          ccall((:mpfr_set_z_2exp, :libmpfr), Nothing, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i, j], tmp_mpz, e + Clong(Int(d[1, j])), __get_rounding_mode())
+          e = ccall((:mpfr_get_z_2exp, Base.MPFR.libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}), tmp_mpz, a[i, j])
+          ccall((:mpfr_set_z_2exp, Base.MPFR.libmpfr), Nothing, (Ref{BigFloat}, Ref{BigInt}, Clong, Int32), a[i, j], tmp_mpz, e + Clong(Int(d[1, j])), __get_rounding_mode())
       end
   end
 end
@@ -416,9 +439,9 @@ function round_scale!(b::ZZMatrix, a::Matrix{BigFloat}, l::Int, R=_RealRings[Thr
       for j = 1:s[2]
           e = a[i, j].exp
           a[i, j].exp += l
-          ccall((:mpfr_round, :libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), tmp_mpfr, a[i, j], rd)
+          ccall((:mpfr_round, Base.MPFR.libmpfr), Int32, (Ref{BigFloat}, Ref{BigFloat}, Int32), tmp_mpfr, a[i, j], rd)
           a[i, j].exp = e
-          f = ccall((:mpfr_get_z_2exp, :libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
+          f = ccall((:mpfr_get_z_2exp, Base.MPFR.libmpfr), Clong, (Ref{BigInt}, Ref{BigFloat}),
               tmp_mpz, tmp_mpfr)
           ccall((:fmpz_set_mpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{BigInt}), tmp_fmpz, tmp_mpz)
           if f > 0
@@ -439,8 +462,7 @@ function round_scale!(b::ZZMatrix, a::ArbMatrix, l::Int)
   r = R()
   for i = 1:s[1]
       for j = 1:s[2]
-          v = ccall((:arb_mat_entry_ptr, libflint), Ptr{ArbFieldElem},
-              (Ref{ArbMatrix}, Int, Int), a, i - 1, j - 1)
+          v = mat_entry_ptr(a, i, j)
           ccall((:arb_mul_2exp_si, libflint), Nothing, (Ref{ArbFieldElem}, Ptr{ArbFieldElem}, Int), r, v, l)
           b[i, j] = round(ZZRingElem, r)
       end
@@ -470,14 +492,12 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
         if is_lower_triangular(S)
           break
         end
-        ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{ZZMatrix}, Ref{ZZMatrix}), S, S)
+        transpose!(S)
         ccall((:fmpz_mat_hnf_transform, libflint), Nothing,
            (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{ZZMatrix}), S, T, S)
         #S, T = hnf_with_transform(S)
         R = mul!(R, T, R)
-        ccall((:fmpz_mat_transpose, libflint), Nothing,
-           (Ref{ZZMatrix}, Ref{ZZMatrix}), S, S)
+        transpose!(S)
         if is_upper_triangular(S)
           break
         end
@@ -488,23 +508,16 @@ function snf_for_groups(A::ZZMatrix, mod::ZZRingElem)
   GC.@preserve S R begin
     for i=1:min(nrows(S), ncols(S))
       Sii = mat_entry_ptr(S, i, i)
-      fl = is_one(Sii)
-      if fl
+      if is_one(Sii)
         continue
       end
       for j=i+1:min(nrows(S), ncols(S))
         Sjj = mat_entry_ptr(S, j, j)
-        fl = is_zero(Sjj)
-        if fl
+        if is_zero(Sjj)
           continue
         end
-        fl1 = is_zero(Sii)
-        if !fl1
-          fl2 = Bool(ccall((:fmpz_divisible, libflint), Cint,
-              (Ref{ZZRingElem}, Ref{ZZRingElem}), Sjj, Sii))
-          if fl2
-            continue
-          end
+        if !is_zero(Sii) && is_divisible_by(Sjj, Sii)
+          continue
         end
         #if S[i,i] != 0 && S[j,j] % S[i,i] == 0
         #  continue
@@ -975,8 +988,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     for i = 1:nrows(M)
       SR[i, i+nrows(M)] = 1
     end
-    ccall((:nmod_mat_howell_form, libflint), Nothing, (Ref{zzModMatrix}, ), SR)
-    #howell_form!(SR)
+    howell_form!(SR)
     iMR = SR[1:nrows(M), nrows(M)+1:ncols(SR)]
     #@assert iMR*MRR == identity_matrix(RR, nrows(M))
     return lift(iMR)
@@ -988,7 +1000,7 @@ function invmod(M::ZZMatrix, d::ZZRingElem)
     for i = 1:nrows(M)
       S[i, i+nrows(M)] = 1
     end
-    ccall((:fmpz_mod_mat_howell_form, libflint), Nothing, (Ref{ZZModMatrix}, Ref{Nemo.fmpz_mod_ctx_struct}), S, R.ninv)
+    howell_form!(S)
     iM = S[1:nrows(M), nrows(M)+1:ncols(S)]
     #@assert iM*MR == identity_matrix(R, nrows(M))
     return lift(iM)
@@ -1002,13 +1014,55 @@ end
 #
 ################################################################################
 
-# we avoid to compute twice the minpoly in case of finite order
-function _has_finite_multiplicative_order(f)
-  @assert is_square(f)
-  chi = minpoly(f)
-  !Hecke.is_squarefree(chi) && return (false, [Pair(chi, 1)])
-  fact = collect(factor(chi))
-  return all(p -> is_cyclotomic_polynomial(p[1]), fact), fact
+# All pairs `(n, euler_phi(n))` with `euler_phi(n) <= d`.
+function _euler_phi_at_most(d::Int)
+  res = [(1, 1)]
+  for p in PrimesSet(2, d + 1)
+    for i in 1:length(res)
+      n, e = res[i]
+      q, f = p, p - 1
+      while e * f <= d
+        push!(res, (n * q, e * f))
+        q *= p
+        f *= p
+      end
+    end
+  end
+  return res
+end
+
+# Return the multiplicative order of `f` if it is finite, `-1` if `f` is not
+# invertible over its base ring, and `0` otherwise.
+#
+# Dividing the cyclotomic factors off the characteristic polynomial takes
+# 4 us in degree 8, factoring it 50 us. If nothing remains, `f` has finite
+# order if and only if `f^L` is one, where `L` is the lcm of the orders of
+# the eigenvalues.
+function _multiplicative_order(f::Union{ZZMatrix, QQMatrix})
+  is_one(f) && return ZZ(1)
+  # involutions are common and cost a single product
+  is_one(f * f) && return ZZ(2)
+  chi = charpoly(f)
+  is_unit(constant_coefficient(chi)) || return ZZ(-1)
+  if chi isa QQPolyRingElem
+    is_one(denominator(chi)) || return ZZ(0)
+    chi = numerator(chi)
+  end
+  x = gen(parent(chi))
+  L = ZZ(1) # can exceed `typemax(Int)`
+  for (n, e) in _euler_phi_at_most(degree(chi))
+    e > degree(chi) && continue
+    c = cyclotomic(n, x)
+    b, q = divides(chi, c)
+    while b
+      L = lcm(L, n)
+      chi = q
+      b, q = divides(chi, c)
+    end
+  end
+  is_one(chi) || return ZZ(0)
+  is_one(f^L) || return ZZ(0)
+  return L
 end
 
 @doc raw"""
@@ -1043,7 +1097,7 @@ false
 """
 function has_finite_multiplicative_order(f::Union{ZZMatrix, QQMatrix})
   @req is_square(f) "Matrix must be square"
-  return _has_finite_multiplicative_order(f)[1]
+  return _multiplicative_order(f) > 0
 end
 
 @doc raw"""
@@ -1078,19 +1132,11 @@ infinity
 ```
 """
 function multiplicative_order(f::Union{ZZMatrix, QQMatrix})
-  @req is_invertible(f) "Matrix must be invertible"
-  bool, fact = _has_finite_multiplicative_order(f)
-  bool || return PosInf()
-  degs = unique([degree(p[1]) for p in fact])
-  exps = Int.(euler_phi_inv(degs[1]))
-  for i in 1:length(degs)
-    union!(exps, Int.(euler_phi_inv(degs[i])))
-  end
-  maxdeg = lcm(exps)
-  divmd = sort(divisors(maxdeg))
-  n = findfirst(k -> isone(f^k), divmd)
-  @assert n !== nothing
-  return divmd[n]
+  @req is_square(f) "Matrix must be square"
+  n = _multiplicative_order(f)
+  @req n >= 0 "Matrix must be invertible"
+  is_zero(n) && return PosInf()
+  return Int(n)
 end
 
 ################################################################################
@@ -1125,4 +1171,156 @@ function remove_row(M, r)
     l += 1
   end
   return N
+end
+
+#
+
+# TODO: remove and use snf_with_transform once Nemo release contains https://github.com/Nemocas/Nemo.jl/pull/2297
+function __snf_with_transform(A::ZZMatrix, l::Bool=true, r::Bool=true; is_hnf::Bool = false)
+  # always need R and L defined for the GC.@preserve block below
+  if r
+    R = identity_matrix(ZZ, ncols(A))
+  else
+    R = A
+  end
+
+  if l
+    L = identity_matrix(ZZ, nrows(A))
+  else
+    L = A
+  end
+
+  S = deepcopy(A)
+  Stra = is_square(S) ? S : zero_matrix(ZZ, ncols(S), nrows(S))
+  first = true
+  while !is_diagonal(S)
+    # Most of the work seems to be done for the first HNF
+    # Since we can always choose the side we start with
+    # in case only one transformation is requested, we start with the side where no
+    # transformation is request.
+    # r && !l (this is the standard)
+    #   l -> r (with transform) -> l -> r (with transform) -> ...
+    # l && !r
+    #   r -> l (with transform) -> r -> l (with_transform)
+    if !(first && l && !r)
+      if l
+        S, T = hnf_with_transform(S)
+        L = T * L
+      else
+        S = hnf!(S)
+      end
+    end
+    first = false
+
+    if is_diagonal(S)
+      break
+    end
+
+    if r
+      #S, T = hnf_with_transform(transpose(S))
+      Stra, T = hnf_with_transform(transpose!(Stra, S))
+      Stra, S = S, Stra
+      R = T * R
+    else
+      #S = hnf!(transpose(S))
+      Stra = hnf!(transpose!(Stra, S))
+      Stra, S = S, Stra
+    end
+    #S = transpose(S)
+    Stra = transpose!(Stra, S)
+    Stra, S = S, Stra
+  end
+  #this is probably not really optimal...
+  a = ZZRingElem()
+  b = ZZRingElem()
+  g = ZZRingElem()
+  e = ZZRingElem()
+  f = ZZRingElem()
+  x = ZZRingElem()
+  y = ZZRingElem()
+  z = ZZRingElem()
+  GC.@preserve S L R begin
+    for i = 1:min(nrows(S), ncols(S))
+      if is_one(mat_entry_ptr(S, i, i))
+        continue
+      end
+      for j = i+1:min(nrows(S), ncols(S))
+        #if S[j, j] == 0
+        if is_zero_entry(S, j, j)
+          continue
+        end
+        if !is_zero_entry(S, i, i) && is_divisible_by(mat_entry_ptr(S, j, j), mat_entry_ptr(S, i, i))
+        #if S[i, i] != 0 && S[j, j] % S[i, i] == 0 #is_divisible_by(mat_entry_ptr(S, j, j), mat_entry_ptr(S, i, i))
+          continue
+        end
+        g, e, f = gcdx!(g, e, f, mat_entry_ptr(S, i, i), mat_entry_ptr(S, j, j))
+        #a = divexact(S[i, i], g)
+        a = divexact!(a, mat_entry_ptr(S, i, i), g)
+        S[i, i] = g
+        #b = divexact(S[j, j], g)
+        b = divexact!(b, mat_entry_ptr(S, j, j), g)
+        #S[j, j] *= a
+        mul!(mat_entry_ptr(S, j, j), a)
+        b = neg!(b)
+        if l
+          # U = [1 0; -b*f 1] * [ 1 1; 0 1] = [1 1; -b*f -b*f+1]
+          # so row i and j of L will be transformed. We do it naively
+          # those 2x2 transformations of 2 rows should be a c-primitive
+          # or at least a Nemo/Hecke primitive
+          for k = 1:ncols(L)
+            #x = -b * f
+            x = mul!(x, b, f)
+            #L[i, k], L[j, k] = L[i, k] + L[j, k], x * (L[i, k] + L[j, k]) + L[j, k]
+            add!(mat_entry_ptr(L, i, k), mat_entry_ptr(L, j, k))
+            addmul!(mat_entry_ptr(L, j, k), x, mat_entry_ptr(L, i, k))
+          end
+          #b = neg!(b)
+        end
+        if r
+          # V = [e -b ; f a];
+          # so col i and j of R will be transformed. We do it naively
+          # careful: at this point, R is still transposed
+          for k = 1:nrows(R)
+            #R[i, k], R[j, k] = e * R[i, k] + f * R[j, k], -b * R[i, k] + a * R[j, k]
+            set!(x, mat_entry_ptr(R, j, k))
+            set!(z, mat_entry_ptr(R, i, k))
+
+            mul!(y, f, x)
+            mul!(mat_entry_ptr(R, i, k), e, mat_entry_ptr(R, i, k))
+            add!(mat_entry_ptr(R, i, k), y)
+
+            mul!(mat_entry_ptr(R, j, k), a, mat_entry_ptr(R, j, k))
+            mul!(z, z, b)
+            add!(mat_entry_ptr(R, j, k), z)
+          end
+        end
+      end
+    end
+
+    # It might be the case that S was diagonal with negative diagonal entries.
+    mone = neg!(one(ZZ))
+    for i in 1:min(nrows(S), ncols(S))
+      if is_negative_entry(S, i, i)
+        if l
+          multiply_row!(L, mone, i)
+        end
+        neg!(mat_entry_ptr(S, i, i))
+        #S[i, i] = -S[i, i]
+      end
+    end
+  end
+  if l
+    if r
+      return S, L, transpose!(R)
+    else
+      # last is dummy
+      return S, L, L
+    end
+  elseif r
+    # second is dummy
+    return S, R, transpose!(R)
+  else
+    # last two are dummy
+    return S, S, S
+  end
 end

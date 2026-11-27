@@ -158,6 +158,23 @@
        @test overlaps(lh, parent(lh)("2.288529620287974"))
      end
 
+    # On y^2 = x^3 + u^2, the local height of (0, u) is log(4*u^2)/3.
+    @testset "Small negative discriminant" begin
+      u = QQ(1, ZZ(2)^5000)
+      E = elliptic_curve([QQ(0), u^2])
+      lh = local_height(E([0, u]), 0, 10)
+      @test contains(lh, log(ArbField(256)(4*u^2)) / 3)
+      @test Hecke.radiuslttwopower(lh, -10)
+    end
+
+    @testset "Truncation bound straddles an integer" begin
+      u = ZZ("3711975007276096")
+      E = elliptic_curve([0, u^2])
+      lh = local_height(E([0, u]), 0, 2)
+      @test contains(lh, log(ArbField(256)(4*u^2)) / 3)
+      @test Hecke.radiuslttwopower(lh, -2)
+    end
+
      let E, P
        K, a = number_field(x^3 - x^2 + 1)
        E = elliptic_curve(K, [a, 1 + a , a, a, 0])
@@ -178,9 +195,74 @@
        @test contains(lh, lh2)
      end
 
+    # archimedean local height does not change under u = 1
+
+    let E = elliptic_curve(QQ, [0, 0, 1, -1, 0])
+      P = E([0, 0])
+      _, phi, _ = transform_rstu(E, QQ.([1//2, 1//2, 1//2, 1]))
+      @test overlaps(local_height(phi(P), 0, 50), local_height(P, 0, 50))
+    end
+
+    for L in (quadratic_field(17)[1], quadratic_field(-17)[1])
+      w = (1 + gen(L))//2
+      E = elliptic_curve(L, [0, 0, 1, -1, 0])
+      P = E([0, 0])
+      G, phi, _ = transform_rstu(E, [w, w, w, 1])
+      for v in vcat(real_places(L), complex_places(L))
+        @test overlaps(local_height(phi(P), v, 50), local_height(P, v, 50))
+      end
+    end
+
+    # corner case in local height computation: |sigma(P_x)| = 1/2 exactly
+    # before the fix this testcase would just hang, infinitely increasing precision
+    let (K, i) = number_field(x^2 + 1, :i),
+        E = elliptic_curve(K, [0, 0, 0, 0, -288 - 91*i]),
+      D = 1 + 3*i
+      P = E([(3 - 4*i)//D^2, (-378 + 399*i)//D^3])
+      v = complex_places(K)[1]
+
+      h = local_height(P, v, 50)
+      @test overlaps(h, parent(h)("2.3664798676775410944873740579471174"))
+    end
+
+    let (K, b) = number_field(x^2 - 2, :b)
+      # corner case in local height computation: |Delta|_v is very small
+      # before the fix this testcase will throw an exception, since absolute precision for
+      #   for computing discriminant is too low, resuling in it being zero
+      for k in (10, 20, 30, 40, 50)
+        u = (1 - b)^k
+        E = elliptic_curve(K, [0, 0, 0, 0, u^2])
+
+        P = E([0, u])
+        @test is_infinite(3*P)
+        @test contains(canonical_height(P, 50), 0)
+      end
+
+      # corner case in local height computation: the bound on the number of series terms straddles an integer
+      # before the fix this testcase will throw an exception "Argument must represent a unique integer"
+      # NOTE: this happening of course heavily depends on the exact ball returned for a given precision,
+      #   but this can never start failing for unrelated reasons, so it is safe to have it tested always
+      u = (1 - b)^30
+      E = elliptic_curve(K, [0, 0, 0, 0, u^2])
+      P = E([0, u])
+      for v in real_places(K)
+        @test Hecke.radiuslttwopower(local_height(P, v, 1568), -1568)
+      end
+
+      # corner case in local height computation: the first working precision is too
+      #   low at a place where the coefficients are huge.
+      # before the fix this testcase will throw an AssertionError in expand!.
+      u = (b - 1)^5
+      E = elliptic_curve(K, [0, 0, u^3, -u^4, 0])
+      P = E([0, 0])
+      for v in real_places(K)
+        h = local_height(P, v, 100)
+        hp = local_height(P, v, 2)
+        @test Hecke.radiuslttwopower(hp, -2)
+        @test overlaps(hp, h)
+      end
+    end
   end
-
-
 
   @testset "Canonical height" begin
      E1 = elliptic_curve([1, -1, 1, -2063758701246626370773726978, 32838647793306133075103747085833809114881])
@@ -191,8 +273,48 @@
      @test Hecke.radiuslttwopower(ch2, -1000)
      @test contains(ch, ch2)
 
+    # 37.a1
+    let h00 = "0.051111408239968840235886099757"
+      transform = [[0, 0, 0, 1],           # the minimal model itself
+                   [0, 0, 0, 1//2],        # non-minimal at 2 (good reduction)
+                   [0, 0, 0, 1//37],       # non-minimal at 37 (bad reduction)
+                   [0, 0, 0, 2],           # non-integral at 2
+                   [1//3, 1, 1//2, 3//7]]  # non-minimal and non-integral
+      for F in [QQ, K, quadratic_field(17)[1]], rstu in transform
+        E = elliptic_curve(F, [0, 0, 1, -1, 0])
+        G, phi, _ = transform_rstu(E, map(F, rstu))
+        P = phi(E([0, 0]))
 
+        h = @inferred canonical_height(P, 50)
+        @test overlaps(h, parent(h)(h00))
 
+        # in Q(sqrt(17)), 2 splits and [OK : Z[sqrt(17)]] = 2, thus minimal
+        #   model at primes above 2 carry denominators
+        h = @inferred canonical_height(2*P, 50)
+        @test overlaps(h, 4*parent(h)(h00))
+
+        h = @inferred canonical_height(5*P, 50)
+        @test overlaps(h, 25*parent(h)(h00))
+
+        @test contains(canonical_height(infinity(G), 50), 0)
+      end
+    end
+
+    # Order-two point with a denominator at the bad prime (2).
+    let E = elliptic_curve(K, [1, 1, 0, -20700, 1134000]),
+        P = E([315//4, -315//8])
+      @test is_infinite(2*P)
+      h = @inferred canonical_height(P, 100)
+      @test contains(h, 0)
+      @test Hecke.radiuslttwopower(h, -100)
+    end
+
+    # x(P) = (3*a^2 - 2*a + 16)/25: denominator ideal of norm 25 (5 splits), integer denominator 25 of norm 25^3
+    let E = elliptic_curve(K, [0, a^2 - 1, 1, -a^2, 0]),
+        P = 2*E([-a + 1, -a^2 + a - 1])
+      h = @inferred canonical_height(P, 100)
+      @test overlaps(h, parent(h)("1.0879631588314750249053432385433044425046669"))
+    end
   end
 
   @testset "Neron-Tate height" begin

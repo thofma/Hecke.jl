@@ -66,7 +66,13 @@ function preimage(f::ModAlgHom, a::ModAlgAssElem)
 end
 
 function zero_map(V::ModAlgAss, W::ModAlgAss)
-  return hom(V, W, zero_matrix(base_ring(algebra(V)), dim(V), dim(W)))
+  K = coefficient_ring(V)
+  if !has_algebra(V) && !has_algebra(W)
+    @req K == coefficient_ring(W) "Modules must have same coefficient ring"
+    consistent_action(V, W)
+  end
+  M = zero_matrix(K, dim(V), dim(W))
+  return hom(V, W, M; check = false)
 end
 
 #################################################################################
@@ -141,7 +147,7 @@ function endomorphism_algebra(V::ModAlgAss)
         @assert x[i] * b == b * x[i]
       end
     end
-    A = matrix_algebra(coefficient_ring(V), B, isbasis = true)
+    A = matrix_algebra(coefficient_ring(V), B, is_basis = true)
     f = EndAlgMap(A, V)
     set_attribute!(V, :endomorphism_algebra => f)
     return A, f

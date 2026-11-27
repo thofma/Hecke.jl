@@ -720,18 +720,37 @@ function baby_step_giant_step(g, n, h, cache::Dict)
   m = ZZRingElem(isqrt(n) + 1)
   if isempty(cache)
     it = g^0
-    for j in 0:m
-      cache[it] = j
-      it *= g
+    if fits(Int, m)
+      for j in 0:Int(m)
+        cache[it] = j
+        it *= g
+      end
+    else
+      for j in 0:m
+        cache[it] = j
+        it *= g
+      end
     end
   end
   b = g^(-m)
   y = h
-  for i in 0:m-1
-    if haskey(cache, y)
-      return ZZRingElem(mod(i*m + cache[y], n))
-    else
-      y *= b
+  # the largest value is m * m + m <= 2m*2
+  if 2*nbits(m) + 1 < 8 * sizeof(Int)
+    mm = Int(m)
+    for i in 0:mm-1
+      if haskey(cache, y)
+        return ZZRingElem(mod(i*mm + cache[y], n))
+      else
+        y *= b
+      end
+    end
+  else
+    for i in 0:m-1
+      if haskey(cache, y)
+        return ZZRingElem(mod(i*m + cache[y], n))
+      else
+        y *= b
+      end
     end
   end
   error("Couldn't find discrete logarithm")
@@ -819,7 +838,7 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
   end
   inv=gcdx(m,ZZRingElem(powerp))[2]
 
-  function disclog(x::AbsSimpleNumFieldOrderElem)
+  function disclog(x::AbsSimpleNumFieldOrderElem, big_step_cache)
     t=mQ(x)^m
     if powerp<10
       w=1
@@ -830,16 +849,19 @@ function _prime_part_multgrp_mod_p(p::AbsNumFieldOrderIdeal{AbsSimpleNumField, A
       end
       return ZZRingElem[w*inv]
     else
-      return ZZRingElem[_pohlig_hellman_prime_power(g,prime,s,t)*inv]
+      return ZZRingElem[_pohlig_hellman_prime_power(g, prime, s, t;
+                                                  big_step_cache = big_step_cache)*inv]
     end
   end
 
-  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ ZZRingElem(powerp) ], disclog)
+  # Reuse the baby-step giant-step cache across preimages.
+  map = GrpAbFinGenToNfAbsOrdMap(O, [ mQ\g ], [ ZZRingElem(powerp) ],
+                              Base.Fix2(disclog, Dict{typeof(g), ZZRingElem}()))
   return domain(map), map
 end
 
 
-function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer)
+function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::IntegerUnion; method = nothing)
   O = Q.base_ring
   OtoQ = NfOrdQuoMap(O, Q)
 
@@ -879,7 +901,7 @@ function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer)
     end
 
     if haskey(y2, q)
-      G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], q^y2[q])
+      G2, G2toO = _1_plus_p_mod_1_plus_pv(q, y2[q], q^y2[q]; method)
 
       nq = norm(q) - 1
 
@@ -888,7 +910,11 @@ function _mult_grp(Q::AbsSimpleNumFieldOrderQuoRing, p::Integer)
       obcs_inv = gcdx(nq, obcs)[2]
 
       disc_log2 = function(x::AbsSimpleNumFieldOrderElem)
-        y = Q(x)^Int(nq)
+        if fits(Int, nq)
+          y = Q(x)^Int(nq)
+        else
+          y = Q(x)^nq
+        end
         z = G2toO.discrete_logarithm(y.elem)
         for i = 1:length(z)
           z[i] *= obcs_inv

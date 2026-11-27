@@ -18,7 +18,7 @@
 
   q = quadratic_space(K, diagonal_matrix(Hecke.diagonal_of_rational_span(L)))
   @test is_isometric(ambient_space(L),q)
-  gensL = generators(L, minimal=true)
+  gensL = gens(L, minimal=true)
   L1 = lattice(ambient_space(L), matrix(gensL))
   @test L1 == L
 
@@ -138,7 +138,7 @@
   OK = maximal_order(K)
   q = quadratic_space(K, K[1 0; 0 1])
   L = fractional_ideal(OK, K(1//2))*lattice(q)
-  S = lattice(q, matrix(generators(L)[1:1]))
+  S = lattice(q, matrix(gens(L)[1:1]))
   LS =  @inferred intersect(L, S)
   @test is_sublattice(L, LS) && is_sublattice(S, LS)
   T = @inferred orthogonal_submodule(L, S)
@@ -173,6 +173,81 @@
   @test is_isometric_with_isometry(L, L)[1]
 end
 
+@testset "Rank-zero automorphisms and isometries" begin
+  # Rank-zero quadratic and hermitian lattices have trivial automorphisms.
+  _, x = polynomial_ring(QQ, "x")
+  K, _ = number_field(x^2 - 2, "a")
+  _, t = polynomial_ring(K, "t")
+  E, _ = number_field(t^2 + 1, "b")
+  for (F, constructor) in ((K, quadratic_lattice), (E, hermitian_lattice))
+    Z = constructor(F, []; gram = identity_matrix(F, 2))
+    @test automorphism_group_order(Z) == 1
+    @test automorphism_group_generators(Z; ambient_representation = true) ==
+          [identity_matrix(F, 2)]
+    @test automorphism_group_generators(Z; ambient_representation = false) ==
+          [identity_matrix(F, 0)]
+    @test is_isometric(Z, Z)
+    @test is_isometric_with_isometry(Z, Z) == (true, zero_matrix(F, 0, 0))
+    N = constructor(F; gram = diagonal_matrix(F, [1, -1]))
+    for (L, M) in ((Z, N), (N, Z))
+      @test !is_isometric(L, M)
+      @test is_isometric_with_isometry(L, M) == (false, zero_matrix(F, 0, 0))
+    end
+  end
+
+  Z = quadratic_lattice(E, []; gram = identity_matrix(E, 2))
+  @test is_isometric(Z, Z)
+end
+
+@testset "Definite number field lattice isometry" begin
+  # Check sign compatibility and isometry certificates for both lattice types.
+  _, x = polynomial_ring(QQ, "x")
+  K, _ = number_field(x^2 - 2, "a")
+  E, _ = number_field(x^2 + 1, "b")
+  for (F, make_lattice) in ((K, quadratic_lattice), (E, hermitian_lattice))
+    for n in 1:2
+      D = identity_matrix(F, n)
+      P = make_lattice(F; gram = D)
+      N = make_lattice(F; gram = -D)
+      for (L, M) in ((P, N), (N, P))
+        @test !is_isometric(L, M)
+        @test is_isometric_with_isometry(L, M) ==
+              (false, zero_matrix(F, 0, 0))
+      end
+
+      U = identity_matrix(F, n)
+      U[1, n] = 1
+      for (s, L) in ((1, P), (-1, N))
+        M = make_lattice(F, U; gram = s * D)
+        for (A, B) in ((L, L), (L, M), (M, L))
+          @test is_isometric(A, B)
+          fl, T = is_isometric_with_isometry(A, B)
+          @test fl
+          @test base_ring(T) === F
+          @test T * gram_matrix(rational_span(B)) *
+                map_entries(involution(A), transpose(T)) ==
+                gram_matrix(rational_span(A))
+        end
+        M = make_lattice(F; gram = 2 * s * D)
+        @test !is_isometric(L, M)
+        @test is_isometric_with_isometry(L, M) ==
+              (false, zero_matrix(F, 0, 0))
+      end
+    end
+
+    I = make_lattice(F; gram = diagonal_matrix(F, [1, -1]))
+    for s in (1, -1)
+      L = make_lattice(F; gram = s * identity_matrix(F, 2))
+      @test !is_isometric(L, I)
+      @test is_isometric_with_isometry(L, I) ==
+            (false, zero_matrix(F, 0, 0))
+      @test is_isometric_with_isometry(I, L) ==
+            (false, zero_matrix(F, 0, 0))
+    end
+    @test_throws ArgumentError is_isometric_with_isometry(I, I)
+  end
+end
+
 @testset "Misc" begin
   Qx, x = QQ["x"]
   K, a = number_field(x - 1, "a")
@@ -190,8 +265,8 @@ end
   f = x - 1;
   K, a = number_field(f)
   D = matrix(K, 3, 3, [3, 2, 1, 2, 3, 1, 1, 1, 1]);
-  gens = [[1, -1, 0], [1, -1, 0], [0, 1, -1], [0, 1, -1]]
-  L = quadratic_lattice(K, gens, gram = D)
+  gs = [[1, -1, 0], [1, -1, 0], [0, 1, -1], [0, 1, -1]]
+  L = quadratic_lattice(K, gs, gram = D)
   p = prime_decomposition(maximal_order(K), 2)[1][1]
   B, B, S = jordan_decomposition(L, p)
   @test length(S) == 1
@@ -206,8 +281,26 @@ end
   @test codomain(VrestoV) === ambient_space(L)
   Lres = restrict_scalars(L, QQ)
   @test ambient_space(Lres) === Vres
-  @test all(v -> VrestoV(VrestoV\v) == v, generators(L))
+  @test all(v -> VrestoV(VrestoV\v) == v, gens(L))
 
+  # restriction of scalars from QQ to QQ rescales the form by alpha
+  V = quadratic_space(QQ, QQ[2 1; 1 2])
+  Vres, VrestoV = restrict_scalars(V, QQ)
+  @test gram_matrix(Vres) == gram_matrix(V)
+  @test codomain(VrestoV) === V
+  Vres, = restrict_scalars(V, QQ, QQ(3))
+  @test gram_matrix(Vres) == 3 * gram_matrix(V)
+
+  # restriction of scalars of a ZZ-lattice to QQ keeps its basis
+  L = lattice(V, QQ[1 1; 1//2 0])
+  Lres = restrict_scalars(L, QQ)
+  @test basis_matrix(Lres) == basis_matrix(L)
+  @test gram_matrix(Lres) == gram_matrix(L)
+  Lres, VrestoV = restrict_scalars_with_map(L, QQ, QQ(3))
+  @test gram_matrix(Lres) == 3 * gram_matrix(L)
+  @test restrict_scalars(L, VrestoV) == Lres
+  L = integer_lattice(gram = ZZ[2 1; 1 2])
+  @test gram_matrix(restrict_scalars(L, QQ)) == gram_matrix(L)
 
   Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
@@ -216,10 +309,10 @@ end
   g = t^2 + 2
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1]), map(E, [b - 6, -6*b + 6, 0])]
-  gens2 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1])]
-  L = hermitian_lattice(E, gens, gram = D)
-  M = hermitian_lattice(E, gens2, gram = D)
+  gs = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1]), map(E, [b - 6, -6*b + 6, 0])]
+  gs2 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-2*b - 2, b + 6, 0]), map(E, [0, 1, 1])]
+  L = hermitian_lattice(E, gs, gram = D)
+  M = hermitian_lattice(E, gs2, gram = D)
 
   Qx, x = polynomial_ring(QQ, "x")
   f = x - 1
@@ -228,8 +321,8 @@ end
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-1, -4*b + 6, 0]), map(E, [16*b - 2, -134*b - 71, -2*b - 1]), map(E, [3*b - 92, -1041//2*b + 1387//2, -15//2*b + 21//2])]
-  O = hermitian_lattice(E, gens, gram = D)
+  gs = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-1, -4*b + 6, 0]), map(E, [16*b - 2, -134*b - 71, -2*b - 1]), map(E, [3*b - 92, -1041//2*b + 1387//2, -15//2*b + 21//2])]
+  O = hermitian_lattice(E, gs, gram = D)
 
   Lres, f = Hecke.restrict_scalars_with_map(L, QQ)
   Mres = Hecke.restrict_scalars(M, f)
@@ -246,8 +339,8 @@ end
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [b + 2, 1, 0])]
-  L = hermitian_lattice(E, gens, gram = D)
+  gs = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [b + 2, 1, 0])]
+  L = hermitian_lattice(E, gs, gram = D)
   pm = pseudo_hnf(pseudo_matrix(L))
   LL = lattice(ambient_space(L), pm)
   @test L == LL
@@ -261,13 +354,13 @@ end
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
-  gens2 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
-  gens3 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [2 + 2*a + 2*b, 2, 0])]
-  L1 = hermitian_lattice(E, gens, gram = D)
-  L2 = hermitian_lattice(E, gens2, gram = D)
-  L3 = hermitian_lattice(E, gens3, gram = D)
-  L4 = hermitian_lattice(E, gens, gram = 2*D)
+  gs = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
+  gs2 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  gs3 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [2 + 2*a + 2*b, 2, 0])]
+  L1 = hermitian_lattice(E, gs, gram = D)
+  L2 = hermitian_lattice(E, gs2, gram = D)
+  L3 = hermitian_lattice(E, gs3, gram = D)
+  L4 = hermitian_lattice(E, gs, gram = 2*D)
 
   L13 = @inferred intersect(L1, L3) #non full rank case
   @test is_sublattice(L1, L13) && is_sublattice(L3, L13)
@@ -292,13 +385,13 @@ end
   g = t^2 + 1
   E, b = number_field(g, "b", cached = false)
   D = matrix(E, 3, 3, [1, 0, 0, 0, 1, 0, 0, 0, 1])
-  gens = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
-  gens2 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
-  gens3 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [2 + 2*a + 2*b, 2, 0])]
-  L1 = hermitian_lattice(E, gens, gram = D)
-  L2 = hermitian_lattice(E, gens2, gram = D)
-  L3 = hermitian_lattice(E, gens3, gram = D)
-  L4 = hermitian_lattice(E, gens, gram = 2*D)
+  gs = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [-46*b + 71, 363//2*b + 145//2, -21//2*b + 49//2])]
+  gs2 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6, -10*b + 10, 0]), map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [1 + a + b, 1, 0])]
+  gs3 = Vector{Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}}[map(E, [-6*b + 7, 37//2*b + 21//2, -3//2*b + 5//2]), map(E, [2 + 2*a + 2*b, 2, 0])]
+  L1 = hermitian_lattice(E, gs, gram = D)
+  L2 = hermitian_lattice(E, gs2, gram = D)
+  L3 = hermitian_lattice(E, gs3, gram = D)
+  L4 = hermitian_lattice(E, gs, gram = 2*D)
   @test genus(direct_sum(L1, L2)[1]) == direct_sum(genus(L1), genus(L2))
   @test genus(direct_product(L3, L4)[1]) == direct_sum(genus(L3), genus(L4))
   L5, inj, proj = @inferred biproduct(L1, L2, L3, L4)

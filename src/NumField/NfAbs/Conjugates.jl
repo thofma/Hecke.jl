@@ -70,7 +70,12 @@ function conjugates(x::NumFieldElem, C::AcbField)
 end
 
 function conjugates(x::QQFieldElem, abs_tol::Int = 32)
-  return [ComplexField(abs_tol)(x)]
+  prec = abs_tol
+  while true
+    z = AcbField(prec, cached = false)(x)
+    radiuslttwopower(z, -abs_tol) && return [z]
+    prec *= 2
+  end
 end
 
 # This is for quick and dirty computations
@@ -372,10 +377,6 @@ function _minkowski_map_and_apply(a, abs_tol, G, work_tol::Int = abs_tol)
     if !radiuslttwopower(A[i], -abs_tol)
       error("this should not happen")
     end
-  end
-
-  if work_tol > 2^18 || abs_tol > 2^18
-    error("asdsd")
   end
 
   #R = ArbField(precision(parent(c[1])), false)

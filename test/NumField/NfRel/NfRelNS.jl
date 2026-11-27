@@ -1,4 +1,4 @@
-@testset "NumField/NfRel/NfResNS.jl" begin
+@testset "NumField/NfRel/NfRelNS.jl" begin
     R, x = universal_polynomial_ring(ZZ, 5; cached = false)
 
     # Simple shared root in first variable
@@ -23,4 +23,26 @@
     r = resultant(x[1]^2 - 1, x[1] - 1, x[1])
     @test parent(r) === R
     @test isa(r, UniversalPolyRingElem)
+
+    # Generic multivariate polynomials from different rings
+    K, t = polynomial_ring(QQ, :t)
+    P, (a, b) = polynomial_ring(K, [:a, :b]; cached = false)
+    Q, (c, d) = polynomial_ring(K, [:a, :b]; cached = false)
+    @test resultant(a + b, a^2 + b, 1) == b^2 + b
+    @test_throws ErrorException resultant(a + b, c^2 + d, 1)
+end
+
+@testset "Relative simple field bases" begin
+  # The canonical basis has exactly the relative degree, including degree one.
+  Qx, x = polynomial_ring(QQ, "x")
+  K, a = number_field(x^2 - 2, "a")
+  Ky, y = polynomial_ring(K, "y")
+  for (d, f) in enumerate((y - 1, y^2 - 3, y^3 - 5))
+    L, b = number_field(f, "b")
+    B = @inferred basis(L)
+    @test length(B) == degree(L) == d
+    @test B == [b^i for i in 0:d-1]
+    @test B isa Vector{elem_type(L)}
+    @test all(c -> parent(c) === L, B)
+  end
 end

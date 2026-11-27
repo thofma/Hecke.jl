@@ -1,5 +1,39 @@
 @testset "PIDIdeal" begin
   k, = quadratic_field(-1)
+  @testset "Degree localization ideals" begin
+    for K in (QQ, k, GF(7))
+      F, t = rational_function_field(K, "t")
+      R = localization(F, degree)
+      p = gen(R)
+      u = R(t/(t + 1))
+      I = @inferred ideal(R, p^2)
+      J = @inferred ideal(R, u*p^2)
+      @test typeof(I) === ideal_type(typeof(R))
+      @test base_ring_type(typeof(I)) === typeof(R)
+      @test (@inferred base_ring(I)) === R
+      @test gen(I) == p^2
+      @test I == J
+      @test hash(I) == hash(J)
+      @test Dict(I => 1)[J] == 1
+      @test ideal(R, p^2, p^3, zero(R)) == I
+      @test ideal(R, [u*p^2, p^3, zero(R)]) == I
+      @test ideal(R, gens(I)) == I
+      @test gen(Hecke.PIDIdeal(u*p^2)) == p^2
+      @test gen(Hecke.PIDIdeal(zero(R))) == zero(R)
+      @test ideal(R, elem_type(R)[]) == ideal(R, zero(R))
+      @test iszero(ideal(R, zero(R)))
+      @test isone(ideal(R, u))
+      @test gen(ideal(R, u)) == one(R)
+      @test I*I == ideal(R, p^4)
+      @test I^2 == ideal(R, p^4)
+      @test I^ZZ(2) == ideal(R, p^4)
+      @test p*I == I*p == ideal(R, p^3)
+      @test gcd(I, ideal(R, p^3)) == I
+      @test I + ideal(R, p^3) == I
+      @test intersect(I, ideal(R, p^3)) == ideal(R, p^3)
+    end
+  end
+
   for K in [QQ, k, GF(2)]
     Kx, x = K["x"]
 

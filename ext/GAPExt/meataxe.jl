@@ -48,7 +48,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fpField, Nemo.FpField}
    f(x::Union{Nemo.fpFieldElem, Nemo.FpFieldElem}) = _GapObj(lift(x))*e
    finv(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
 
-   return MapFromFunc(F, G, f, finv)
+   return map_from_func(F, G, f, finv)
 end
 
 function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.FqPolyRepField}
@@ -62,7 +62,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
    if d == 1
       f1(x::Union{Nemo.fqPolyRepFieldElem, Nemo.FqPolyRepFieldElem}) = GAP.Obj(coeff(x, 0))*e
       finv1(x) = F(ZZRingElem(GAP.Globals.IntFFE(x)))
-      return MapFromFunc(F, Fp_gap, f1, finv1)
+      return map_from_func(F, Fp_gap, f1, finv1)
    end
 
    # non-prime fields: convert the defining polynomial to GAP...
@@ -82,20 +82,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
    end
 
    # compute matching bases of both fields
-   if GAP.Globals.IsAlgebraicExtension(G)
-#FIXME:
-# As soon as the problem from https://github.com/gap-system/gap/issues/4694
-# is fixed, go back to `Basis_G = GAP.Globals.Basis(G)` also in this case.
-# Note that the above `GF` call delegates to `FieldExtension`,
-# and we want a basis in the filter `IsCanonicalBasisAlgebraicExtension`.
-      Basis_G = GAP.Globals.Objectify(GAP.Globals.NewType(
-                GAP.Globals.FamilyObj(G),
-                GAP.Globals.IsCanonicalBasisAlgebraicExtension),
-                GAP.NewPrecord(0))
-      GAP.Globals.SetUnderlyingLeftModule(Basis_G, G)
-   else
-      Basis_G = GAP.Globals.Basis(G)
-   end
+   Basis_G = GAP.Globals.Basis(G)
    Basis_F = Vector{elem_type(F)}(undef, d)
    Basis_F[1] = F(1)
    for i = 2:d
@@ -114,7 +101,7 @@ function _ring_iso_oscar_gap(F::T) where T <: Union{Nemo.fqPolyRepField, Nemo.Fq
       return sum([ v_int[i]*Basis_F[i] for i = 1:d ])
    end
 
-   return MapFromFunc(F, G, f, finv)
+   return map_from_func(F, G, f, finv)
 end
 
 function __to_gap(h, x::Vector)

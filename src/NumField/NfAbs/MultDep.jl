@@ -21,10 +21,14 @@ function syzygies_sunits_mod_units(A::Vector{<:Union{AbsSimpleNumFieldElem, FacE
   k = parent(A[1])
   @assert all(i->parent(i) === k, A)
   if !isnothing(support)
-    @assert length(support) > 0
     cp = support
-    zk = order(support[1])
-    @assert isnothing(max_ord) || max_ord === zk
+    if length(support) > 0
+      zk = order(support[1])
+      @assert isnothing(max_ord) || max_ord === zk
+    else
+      @assert !isnothing(max_ord)
+      zk = max_ord
+    end
   elseif !use_ge
     if max_ord === nothing
       zk = maximal_order(k)
@@ -126,7 +130,7 @@ mutable struct GeIdeal
   end
 end
 
-import Hecke.gcd, Hecke.isone, Hecke.*, Hecke.gcd_into!, Hecke.copy, Hecke.divexact,
+import Hecke.gcd, Hecke.isone, Hecke.*, Hecke.copy, Hecke.divexact,
        Hecke.is_unit, Hecke.coprime_base, Hecke.valuation
 
 function make_compatible!(a::GeIdeal, b::GeIdeal)
@@ -140,7 +144,7 @@ function make_compatible!(a::GeIdeal, b::GeIdeal)
   b.a = extend(b.a, o)
 end
 
-#is_unit, divexact, gcd, isone, *, gcd_into!, copy
+#is_unit, divexact, gcd, isone, *, copy
 isone(a::GeIdeal) = isone(a.a)
 is_unit(a::GeIdeal) = isone(a)
 copy(a::GeIdeal) = GeIdeal(a.a)
@@ -148,12 +152,6 @@ copy(a::GeIdeal) = GeIdeal(a.a)
 function gcd(a::GeIdeal, b::GeIdeal)
   make_compatible!(a, b)
   return GeIdeal(a.a + b.a)
-end
-
-function gcd_into!(a::GeIdeal, b::GeIdeal, c::GeIdeal)
-  make_compatible!(b, c)
-  a.a = b.a + c.a
-  return a
 end
 
 function *(a::GeIdeal, b::GeIdeal)
@@ -224,7 +222,7 @@ M should be LLL reduced.
 Also returns the transformations applied to v, so on return
  v <- v + t*M
 """
-function size_reduce_with_transform(M::ZZMatrix, v::ZZMatrix)
+function size_reduce_with_transform(M::Union{ZZMatrix, QQMatrix}, v::Union{ZZMatrix, QQMatrix})
   s = gram_schmidt_orthogonalisation(QQ.(transpose(M)))
   d = diagonal(transpose(s)*s)
   t = zero_matrix(ZZ, nrows(v), nrows(M))
@@ -252,7 +250,7 @@ function syzygies_units_mod_tor(A::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimp
   p = next_prime(100)
   K = base_ring(parent(A[1]))
   m = maximum(degree, first.(factor(GF(p), K.pol)))
-  while m > 4
+  while m > 4 || discriminant(map_coefficients(Native.GF(p), K.pol)) == 0
     p = next_prime(p)
     m = maximum(degree, first.(factor(GF(p), K.pol)))
   end
@@ -412,21 +410,21 @@ function verify_gamma(a::Vector{FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField
   #    But here we know more
   #    the p-adic logs are all 0 (mod p^v) , so this should mean
   #    that the element is torsion or LARGE (since p^? has to divide s.th.)
-  # 
+  #
   t = prod([a[i]^g[i] for i=1:length(a)])
   pr = 20
   n = degree(base_ring(t))
   while true
     b = sum(x*x for x = conjugates_arb_log(t, pr))
     D = 21/128*log(parent(b)(n))/n^2 #plain Dobrowski
-    if b > D 
+    if b > D
       return false
     elseif b < D
       return true
     end
     pr *= 2
   end
-  
+
   #= I claim N(1-a) > v^n for n the field degree:
    Let K be one of the p-adic fields involved, set b = a^g
    then log(K(b)) = 0 (v = p^l) by assumption
@@ -458,7 +456,7 @@ This returns u, v and the precision
 function canonical_split(a::PadicFieldElem)
   u = ZZ()
   ccall((:fmpz_set, Hecke.libflint), Nothing, (Ref{ZZRingElem}, Ref{Int}), u, a.u)
-  return u, a.v, a.N
+  return u, a.v, precision(a)
 end
 
 #TODO: different name ...
@@ -571,6 +569,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     if length(support) == 0 #kown to be units
       u = A
       g1 = typeof(A[1])[]
+      cp = support
     else
       S, T, cp = syzygies_sunits_mod_units(A; use_ge, max_ord, support)
       u = Hecke._transform(A, transpose(T))
@@ -646,7 +645,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
           if y === nothing
             prec *= 2
             @vprint :qAdic 1  "increase prec to ", prec
-            log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+            log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
             break
           else
 #            @show y
@@ -662,7 +661,7 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
         if !verify_gamma(push!(copy(g2), a), gamma, prime(base_ring(log_mat), prec))
           prec *= 2
           @vprint :qAdic 1 "increase prec to ", prec
-          log_mat = transpose(matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2]))
+          log_mat = matrix([conjugates_log(x, C, prec, all = false, flat = true) for x = g2])
           continue
         end
         @assert length(gamma) == length(g2)+1
@@ -690,53 +689,101 @@ function Hecke.multiplicative_group(A::Vector{<:Union{AbsSimpleNumFieldElem, Fac
     return pr(FacElem(a))
   end
 
-  return G, MapFromFunc(G, parent(u[1]), im, pr)
+  return G, map_from_func(G, parent(u[1]), im, pr)
 end
 
 function Hecke.saturate(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
+  fl, u = _is_saturated(f, p; decom, support)
+  return u
+end
+
+function _is_saturated(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing, maxext = true)
+  # maxext = false: if not saturated, find only one non-p-th root (instead of all)
+  @assert is_prime(p)
   G = domain(f)
   @assert is_free(G) # now now due to difficulties with torsion in the saturation
-  c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, 3.5)
-  if nrows(c) == 0
-    return f
-  end
 
-  decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
-
-  cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
-  if nrows(c) > ngens(G) #torsion added
-    K = base_ring(parent(cand[1]))
-    zeta = Hecke.torsion_units_generator(K)
-    for i=1:ncols(c)
-      cand[i] *= zeta^c[end, i]
+  stab = 15.5
+  while true
+    stab *= 1.5
+    c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, stab)
+    # this is so odd: if c is empty, then it is transposed?!
+    if nrows(c) == 0
+      return true, f
     end
-  end
 
-  new = typeof(cand[1])[]
-  for a = cand
-    @vprintln :Saturate 1 "Testing if element is an n-th power"
+    @vprintln :Saturate 1 "Dimension of kernel: $(ncols(c))"
+
     decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
-    if !isnothing(support)
-      for P = support
-        decom[P] = valuation(a, P)
+
+    cand = [f(G(view(c, 1:ngens(G), i:i))) for i=1:ncols(c)]
+    if nrows(c) > ngens(G) #torsion added
+      K = base_ring(parent(cand[1]))
+      zeta = Hecke.torsion_units_generator(K)
+      for i=1:ncols(c)
+        cand[i] *= zeta^c[end, i]
       end
     end
-    @vtime :Saturate 1 fl, x = is_power(a, p; decom)
-    if fl
-      @vprintln :Saturate 1  "The element is an n-th power"
-      push!(new, x)
-    else
-#      @show :bad
+
+    new = typeof(cand[1])[]
+    for a = cand
+      @vprintln :Saturate 1 "Testing if element is an n-th power"
+      decom = Dict{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, ZZRingElem}()
+      if !isnothing(support)
+        for P = support
+          decom[P] = valuation(a, P)
+        end
+      end
+      @vtime :Saturate 1 fl, x = is_power(a, p; decom)
+      if fl
+        @vprintln :Saturate 1  "The element is an n-th power"
+        push!(new, x)
+        if !maxext
+          @vprintln :Saturate 1  "We only want info on saturateness, so we are done"
+          break
+        end
+      else
+  #      @show :bad
+      end
+    end
+
+    if !isempty(new)
+      #TODO: MultGrp needs to be a "special" type, ie. attributes
+      #      can be on the map
+      #       -> suport can be inherited
+      #       -> the valuations
+      #       -> the data for disc log and such could to be updated
+      #      possibly the result should be the injection into the larger group?
+      #      deal with torsion
+      return false, multiplicative_group(vcat(map(f, gens(G)), new); task = :modulo_tor, support)[2]
     end
   end
-  #TODO: MultGrp needs to be a "special" type, ie. attributes
-  #      can be on the map
-  #       -> suport can be inherited
-  #       -> the valuations
-  #       -> the data for disc log and such could to be updated
-  #      possibly the result should be the injection into the larger group?
-  #      deal with torsion
-  return multiplicative_group(vcat(map(f, gens(G)), new); task = :modulo_tor, support)[2]
+end
+
+function __is_saturated_definitely(f::MapFromFunc{FinGenAbGroup, FacElemMon{AbsSimpleNumField}}, p::Int; decom = false, support::Union{Nothing, Vector{AbsSimpleNumFieldOrderIdeal}} = nothing)
+  @assert is_prime(p)
+  G = domain(f)
+  @assert is_free(G) # now now due to difficulties with torsion in the saturation
+
+  stab = 30.5
+  c = Hecke.RelSaturate.compute_candidates_for_saturate(map(f, gens(G)), p, stab)
+  # this is so odd: if c is empty, then it is transposed?!
+  if nrows(c) == 0
+    return true
+  end
+  return false
+end
+
+function _psaturation(mU, p)
+  if iszero(ngens(domain(mU)))
+    return mU
+  end
+  fl, mC = Hecke.MultDep._is_saturated(mU, p; support = Vector{AbsSimpleNumFieldOrderIdeal}())
+  while !fl
+    #@info "Not saturated at $p; Saturating ..."
+    fl, mC = Hecke.MultDep._is_saturated(mC, p; support = Vector{AbsSimpleNumFieldOrderIdeal}())
+  end
+  return mC
 end
 
 export syzygies
@@ -744,5 +791,3 @@ export syzygies
 end
 
 using .MultDep
-
-

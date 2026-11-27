@@ -207,7 +207,7 @@ function _eichler_find_transforming_unit(I::AlgAssRelOrdIdl, J::AlgAssRelOrdIdl)
 end
 
 function get_coeff_fmpz!(x::fqPolyRepFieldElem, n::Int, z::ZZRingElem)
-  c = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{fqPolyRepFieldElem}, Int), x, n)
+  c = coeff(x, n)
   set!(z, c)
   return z
 end
@@ -232,6 +232,17 @@ function find_path(generators::Vector{T}, v::T, w::T) where { T <: MatElem }
     for i = 1:nrows(v)
       for j = 0:jmax
         n = add!(n, n, get_coeff_fmpz!(v[i, 1], j, t))
+      end
+    end
+    return n
+  end
+
+  function _weight(v::MatElem{FqFieldElem}, n::ZZRingElem, t::ZZRingElem,
+                   jmax::Int)
+    n = zero!(n)
+    for i = 1:nrows(v)
+      for c in absolute_coordinates(v[i, 1])
+        n = add!(n, n, lift(ZZ, c))
       end
     end
     return n

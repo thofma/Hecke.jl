@@ -166,7 +166,7 @@ end
 #Conversion to absolute non simple
 function number_field(::Type{AbsSimpleNumField}, L::RelSimpleNumField{AbsSimpleNumFieldElem}; check::Bool = true, cached::Bool = true)
   @assert degree(base_field(L)) == 1
-  pol = to_univariate(Globals.Qx, map_coefficients(QQ, L.pol, cached = false))
+  pol = map_coefficients(QQ, L.pol, parent = Globals.Qx)
   return number_field(pol, check = false, cached = cached)
 end
 
@@ -242,7 +242,19 @@ Base.:(//)(a::RelSimpleNumFieldElem{T}, b::RelSimpleNumFieldElem{T}) where {T} =
 
 function Base.inv(a::RelSimpleNumFieldElem)
   a == 0 && error("Element not invertible")
-  g, s, _ = gcdx(data(a), parent(a).pol)
+  K = parent(a)
+  f = K.pol
+  if degree(f) == 2
+    # with f = r*x^2 + p*x + q and a = a0 + a1*x:
+    # a * (r*a0 - p*a1 - r*a1*x) = r*a0^2 - p*a0*a1 + q*a1^2
+    r, p, q = coeff(f, 2), coeff(f, 1), coeff(f, 0)
+    a0, a1 = coeff(a, 0), coeff(a, 1)
+    c0 = r*a0 - p*a1
+    c1 = -r*a1
+    n = inv(a0*c0 + q*a1^2)
+    return K(parent(f)([c0*n, c1*n]))
+  end
+  g, s, _ = gcdx(data(a), f)
   @assert g == 1
   return parent(a)(s)
 end
@@ -398,7 +410,7 @@ end
 #
 ################################################################################
 
-function hash(a::Hecke.RelSimpleNumFieldElem{AbsSimpleNumFieldElem}, b::UInt)
+function hash(a::Hecke.RelSimpleNumFieldElem, b::UInt)
   return hash(a.data, b)
 end
 
@@ -734,22 +746,9 @@ end
 #
 ################################################################################
 
-RandomExtensions.maketype(L::RelSimpleNumField, B) = elem_type(L)
-
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{<:RelSimpleNumFieldElem,<:RelSimpleNumField,<:AbstractUnitRange}})
-  L, B = sp[][1:end]
-  k = base_field(L)
-  pb = basis(L)
-  z = zero(L)
-  for i = 1:length(pb)
-    t = rand(rng, k, B)
-    z += t*pb[i]
-  end
-  return z
+function ConformanceTests.generate_element(K::RelSimpleNumField)
+  return rand(K, -10:10)
 end
-
-rand(L::RelSimpleNumField, B::AbstractUnitRange{Int}) = rand(GLOBAL_RNG, L, B)
-rand(rng::AbstractRNG, L::RelSimpleNumField, B::AbstractUnitRange{Int}) = rand(rng, make(L, B))
 
 ################################################################################
 #

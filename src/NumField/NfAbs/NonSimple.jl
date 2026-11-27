@@ -6,7 +6,7 @@
 
 @inline base_ring(K::AbsNonSimpleNumField) = QQ
 
-@inline base_ring_type(K::AbsNonSimpleNumField) = QQField
+base_ring_type(::Type{AbsNonSimpleNumField}) = QQField
 
 @inline base_field(K::AbsNonSimpleNumField) = QQ
 
@@ -76,11 +76,11 @@ end
 #
 ################################################################################
 
-RandomExtensions.maketype(K::AbsNonSimpleNumField, r) = elem_type(K)
-
 # construct a dense random element:
 # linear combination of basis elements (monomials) with random coefficients
-function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldElem,AbsNonSimpleNumField,<:AbstractUnitRange}})
+function rand(rng::AbstractRNG,
+              sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldElem, AbsNonSimpleNumField,
+                                         <:AbstractUnitRange{<:IntegerUnion}}})
   K, r = sp[][1:end]
 
   ci = QQFieldElem[rand(rng, r) for _ in 1:degree(K)]
@@ -92,8 +92,9 @@ function rand(rng::AbstractRNG, sp::SamplerTrivial{<:Make2{AbsNonSimpleNumFieldE
   return K(QQMPolyRingElem(parent(K.pol[1]), ci, ei))
 end
 
-rand(K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(GLOBAL_RNG, K, r)
-rand(rng::AbstractRNG, K::AbsNonSimpleNumField, r::AbstractUnitRange) = rand(rng, make(K, r))
+function ConformanceTests.generate_element(K::AbsNonSimpleNumField)
+  return rand(K, -10:10)
+end
 
 ################################################################################
 #
@@ -267,7 +268,10 @@ function Base.div(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem)
   return a * inv(b)
 end
 
-Nemo.divexact(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem; check::Bool = false) = div(a, b)
+function Nemo.divexact(a::AbsNonSimpleNumFieldElem, b::AbsNonSimpleNumFieldElem; check::Bool = false)
+  iszero(b) && throw(DivideError())
+  return div(a, b)
+end
 
 ################################################################################
 #
@@ -644,13 +648,17 @@ end
 
 # TODO: Dan says that it is better to use a BuilderCtx if the result has
 # denominator 1
+# As nf_elem_coprime_den for simple fields: each coefficient n/(q1 q2), with
+# q1 composed of the primes dividing p and q2 coprime to p, becomes
+# n q2^-1 mod p q1, divided by q1, so that b changes by an element with
+# denominator coprime to p and numerator divisible by p.
 function mod!(b::AbsNonSimpleNumFieldElem, p::ZZRingElem)
   for i=1:length(b.data)
     el = coeff(b.data, i)
-    dnew, cp = ppio(denominator(el), p)
-    el *= cp
-    n = mod(numerator(el), dnew * p)
-    setcoeff!(b.data, i, QQFieldElem(n, dnew))
+    q1, q2 = ppio(denominator(el), p)
+    m = q1 * p
+    n = isone(q2) ? numerator(el) : mod(q1 * el, abs(m))
+    setcoeff!(b.data, i, QQFieldElem(mod(n, m), q1))
   end
   combine_like_terms!(b.data)
   return b
@@ -777,7 +785,7 @@ function simple_extension(K::AbsNonSimpleNumField; cached::Bool = true, check::B
   Ka, h = _simple_extension(K; cached = cached, check = check)
 
   embed(h)
-  embed(MapFromFunc(K, Ka, x->preimage(h, x)))
+  embed(map_from_func(K, Ka, x->preimage(h, x)))
   return Ka, h
 end
 
@@ -831,7 +839,7 @@ function number_field(f::Vector{QQPolyRingElem}, s::String="_\$"; cached::Bool =
 end
 
 function number_field(f::Vector{QQPolyRingElem}, s::VarName; cached::Bool = false, check::Bool = true)
-  return number_field(f, String(s); cached = cached, check = check)
+  return number_field(f, string(s); cached = cached, check = check)
 end
 
 function number_field(f::Vector{QQPolyRingElem}, s::Vector{<:VarName}; cached::Bool = false, check::Bool = true)
@@ -992,6 +1000,12 @@ function tr(a::AbsNonSimpleNumFieldElem)
   return t
 end
 
+# in a quadratic field, a + conj(a) = tr(a)
+function conjugate_quad(a::AbsNonSimpleNumFieldElem)
+  @assert degree(parent(a)) == 2
+  return tr(a) - a
+end
+
 #TODO:
 #  test f mod p first
 #  if all polys are monic, the test if traces have non-trivial gcd
@@ -1052,13 +1066,11 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
   end
 
   if degree(f) == 0
-    r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}()
-    r.unit = Kx(leading_coefficient(f))
+    d = Dict{typeof(f), Int}()
     if val > 0
-      r.fac[gen(Kx)] = val
+      d[gen(Kx)] = val
     end
-    return r
+    return Fac(Kx(leading_coefficient(f)), d)
   end
 
   f_orig = deepcopy(f)
@@ -1072,13 +1084,11 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
 
   if degree(f) == 1
     multip = div(degree(f_orig), degree(f))
-    r = Fac{typeof(f)}()
-    r.fac = Dict{typeof(f), Int}(f*(1//leading_coefficient(f)) => multip)
-    r.unit = one(Kx) * leading_coefficient(f_orig)
+    d = Dict{typeof(f), Int}(f*(1//leading_coefficient(f)) => multip)
     if val > 0
-      r.fac[gen(Kx)] = val
+      d[gen(Kx)] = val
     end
-    return r
+    return Fac(one(Kx) * leading_coefficient(f_orig), d)
   end
 
   f = f*(1//leading_coefficient(f))
@@ -1098,7 +1108,7 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
   end
   @vtime :PolyFactor 2 fac = factor(N)
 
-  res = Dict{PolyRingElem{AbsNonSimpleNumFieldElem}, Int64}()
+  res = Dict{typeof(f), Int}()
 
   for (i, _) in fac
     t = change_base_ring(K, i, parent = Kx)
@@ -1107,15 +1117,12 @@ function factor(f::PolyRingElem{AbsNonSimpleNumFieldElem})
     res[t] = valuation(f_orig, t)
   end
 
-  r = Fac{typeof(f)}()
-  r.fac = res
-  r.unit = Kx(1)
   if val > 0
-    r.fac[gen(Kx)] = val
+    res[gen(Kx)] = val
   end
 
-  r.unit = one(Kx)* leading_coefficient(f_orig)//prod((leading_coefficient(p) for (p, e) in r))
-  return r
+  u = one(Kx)* leading_coefficient(f_orig)//prod((leading_coefficient(p) for p in keys(res)))
+  return Fac(u, res)
 end
 
 ################################################################################
@@ -1138,4 +1145,3 @@ function (K::QQField)(a::AbsNonSimpleNumFieldElem)
   @req is_constant(data(a)) "Element must be rational"
   return constant_coefficient(data(a))
 end
-

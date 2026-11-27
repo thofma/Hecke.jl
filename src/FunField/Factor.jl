@@ -1,12 +1,8 @@
 module FactorFF
 using ..Hecke
 
-function _is_separable(F::Generic.FunctionField)
-  return is_separable(defining_polynomial(F))
-end
-
-function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem})
-  @assert !_is_separable(F)
+function _isomorphic_separable_extension(F::Generic.AbsSimpleFunctionField{<:FinFieldElem})
+  @assert !Hecke._is_separable(F)
   f = defining_polynomial(F)
   K = base_ring(f)
   # K = k(t)
@@ -46,7 +42,7 @@ function _isomorphic_separable_extension(F::Generic.FunctionField{<:FinFieldElem
   return FF, FtoFF, FFtoF
 end
 
-function Hecke.norm(f::PolyRingElem{<: Generic.FunctionFieldElem})
+function Hecke.norm(f::PolyRingElem{<: Generic.AbsSimpleFunctionFieldElem})
     K = base_ring(f)
     P = polynomial_to_power_sums(f, degree(f)*degree(K))
     PQ = elem_type(base_field(K))[tr(x) for x in P]
@@ -96,23 +92,20 @@ function Hecke.factor_absolute(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   return la
 end
 
-function is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+function Hecke.is_absolutely_irreducible(f::Generic.Poly{<:Generic.RationalFunctionFieldElem})
+  degree(f) <= 0 && return false
+  # Units in the coefficient field must not become extra polynomial factors.
+  f = divexact(f, leading_coefficient(f))
   return is_absolutely_irreducible(to_mpoly(f))
 end
 
-function Hecke.factor(F::Generic.FunctionField{T, U}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T, U}}) where {T, U}
+function Hecke.factor(F::Generic.AbsSimpleFunctionField{T, U}, f::Generic.Poly{<:Generic.RationalFunctionFieldElem{T, U}}) where {T, U}
   return factor(map_coefficients(F, f, cached = false))
 end
 
 # squarefree factorization a la Trager-Gianni
 
-function is_separable(f::PolyRingElem{<:FieldElem})
-  # Bourbaki, N. (2003). *Algebra II. Chapters 4--7*. Springer-Verlag, Berlin.
-  # Chapter 5, §7, No. 2.
-  return is_unit(gcd(f, derivative(f)))
-end
-
-function _induced_derivation(a::Generic.FunctionFieldElem)
+function _induced_derivation(a::Generic.AbsSimpleFunctionFieldElem)
   # Given F/k(T), extend the non-trivial deriviation from k(T) to F
   # see Gianni-Trager, Prop. 11.
   #
@@ -122,16 +115,16 @@ function _induced_derivation(a::Generic.FunctionFieldElem)
   return b
 end
 
-function _induced_derivation(f::PolyRingElem{<:Generic.FunctionFieldElem})
+function _induced_derivation(f::PolyRingElem{<:Generic.AbsSimpleFunctionFieldElem})
   # Gianni-Trager, Ex. 4
   return  map_coefficients(_induced_derivation, f; parent = parent(f))
 end
 
-function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
+function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.AbsSimpleFunctionFieldElem})
   if characteristic(base_ring(f)) == 0
     return Hecke.Nemo._factor_squarefree_char_0(f)
   end
-  if is_separable(defining_polynomial(base_ring(f)))
+  if Hecke._is_separable(base_ring(f))
     return _factor_squarefree_sep_ext(f)
   end
   FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
@@ -141,8 +134,8 @@ function Hecke.factor_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
   return Fac(map_coefficients(FFtoF, unit(fa); parent = parent(f)), D)
 end
 
-function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.FunctionFieldElem})
-  @req is_separable(defining_polynomial(base_ring(f))) "Defining polynomial must be separable"
+function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.AbsSimpleFunctionFieldElem})
+  @req Hecke._is_separable(base_ring(f)) "Defining polynomial must be separable"
   D = Dict{typeof(f), Int}()
   un = leading_coefficient(f)
   f = divexact(f, leading_coefficient(f))
@@ -170,22 +163,22 @@ function _factor_squarefree_sep_ext(f::PolyRingElem{<:Generic.FunctionFieldElem}
   return R
 end
 
-function Hecke.is_squarefree(f::PolyRingElem{<:Generic.FunctionFieldElem})
+function Hecke.is_squarefree(f::PolyRingElem{<:Generic.AbsSimpleFunctionFieldElem})
   if characteristic(base_ring(f)) == 0
     return is_unit(gcd(f, derivative(f)))
   end
   return all(e == 1 for (_, e) in factor_squarefree(f))
 end
 
-function Hecke.factor(f::Generic.Poly{<:Generic.FunctionFieldElem})
-  if !_is_separable(base_ring(f))
+function Hecke.factor(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
+  if !Hecke._is_separable(base_ring(f))
     FF, FtoFF, FFtoF = _isomorphic_separable_extension(base_ring(f))
     return Hecke.AbstractAlgebra.Generic._transport_factor(factor, f, FtoFF, FFtoF)
   end
   return _factor_assume_separable(f)
 end
 
-function _factor_assume_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
+function _factor_assume_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
   lc = leading_coefficient(f)
   f = divexact(f, lc)
   fsqf = factor_squarefree(f)
@@ -199,7 +192,8 @@ function _factor_assume_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
 end
 
 #plain vanilla Trager, possibly doomed in pos. small char.
-function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.FunctionFieldElem})
+function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.AbsSimpleFunctionFieldElem})
+  @assert is_monic(f)
   i = 0
   local N
   g = f
@@ -221,8 +215,8 @@ function _factor_assume_squarefree_and_separable(f::Generic.Poly{<:Generic.Funct
   end
 
   fN = factor(N)
-  @assert isone(fN.unit)
-  D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) = fN.fac))
+  # We are reconstructing the monic polynomial g and the gcds below are monic.
+  D = Fac(one(parent(f)), Dict((gcd(map_coefficients(base_ring(f), p, parent = parent(f)), g)(t+i*a), k) for (p,k) in fN))
   return D
 end
 
@@ -231,7 +225,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
   f = divexact(f, gcd(f, derivative(f)))
 
   lf = factor(f)
-  lf = [x for x = keys(lf.fac) if degree(x) > 1]
+  lf = [x for (x, _) in lf if degree(x) > 1]
   if length(lf) == 0
     return base_ring(f)
   end
@@ -264,7 +258,7 @@ function Hecke.splitting_field(f::Generic.Poly{<:Generic.RationalFunctionFieldEl
     end
 
     fN = factor(N)
-    lf = [x for x = keys(fN.fac) if degree(x) > degree(G)]
+    lf = [x for (x, _) in fN if degree(x) > degree(G)]
       #the gcd of x with deg(x) == deg(G) will yield a linear
       #factor, hence does not contribute further
     if length(lf) == 0
@@ -278,10 +272,10 @@ end
     swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
     swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
 
-Compute the minimal polynomial of $\sum \pm \sqrt{t+v_i}$ evaluated at $x$.
+Compute the minimal polynomial of $\sum \pm \sqrt{-(t+v_i)}$ evaluated at $x$.
 $t$ is the generator of the base field of the parent of $x$.
 
-In the second variant, the polynomial has roots $\sum\pm\sqrt{t+i}$ for
+In the second variant, the polynomial has roots $\sum\pm\sqrt{-(t+i)}$ for
   $i=1,\ldots,n$.
 """
 function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
@@ -290,8 +284,9 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunc
   S = base_ring(x)
   T = gen(S)
   X = gen(parent(x))
-  l = [(X^2 + T + i) for i = V]
-  l = [ vcat([2*one(S)], polynomial_to_power_sums(x, 2^n)) for x = l]
+  l0 = [(X^2 + T + i) for i = V]
+  nps = 2^n
+  l = [ vcat([2*one(S)], polynomial_to_power_sums(x, nps)) for x = l0]
   while n > 1
     i = 1
     while 2*i <= n
@@ -314,7 +309,7 @@ function Hecke.swinnerton_dyer(V::Vector, x::Generic.Poly{<:Generic.RationalFunc
 end
 
 function Hecke.swinnerton_dyer(n::Int, x::Generic.Poly{<:Generic.RationalFunctionFieldElem})
-  return swinnerton_dyer(x, collect(1:n))
+  return swinnerton_dyer(collect(1:n), x)
 end
 
 end

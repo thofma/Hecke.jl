@@ -7,9 +7,10 @@ function _primitive_element(a::Vector{QQBarFieldElem})
     g = minpoly(Globals.Qx, a[i])
     f = minpoly(Globals.Qx, pe)
     k, _ = number_field(f, check = false, cached = false)
-    lf = collect(keys(factor(k, g).fac))
+    lf = [p for (p, _) in factor(k, g)]
     for j = 1:length(lf)
-      h = map_coefficients(x->Qx(x)(pe), lf[j])
+      cur = pe
+      h = map_coefficients(x->Qx(x)(cur), lf[j])
       if is_zero(h(a[i]))
         d = degree(f) * degree(h)
         mu = 0
@@ -56,7 +57,7 @@ function factor(f::PolyRingElem{QQBarFieldElem})
   rts = roots(f)
   facts = [gen(parent(f)) - r for r in rts]
   fac = Fac(parent(f)(leading_coefficient(f)), Dict(facts[i] => valuation(f, facts[i]) for i in 1:length(facts)))
-  @assert degree(f) == sum(e for (_,e) in fac)
+  @assert degree(f) == sum(e for (_,e) in fac; init = 0)
   return fac
 end
 

@@ -3,6 +3,94 @@
   A = GroupAlgebra(QQ, G)
   @test sprint(show, MIME"text/plain"(), A) isa String
   @test sprint(show, A) isa String
+
+  # Test explicit representations, automatic selection, and caching.
+  @testset "Representation" begin
+    local G, A
+    for G in (small_group(6, 1), abelian_group([2, 2]))
+      for sparse in (false, true)
+        A = group_algebra(QQ, G; sparse)
+        @test Hecke._is_sparse(A) == sparse
+        @test group_algebra(QQ, G; sparse) === A
+        @test group_algebra(QQ, G; sparse, cached = false) !== A
+      end
+      @test group_algebra(QQ, G) === group_algebra(QQ, G; sparse = false)
+    end
+
+    for (n, sparse) in ((999, false), (1000, true), (0, true))
+      G = abelian_group([n])
+      A = group_algebra(QQ, G)
+      @test Hecke._is_sparse(A) == sparse
+      @test A === group_algebra(QQ, G; sparse)
+    end
+
+    G = abelian_group([1000])
+    @test !Hecke._is_sparse(group_algebra(QQ, G; sparse = false))
+  end
+
+  @testset "Sparse group algebra construction and addition" begin
+    # Check coefficient inputs and the addition used in matrix multiplication.
+    local G = abelian_group([4])
+    D = group_algebra(ZZ, G; sparse = false, cached = false)
+    B = group_algebra(ZZ, G; sparse = true, cached = false)
+    c = ZZRingElem[1, 0, 0, 0]
+    @test D(c) == one(D)
+    @test_throws ArgumentError B(c)
+    @test_throws ArgumentError B([0, 0, 0, 0]; copy = true)
+    @test_throws ArgumentError elem_type(B)(B, c)
+    C = group_algebra(ZZ, abelian_group([0]))
+    @test_throws ArgumentError C(ZZRingElem[])
+    @test B(sparse_row(ZZ, 1, ZZ(1))) == one(B)
+    b = B(G[1])
+    row = matrix(B, 1, 2, [one(B), b])
+    col = matrix(B, 2, 1, [b, one(B)])
+    @test (row * col)[1, 1] == b + b
+  end
+
+  @testset "Multiplication by group elements" begin
+    local G, A
+    G = small_group(6, 1)
+    x, y = first((x, y) for x in G for y in G if x*y != y*x)
+    for sparse in (false, true), R in (ZZ, QQ, residue_ring(ZZ, 6)[1]), c in (ZZ(2), ZZ(2)^200)
+      A = group_algebra(R, G; sparse = sparse, cached = false)
+      a = A(x => c, y => -3, one(G) => 1)
+      @test a*y == a*A(y)
+      @test y*a == A(y)*a
+      @test a*y != y*a
+      for s in (0, 1, -1, 3)
+        p = A(y => s)
+        @test a*p == A(x*y => c*s, y*y => -3*s, y => s)
+        @test p*a == A(y*x => s*c, y*y => -3*s, y => s)
+        @test A(x => c)*p == A(x*y => c*s)
+      end
+      @test a*one(G) == one(G)*a == a
+      @test iszero(zero(A)*y)
+      @test iszero(y*zero(A))
+
+      # Products must not share mutable coefficients with their input.
+      for b in (a*y, y*a)
+        if sparse
+          b.coeffs_sparse.values[1] = zero!(b.coeffs_sparse.values[1])
+        else
+          zero!(b)
+        end
+        @test a == A(x => c, y => -3, one(G) => 1)
+      end
+      @test_throws ArgumentError a*one(small_group(4, 2))
+      @test_throws ArgumentError one(small_group(4, 2))*a
+    end
+
+    for G in (abelian_group([2, 3]), abelian_group([0]))
+      g = gens(G)[1]
+      for sparse in (false, true)
+        !is_finite(G) && !sparse && continue
+        A = group_algebra(ZZ, G; sparse = sparse, cached = false)
+        a = A(zero(G) => 2, g => -3)
+        @test a*g == g*a == a*A(g)
+      end
+    end
+  end
+
   @testset "Regular matrix algebra" begin
     B, BtoA = Hecke.regular_matrix_algebra(A)
 
@@ -88,18 +176,18 @@
 
   QG = group_algebra(QQ, abelian_group([2, 2]))
   @test QG isa GroupAlgebra
-  @test QG !== Hecke._group_algebra(QQ, abelian_group([2, 2]); cached = false)
-  @test QG !== Hecke._group_algebra(QQ, abelian_group([2, 2]); sparse = true)
+  @test QG !== group_algebra(QQ, abelian_group([2, 2]); cached = false)
+  @test QG !== group_algebra(QQ, abelian_group([2, 2]); sparse = true)
 
-  QG = Hecke._group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true)
+  QG = group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true)
   @test QG isa GroupAlgebra
-  @test QG !== Hecke._group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true, cached = false)
+  @test QG !== group_algebra(QQ, abelian_group([2 for i in 1:10]); sparse = true, cached = false)
 
   # test sparse arithmetic
 
   let
     G = SymmetricGroup(10)
-    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    QG = group_algebra(QQ, G; sparse = true, cached = false)
     @test dim(QG) == factorial(10)
     #@test !is_commutative(QG) # needs https://github.com/Nemocas/AbstractAlgebra.jl/pull/1907
     @test sprint(show, MIME"text/plain"(), QG) isa String
@@ -117,12 +205,13 @@
       @test bb * aa == dd
       @test (aa + bb)^2 == QG(a)^2 + cc + dd + QG(b)^2
       @test aa - bb == aa + (-bb)
+      @test inv(aa) == QG(inv(a))
     end
   end
 
   let
     G = abelian_group([2, 3, 5000])
-    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    QG = group_algebra(QQ, G; sparse = true, cached = false)
     @test dim(QG) == 2 * 3 * 5000
     @test is_commutative(QG)
     @test sprint(show, MIME"text/plain"(), QG) isa String
@@ -145,7 +234,7 @@
 
   let
     G = abelian_group([2, 3, 0])
-    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    QG = group_algebra(QQ, G; sparse = true, cached = false)
     @test is_commutative(QG)
     @test sprint(show, MIME"text/plain"(), QG) isa String
     @test sprint(show, QG) isa String
@@ -154,16 +243,74 @@
   let
     # 1892
     G = abelian_group([2, 3, 50])
-    QG = Hecke._group_algebra(QQ, G; sparse = true, cached = false)
+    QG = group_algebra(QQ, G; sparse = true, cached = false)
     B = basis(QG)
     b = B[1]
     @test sprint(show, MIME"text/plain"(), b) isa String
 
     G = abelian_group([2, 3, 50])
-    QG = Hecke._group_algebra(QQ, G; sparse = false, cached = false)
+    QG = group_algebra(QQ, G; sparse = false, cached = false)
     B = basis(QG)
     b = B[1]
     @test sprint(show, MIME"text/plain"(), b) isa String
+  end
+
+  # Sparse group algebras of infinite groups whose elements are mutable.
+  @testset "Sparse, infinite group" begin
+    G = abelian_group([0, 0, 0])
+    g1, g2, g3 = gens(G)
+
+    # Mutating a group element must not change stored elements.
+    A = group_algebra(ZZ, G; sparse = true, cached = false)
+    w = g1 + g2
+    x = A(w)
+    add!(w, g1)
+    @test x == A(g1 + g2)
+    @test x != A(2*g1 + g2)
+
+    # Type stability
+    x = A(g1)
+    y = A(g2)
+    @test @inferred(x + y) == @inferred(y + x)
+    @test @inferred(x - y) == -@inferred(y - x)
+    @test @inferred(x * y) == A(g1 + g2)
+    @test @inferred((x + y)[g1]) == 1
+
+    # Hashing
+    @test hash(x + y) == hash(y + x)
+    @test length(Set([x, y, A(g1), x * y, y * x])) == 3
+
+    # Compact printing
+    @test sprint(show, x; context = :compact => true) isa String
+    @test sprint(show, Dict(x => 1)) isa String
+
+    # In-place operations
+    z = A(g3)
+    @test add!(z, x, y) == A(g1) + A(g2)
+    @test x == A(g1) && y == A(g2)
+    @test add!(z, z, x) == 2*A(g1) + A(g2)
+    @test addmul!(z, x, y) == 2*A(g1) + A(g2) + A(g1 + g2)
+    @test mul!(z, x, ZZ(3)) == 3*A(g1)
+    @test mul!(z, z, 2) == 6*A(g1)
+    @test iszero(zero!(z))
+    R = residue_ring(ZZ, 6)[1]
+    B = group_algebra(R, G; sparse = true, cached = false)
+    u = 2*B(g1) + 3*B(g2)
+    @test mul!(u, u, R(3)) == 3*B(g2)
+
+    # Characteristic
+    @test characteristic(A) == 0
+    @test characteristic(B) == 6
+
+    # Inverses
+    @test inv(A(g1)) == A(-g1)
+    @test inv(-A(g1 - g2)) == -A(g2 - g1)
+    Q = group_algebra(QQ, G; sparse = true, cached = false)
+    @test inv(2*Q(g1)) == Q(-g1) * QQ(1, 2)
+    @test !is_invertible(2*A(g1))[1]
+    @test !is_invertible(A(g1) + A(g2))[1]
+    @test !is_invertible(zero(A))[1]
+    @test_throws ErrorException inv(A(g1) + A(g2))
   end
 
   let

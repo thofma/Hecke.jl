@@ -153,12 +153,34 @@ is_normal(K::NumField) = length(automorphism_list(K)) == degree(K)
 #
 ################################################################################
 @doc raw"""
-    is_cm_field(K::AbsSimpleNumField) -> Bool, NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}
+    is_cm_field(K::NumField) -> Bool, NumFieldHom
 
 Given a number field $K$, this function returns true and the complex conjugation
 if the field is CM, false and the identity otherwise.
+
+For a relative field, the complex conjugation is an automorphism of $K$ as an
+absolute field; it is the identity on the base field only if the base field is
+totally real.
 """
 function is_cm_field(K::NumField)
+  c = get_attribute(K, :cm_field)
+  if c !== nothing
+    return true, c::morphism_type(K)
+  end
+  if isodd(absolute_degree(K)) || !is_totally_complex(K)
+    return false, id_hom(K)
+  end
+  Kabs, KabstoK, KtoKabs = _absolute_simple_field_internal(K)
+  fl, cabs = is_cm_field(Kabs)
+  if !fl
+    return false, id_hom(K)
+  end
+  c = KtoKabs * cabs * KabstoK
+  set_attribute!(K, :cm_field => c)
+  return true, c
+end
+
+function is_cm_field(K::AbsSimpleNumField)
   c = get_attribute(K, :cm_field)
   if c !== nothing
     return true, c::morphism_type(K)
@@ -289,11 +311,16 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
   OK = order(x)
   @assert target == false || OK === target
 
-  if isone(x)
+  K = nf(OK)
+  if !is_maximal_known_and_maximal(OK)
+    stable = all(b -> f(b) in OK, basis(OK, K; copy = false))
+    @req stable "The automorphism must preserve the order of the ideal"
+  end
+
+  if iszero(x) || isone(x)
     return x
   end
 
-  K = nf(OK)
   if has_2_elem(x) && is_maximal_known(OK) && is_maximal(OK)
     int_in_ideal = x.gen_one
     if has_minimum(x)
@@ -310,7 +337,10 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
   I = ideal(OK)
   if isdefined(x, :gen_two)
     new_gen_two = f(K(x.gen_two))
-    if has_minimum(x)
+    # Coefficientwise reduction is integral only when the power basis is
+    # integral and contained in the target order.
+    if has_minimum(x) && is_defining_polynomial_nice(K) &&
+        contains_equation_order(OK)
       new_gen_two = mod(new_gen_two, minimum(x, copy = false)^2)
     end
     if is_maximal_known(OK) && is_maximal(OK)
@@ -337,21 +367,16 @@ function induce_image(f::NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}, x::A
     end
   end
   if !has_2_elem(I)
-    #I need to translate the basis matrix
-    bb = Vector{AbsSimpleNumFieldOrderElem}(undef, degree(K))
+    # Store the transformed basis in lower-left HNF.
     B = basis(x, copy = false)
-    for i = 1:length(bb)
-      bb[i] = OK(f(K(B[i])))
-    end
-    I.basis = bb
     M = zero_matrix(ZZ, degree(K), degree(K))
-    for i = 1:degree(K)
-      el = coordinates(I.basis[i])
+    for i in eachindex(B)
+      el = coordinates(OK(f(K(B[i]))); copy = false)
       for j = 1:degree(K)
         M[i, j] = el[j]
       end
     end
-    I.basis_matrix = M
+    I.basis_matrix = _hnf!(M, :lowerleft)
   end
   return I
 end
@@ -523,8 +548,8 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
     end
 	  R = Native.GF(p, cached = false)
 		Rx = polynomial_ring(R, "x", cached = false)[1]
-    gmodp = change_base_ring(R, g; parent = Rx)
-    if degree(gmodp) == degree(g) && !is_zero(discriminant(gmodp))
+    gp = change_base_ring(R, g; parent = Rx)
+    if degree(gp) == degree(g) && !is_zero(discriminant(gp))
       break
     end
   end
@@ -576,18 +601,38 @@ function small_generating_set(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSim
   end
 end
 
-function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+function _automorphism_reduction(
+  G::Vector{<:NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}},
+  p::Int,
+)
   K = domain(G[1])
-	p = 2
-  R = Native.GF(p, cached = false)
-	Rx = polynomial_ring(R, "x", cached = false)[1]
-  while iszero(discriminant(change_base_ring(R, defining_polynomial(K); parent = Rx)))
-		p = next_prime(p)
-	  R = Native.GF(p, cached = false)
-		Rx = polynomial_ring(R, "x", cached = false)[1]
-	end
-  given_gens = fpPolyRingElem[Rx(image_primitive_element(x)) for x in G]
-  return length(closure(given_gens, (x, y) -> Hecke.compose_mod(x, y, change_base_ring(R, defining_polynomial(K); parent = Rx)), gen(Rx)))
+  d = numerator(discriminant(defining_polynomial(K)))
+  while true
+    while mod(d, p) == 0
+      p = next_prime(p)
+    end
+    try
+      R = Native.GF(p, cached = false)
+      Rx, x = polynomial_ring(R, "x", cached = false)
+      fmod = change_base_ring(R, defining_polynomial(K); parent = Rx)
+      pols = fpPolyRingElem[Rx(image_primitive_element(g)) for g in G]
+      return x, fmod, pols
+    catch e
+      if isa(e, Nemo.FlintException) && e.type == Nemo.FLINT_IMPINV
+        # A generator image can have a denominator divisible by p even when
+        # the defining polynomial has good reduction.
+        p = next_prime(p)
+        continue
+      end
+      rethrow(e)
+    end
+  end
+end
+
+function _order(G::Vector{<: NumFieldHom{AbsSimpleNumField, AbsSimpleNumField}})
+  x, fmod, given_gens = _automorphism_reduction(G, 2)
+  return length(closure(
+    given_gens, (x, y) -> Hecke.compose_mod(x, y, fmod), x))
 end
 
 ################################################################################

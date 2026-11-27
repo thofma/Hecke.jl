@@ -224,7 +224,7 @@ end
 ################################################################################
 
 function divexact(a::LaurentSeriesFieldValuationRingElem, b::LaurentSeriesFieldValuationRingElem; check::Bool=true)
-  @assert !iszero(data(b))
+  iszero(b) && throw(DivideError())
   iszero(a) && return a
   valuation(data(a)) >= valuation(data(b)) || error("division not exact")
   return LaurentSeriesFieldValuationRingElem(parent(a), divexact(data(a), data(b)))

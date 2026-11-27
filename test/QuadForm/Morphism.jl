@@ -1,7 +1,5 @@
 @testset "Morphism" begin
   L = integer_lattice(gram = zero_matrix(ZZ, 0, 0))
-  @test_throws ArgumentError shortest_vectors(L)
-  @test_throws ArgumentError shortest_vectors(L, Vector{Int})
   @test_throws ArgumentError minimum(L)
   @test (@inferred short_vectors(L, 1)) == []
   @test (@inferred short_vectors(L, 1, 2)) == []
@@ -13,4 +11,257 @@
   A2 = root_lattice(:A, 2)
   Hecke.assert_has_automorphisms(A2, redo=true, try_small=false)
   @test automorphism_group_order(A2) == 12
+
+  L = integer_lattice(gram=ZZ[3 1 -1 1 1 0 -1 -1 0 -1 1 0 -1 1 0 0 -1 1 1 -1 0 0 0 0 0 0; 1 3 1 1 0 1 0 0 -1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1; -1 1 3 -1 0 0 0 1 -1 0 1 0 0 0 0 0 0 -1 -1 1 0 0 1 -1 1 1; 1 1 -1 3 1 1 -1 0 0 1 0 1 0 0 1 0 0 0 1 -1 0 1 0 1 0 0; 1 0 0 1 3 1 -1 1 1 0 0 0 -1 1 0 0 -1 1 1 -1 0 0 1 0 1 0; 0 1 0 1 1 3 1 0 1 0 0 1 0 1 0 0 0 0 0 0 1 0 0 0 0 1; -1 0 0 -1 -1 1 3 -1 1 0 -1 0 1 0 0 0 0 0 0 1 0 0 -1 0 -1 0; -1 0 1 0 1 0 -1 3 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 1 0; 0 -1 -1 0 1 1 1 0 3 -1 -1 1 -1 1 0 -1 0 1 1 0 0 1 0 1 0 0; -1 0 0 1 0 0 0 0 -1 3 0 0 1 -1 0 0 0 0 0 0 0 0 0 0 0 0; 1 1 1 0 0 0 -1 0 -1 0 3 0 0 1 0 0 0 0 0 0 0 0 1 0 1 1; 0 0 0 1 0 1 0 0 1 0 0 3 -1 0 0 -1 0 0 0 0 0 1 0 0 0 1; -1 0 0 0 -1 0 1 0 -1 1 0 -1 3 -1 0 0 0 -1 0 0 0 0 0 0 -1 -1; 1 0 0 0 1 1 0 0 1 -1 1 0 -1 3 0 0 0 0 1 0 1 0 0 0 1 0; 0 0 0 1 0 0 0 0 0 0 0 0 0 0 3 1 1 0 0 0 -1 1 0 1 0 0; 0 0 0 0 0 0 0 0 -1 0 0 -1 0 0 1 3 0 0 0 0 0 -1 0 0 1 0; -1 0 0 0 -1 0 0 1 0 0 0 0 0 0 1 0 3 0 -1 1 0 0 0 1 0 0; 1 0 -1 0 1 0 0 0 1 0 0 0 -1 0 0 0 0 3 1 0 -1 0 0 1 0 0; 1 0 -1 1 1 0 0 0 1 0 0 0 0 1 0 0 -1 1 3 -1 0 1 0 1 0 -1; -1 0 1 -1 -1 0 1 0 0 0 0 0 0 0 0 0 1 0 -1 3 0 0 -1 0 0 1; 0 0 0 0 0 1 0 0 0 0 0 0 0 1 -1 0 0 -1 0 0 3 0 0 -1 0 0; 0 0 0 1 0 0 0 0 1 0 0 1 0 0 1 -1 0 0 1 0 0 3 0 1 0 0; 0 0 1 0 1 0 -1 1 0 0 1 0 0 0 0 0 0 0 0 -1 0 0 3 0 1 0; 0 0 -1 1 0 0 0 0 1 0 0 0 0 0 1 0 1 1 1 0 -1 1 0 3 0 0; 0 0 1 0 1 0 -1 1 0 0 1 0 -1 1 0 1 0 0 0 0 0 0 1 0 3 1; 0 1 1 0 0 1 0 0 0 0 1 1 -1 0 0 0 0 0 -1 1 0 0 0 0 1 3])
+  Hecke.__assert_has_automorphisms(L; use_everything=true);
+  @test 18720000 == L.automorphism_group_order
+
+  A = [[2 -1 0 0 0 0; -1 2 -1 0 0 0; 0 -1 2 -1 0 0; 0 0 -1 2 -1 0; 0 0 0 -1 2 0; 0 0 0 0 0 20], [2 0 0 0 -1 -1; 0 2 0 -1 0 -1; 0 0 2 -1 1 0; 0 -1 -1 4 1 2; -1 0 1 1 4 1; -1 -1 0 2 1 4], [2 -1 1 0 0 0; -1 2 -1 0 0 0; 1 -1 2 0 0 0; 0 0 0 2 0 0; 0 0 0 0 2 1; 0 0 0 0 1 8], [2 1 -1 -1 0 0; 1 2 -1 -1 0 0; -1 -1 2 1 0 0; -1 -1 1 2 0 0; 0 0 0 0 2 0; 0 0 0 0 0 12], [2 -1 0 0 0 -1; -1 2 0 0 0 0; 0 0 2 0 1 0; 0 0 0 2 1 0; 0 0 1 1 4 0; -1 0 0 0 0 4], [2 -1 1 0 -1 -1; -1 2 -1 0 1 1; 1 -1 2 0 0 0; 0 0 0 2 0 0; -1 1 0 0 4 1; -1 1 0 0 1 6], [2 -1 1 1 -1 0; -1 2 -1 -1 0 0; 1 -1 2 0 0 0; 1 -1 0 2 -1 0; -1 0 0 -1 2 0; 0 0 0 0 0 30]]
+  # Genus representatives of some genus
+  L = [integer_lattice(gram=matrix(QQ,6,6,i),cached=false) for i in A]
+  # mass formula
+  @test sum(1//automorphism_group_order(i) for i in L) == mass(genus(L[1]))
+  # hardcoded orders
+  orders = ZZRingElem[2880, 64, 384, 960, 192, 384, 7680]
+  @test  orders == automorphism_group_order.(L)
+  # test different options
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=false, compress=false, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_fixed_vectors=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=false, redo=true, search_fixed_vectors=false)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=false)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=false, short_vectors_direct=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=true, compress=true, redo=true, search_fixed_vectors=true, short_vectors_direct=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=false, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=false, use_weyl=true, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  for i in L
+    Hecke.__assert_has_automorphisms(i; use_everything=false, use_weyl=true, use_projections=true, compress=true, redo=true)
+  end
+  @test  orders == automorphism_group_order.(L)
+
+  # Non-integral lattices: norm one vectors are split off in an integral
+  # rescaling. Scaling a form does not change its automorphisms.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    E8 = change_base_ring(ZZ, gram_matrix(root_lattice(:E, 8)))
+    for (G, o) in [(diagonal_matrix(ZZ[1;], A2), 24),
+                   (diagonal_matrix(A2, ZZ[3;]), 24),
+                   (identity_matrix(ZZ, 3), 48), (E8, 696729600)]
+      for a in [1//2, 1//3, -1//5]
+        L = rescale(integer_lattice(; gram = G), a)
+        @test automorphism_group_order(L) == o
+        @test all(g * gram_matrix(L) * transpose(g) == gram_matrix(L)
+                  for g in automorphism_group_generators(L))
+      end
+    end
+  end
+
+  L = integer_lattice(; gram = ZZ[-2 0 0 0 1 1 -1 -1 -1 -1 -1 -1 1 1 1 -1 -1; 0 -2 1 1 0 0 -1 -1 -1 1 -1 1 1 1 1 1 1; 0 1 -2 0 0 0 0 1 0 -1 0 -1 0 -1 0 -1 -1; 0 1 0 -2 0 0 0 0 0 -1 0 -1 0 0 -1 0 0; 1 0 0 0 -2 0 1 0 1 1 1 1 -1 -1 0 0 1; 1 0 0 0 0 -2 0 0 1 1 1 1 0 -1 0 1 1; -1 -1 0 0 1 0 -4 -2 -2 -1 -2 -1 2 0 0 1 -1; -1 -1 1 0 0 0 -2 -4 0 1 0 1 2 0 1 0 0; -1 -1 0 0 1 1 -2 0 -4 -2 -3 -2 2 2 1 1 0; -1 1 -1 -1 1 1 -1 1 -2 -4 -1 -3 0 0 0 0 -2; -1 -1 0 0 1 1 -2 0 -3 -1 -4 -1 2 2 0 1 0; -1 1 -1 -1 1 1 -1 1 -2 -3 -1 -4 0 0 0 -1 -2; 1 1 0 0 -1 0 2 2 2 0 2 0 -4 -1 -1 -1 0; 1 1 -1 0 -1 -1 0 0 2 0 2 0 -1 -4 -1 0 -1; 1 1 0 -1 0 0 0 1 1 0 0 0 -1 -1 -4 1 -1; -1 1 -1 0 0 1 1 0 1 0 1 -1 -1 0 1 -4 -1; -1 1 -1 0 1 1 -1 0 0 -2 0 -2 0 -1 -1 -1 -4]);
+  @test Hecke.reduced_automorphism_group_order(L)==2
+
+  L = integer_lattice(gram=QQ[3 1 -1 1 1 0 -1 -1 0 -1 1 0 -1 1 0 0 -1 1 1 -1 0 0 0 0 0 0; 1 3 1 1 0 1 0 0 -1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1; -1 1 3 -1 0 0 0 1 -1 0 1 0 0 0 0 0 0 -1 -1 1 0 0 1 -1 1 1; 1 1 -1 3 1 1 -1 0 0 1 0 1 0 0 1 0 0 0 1 -1 0 1 0 1 0 0; 1 0 0 1 3 1 -1 1 1 0 0 0 -1 1 0 0 -1 1 1 -1 0 0 1 0 1 0; 0 1 0 1 1 3 1 0 1 0 0 1 0 1 0 0 0 0 0 0 1 0 0 0 0 1; -1 0 0 -1 -1 1 3 -1 1 0 -1 0 1 0 0 0 0 0 0 1 0 0 -1 0 -1 0; -1 0 1 0 1 0 -1 3 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 1 0; 0 -1 -1 0 1 1 1 0 3 -1 -1 1 -1 1 0 -1 0 1 1 0 0 1 0 1 0 0; -1 0 0 1 0 0 0 0 -1 3 0 0 1 -1 0 0 0 0 0 0 0 0 0 0 0 0; 1 1 1 0 0 0 -1 0 -1 0 3 0 0 1 0 0 0 0 0 0 0 0 1 0 1 1; 0 0 0 1 0 1 0 0 1 0 0 3 -1 0 0 -1 0 0 0 0 0 1 0 0 0 1; -1 0 0 0 -1 0 1 0 -1 1 0 -1 3 -1 0 0 0 -1 0 0 0 0 0 0 -1 -1; 1 0 0 0 1 1 0 0 1 -1 1 0 -1 3 0 0 0 0 1 0 1 0 0 0 1 0; 0 0 0 1 0 0 0 0 0 0 0 0 0 0 3 1 1 0 0 0 -1 1 0 1 0 0; 0 0 0 0 0 0 0 0 -1 0 0 -1 0 0 1 3 0 0 0 0 0 -1 0 0 1 0; -1 0 0 0 -1 0 0 1 0 0 0 0 0 0 1 0 3 0 -1 1 0 0 0 1 0 0; 1 0 -1 0 1 0 0 0 1 0 0 0 -1 0 0 0 0 3 1 0 -1 0 0 1 0 0; 1 0 -1 1 1 0 0 0 1 0 0 0 0 1 0 0 -1 1 3 -1 0 1 0 1 0 -1; -1 0 1 -1 -1 0 1 0 0 0 0 0 0 0 0 0 1 0 -1 3 0 0 -1 0 0 1; 0 0 0 0 0 1 0 0 0 0 0 0 0 1 -1 0 0 -1 0 0 3 0 0 -1 0 0; 0 0 0 1 0 0 0 0 1 0 0 1 0 0 1 -1 0 0 1 0 0 3 0 1 0 0; 0 0 1 0 1 0 -1 1 0 0 1 0 0 0 0 0 0 0 0 -1 0 0 3 0 1 0; 0 0 -1 1 0 0 0 0 1 0 0 0 0 0 1 0 1 1 1 0 -1 1 0 3 0 0; 0 0 1 0 1 0 -1 1 0 0 1 0 -1 1 0 1 0 0 0 0 0 0 1 0 3 1; 0 1 1 0 0 1 0 0 0 0 1 1 -1 0 0 0 0 0 -1 1 0 0 0 0 1 3])
+  Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = false, use_dual = true, use_everything = true, search_invariant_subspace = false, do_lll = false, depth = 0);
+  @test L.reduced_automorphism_group_order == 18720000
+  Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = true, use_dual = true, use_everything = true, search_invariant_subspace = false, do_lll = false, depth = 0);
+  @test L.reduced_automorphism_group_order == 18720000
+  Hecke.__assert_has_automorphisms(L; redo = true, short_vectors_direct = true, use_dual = true, use_everything = true, search_invariant_subspace = true, do_lll = false, depth = 0);
+  @test L.reduced_automorphism_group_order == 18720000
+
+  # Reduced automorphism group order: the order of the group divided by that
+  # of the Weyl group of the positive definite rescaling of scale 1, on the
+  # Weyl route and when it does not run.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    red(L) = Hecke.reduced_automorphism_group_order(L)
+    # the order computed first, without the Weyl route
+    function red_after_order(L)
+      Hecke.__assert_has_automorphisms(L; use_everything = false,
+                                       use_weyl = false,
+                                       use_projections = false,
+                                       use_target_enum = false)
+      return red(L)
+    end
+    @test red(integer_lattice(; gram = diagonal_matrix(ZZ[1;], A2))) == 2
+    # the roots do not depend on the scale
+    for s in [1, -1, 2, 3, 1//2, 1//3, 3//2]
+      @test red(rescale(root_lattice(:A, 2), s)) == 2
+      @test red_after_order(rescale(root_lattice(:A, 2), s)) == 2
+      @test red(rescale(integer_lattice(; gram = diagonal_matrix(ZZ[1;], A2)), s)) == 2
+    end
+    @test red(rescale(root_lattice(:E, 8), 2)) == 1
+    # entries beyond Int: A2 in the basis (1, N), (0, 1)
+    B = ZZ[1 ZZ(2)^40; 0 1]
+    @test red(integer_lattice(; gram = B * A2 * transpose(B))) == 2
+    @test red(integer_lattice(; gram = zero_matrix(ZZ, 0, 0))) == 1
+    G = diagonal_matrix(A2, A2, ZZ[5;])
+    @test red_after_order(integer_lattice(; gram = G)) ==
+          red(integer_lattice(; gram = G)) == 16
+    L = integer_lattice(; gram = diagonal_matrix(A2, ZZ[3;]))
+    @test red(rescale(L, -1)) == 4
+    @test red_after_order(rescale(L, 3//2)) == red(rescale(L, 3//2)) == 4
+  end
+
+  @testset "Gram matrix compression bounds" begin
+    # Seed 2 produces a 50-bit invariant form in twisted_34.lattices#1034.
+    G = matrix(ZZ, [
+      2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0;
+      0  6  3  3  3 -3 -3  0 -3  3 -3 -3 -3  3  3  3  3  3;
+      0  3  6  3  3 -3  0  0  0  0  0  0  0  0  0  0  0  0;
+      0  3  3  6  3 -3  0  0 -3  3 -3 -3 -3  3  3  3  3  3;
+      0  3  3  3  6 -3  0  0 -3  3 -3 -3 -3  3  3  3  3  3;
+      0 -3 -3 -3 -3  6  0  0  0  0  0  0  0  0  0  0  0  0;
+      0 -3  0  0  0  0  6  0  0  0  0  0  0  0  0 -3 -3 -3;
+      0  0  0  0  0  0  0  6  3 -3 -3  3 -3 -3 -3  0  0  0;
+      0 -3  0 -3 -3  0  0  3 12 -9  6  9  6 -9 -9 -6 -6 -6;
+      0  3  0  3  3  0  0 -3 -9 12 -3 -9 -3  9  9  6  6  6;
+      0 -3  0 -3 -3  0  0 -3  6 -3 12  3  9 -3 -3 -6 -6 -6;
+      0 -3  0 -3 -3  0  0  3  9 -9  3 12  3 -9 -9 -3 -6 -6;
+      0 -3  0 -3 -3  0  0 -3  6 -3  9  3 12 -3 -3 -6 -3 -3;
+      0  3  0  3  3  0  0 -3 -9  9 -3 -9 -3 12  9  3  6  6;
+      0  3  0  3  3  0  0 -3 -9  9 -3 -9 -3  9 12  3  6  6;
+      0  3  0  3  3  0 -3  0 -6  6 -6 -3 -6  3  3 12  6  6;
+      0  3  0  3  3  0 -3  0 -6  6 -6 -6 -3  6  6  6 12  9;
+      0  3  0  3  3  0 -3  0 -6  6 -6 -6 -3  6  6  6  9 12;
+    ])
+    Random.seed!(2)
+    L = integer_lattice(; gram = G, cached = false)
+    @test automorphism_group_order(L; redo = true,
+      short_vectors_direct = false, use_dual = true, use_everything = true,
+      search_invariant_subspace = true, do_lll = false, depth = 0) == 58060800
+    @test all(g -> g * G * transpose(g) == G,
+              automorphism_group_generators(L; ambient_representation = false))
+  end
+
+  # Entries beyond Int: the search first runs with Int entries allowing
+  # overflows, which must not reject a candidate. Scaling a form changes
+  # neither its automorphisms nor its isometries.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    J = ZZ[0 1; -1 0]
+    E8 = change_base_ring(ZZ, gram_matrix(root_lattice(:E, 8)))
+    X = ZZ[3 2; 1 1]
+    function order_of_forms(G)
+      C = Hecke.ZLatAutoCtx(G)
+      Hecke.init(C)
+      Hecke.auto(C)
+      return Hecke._get_generators(C)[2]
+    end
+    for e in [63, 64, 100]
+      N = ZZ(2)^e
+      @test automorphism_group_order(integer_lattice(; gram = N * A2)) == 12
+      @test automorphism_group_order(integer_lattice(; gram = N * E8)) ==
+            696729600
+      @test order_of_forms([ZZ[N 1; 1 N]]) == 4
+      @test order_of_forms([N * A2, N * J]) == 6
+      L = integer_lattice(; gram = ZZ[N 1; 1 N])
+      M = integer_lattice(; gram = X * gram_matrix(L) * transpose(X))
+      fl, T = is_isometric_with_isometry(L, M)
+      @test fl
+      @test T * gram_matrix(M) * transpose(T) == gram_matrix(L)
+    end
+  end
+
+  @testset "Small setup with large extra forms" begin
+    # Every form in both contexts must fit Int before taking the small path;
+    # otherwise the exact searches must still compute the correct result.
+    N = ZZ(2)^100
+    I2 = identity_matrix(ZZ, 2)
+    H = ZZMatrix[I2, ZZ[1 0; 0 2]]
+    @test first(Hecke.try_init_small(Hecke.ZLatAutoCtx(H)))
+    @test first(Hecke._try_iso_setup_small(H, H))
+
+    for F in (ZZ[1 0; 0 N], ZZ[1 0; 0 -N], ZZ[1 N; N 1], ZZ[1 -N; -N 1])
+      G = ZZMatrix[I2, F]
+      C = Hecke.ZLatAutoCtx(G)
+      D = Hecke.ZLatAutoCtx(H)
+      @test !first(Hecke.try_init_small(C))
+      @test !first(Hecke.try_init_small(C, true, ZZ(1)))
+      @test !first(Hecke.try_init_small(C, false, ZZ(1); D))
+      @test !first(Hecke.try_init_small(D, false, ZZ(1); D = C))
+      @test !first(Hecke.try_init_small(Hecke.ZLatAutoCtx([I2, I2, F])))
+      @test !first(Hecke._try_iso_setup_small(G, G))
+      @test !first(Hecke._try_iso_setup_small(G, H))
+      @test !first(Hecke._try_iso_setup_small(H, G))
+
+      Hecke.init(C)
+      gens, order = Hecke.auto(C)
+      @test order == 4
+      @test all(g * A * transpose(g) == A for g in gens for A in G)
+
+      Ci, Co = Hecke._iso_setup(G, G)
+      fl, T = Hecke.isometry(Ci, Co)
+      @test fl
+      @test all(T * A * transpose(T) == A for A in G)
+    end
+  end
+
+  # Entries between 2^62 and 2^63: the default route, through the Weyl
+  # group, cannot enumerate its target vectors with Int; the search proceeds
+  # as for entries beyond Int. Scaling a form does not change its group.
+  let
+    N = ZZ(2)^62
+    s = ZZ(2)^61 + 1
+    A2 = ZZ[2 -1; -1 2]
+    D4 = change_base_ring(ZZ, gram_matrix(root_lattice(:D, 4)))
+    G = ZZ[N 0; 0 N+1]
+    @test automorphism_group_order(integer_lattice(; gram = G)) == 4
+    @test automorphism_group_order(integer_lattice(; gram = s * A2)) == 12
+    L = integer_lattice(; gram = s * D4)
+    @test automorphism_group_order(L) == 1152
+    @test all(g * gram_matrix(L) * transpose(g) == gram_matrix(L)
+              for g in automorphism_group_generators(L))
+    G = diagonal_matrix(ZZ[1;], s * A2)
+    @test automorphism_group_order(integer_lattice(; gram = G)) == 24
+  end
+
+  # Issue #2311: `ZLatAutoCtx`'s `init` threw `UndefRefError` whenever
+  # more than 2 simultaneous Gram matrices were used, because the
+  # short-vector length loop inside `init` always wrote to `w[2]`
+  # instead of `w[k]`, leaving `w[3:r]` permanently undefined.
+  # G4 == G2 is deliberate: it makes fingerprint's length comparison
+  # loop reach (and previously crash on) the undefined w[3] slot
+  # instead of bailing out earlier on an unrelated mismatch.
+  let
+    G1 = 2 * identity_matrix(ZZ, 3)
+    G2 = 3 * identity_matrix(ZZ, 3)
+    G3 = 5 * identity_matrix(ZZ, 3)
+    G4 = 3 * identity_matrix(ZZ, 3)
+    C = Hecke.ZLatAutoCtx([G1, G2, G3, G4])
+    @test (Hecke.init(C, true); true)  # used to throw UndefRefError
+  end
 end

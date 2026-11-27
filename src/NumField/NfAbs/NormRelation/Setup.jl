@@ -68,56 +68,6 @@ function Base.show(io::IO, N::NormRelation)
   end
 end
 
-function _norm_relation_setup_abelian(K::AbsSimpleNumField; small_degree::Bool = true, pure::Bool = true, index::ZZRingElem = zero(ZZRingElem))
-  G = automorphism_list(K)
-  A, GtoA, AtoG = Hecke.find_isomorphism_with_abelian_group(G);
-  if iszero(index)
-    subs = [f for f in subgroups(A) if order(f[1]) > 1]
-  else
-    subs = [f for f in subgroups(A) if order(f[1]) > 1 && order(f[1]) == index || order(f[1]) == index^2]
-  end
-
-  b, den, ls = Hecke._has_norm_relation_abstract(A, subs, large_index = !small_degree, pure = pure)
-  @assert b
-  n = length(ls)
-
-  z = NormRelation{Int}()
-  z.K = K
-  z.subfields = Vector{Tuple{AbsSimpleNumField, morphism_type(AbsSimpleNumField, AbsSimpleNumField)}}(undef, n)
-  z.denominator = den
-  z.ispure = false
-
-  for i in 1:n
-    F, mF = Hecke.fixed_field1(K, morphism_type(AbsSimpleNumField, AbsSimpleNumField)[AtoG[f] for f in ls[i][2]])
-    S, mS = simplify(F, cached = false)
-    L = S
-    mL = mS * mF
-    z.subfields[i] = L, mL
-  end
-
-  if pure
-    z.ispure = true
-    z.pure_coefficients = Vector{Int}(undef, n)
-    for i in 1:n
-      z.pure_coefficients[i] = ls[i][1]
-    end
-  else
-    z.coefficients = Vector{Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Int}}}(undef, n)
-    for i in 1:n
-      w = Vector{Tuple{morphism_type(AbsSimpleNumField, AbsSimpleNumField), Int}}(undef, length(ls[i][1]))
-      for (j, (expo, auto)) in enumerate(ls[i][1])
-        w[j] = (AtoG[auto], expo)
-      end
-      z.coefficients[i] = w
-    end
-
-  end
-
-  z.is_abelian = true
-
-  return z
-end
-
 function _norm_relation_for_sunits(K::AbsSimpleNumField; small_degree::Bool = true,  pure::Bool = false, target_den::ZZRingElem = zero(ZZRingElem), max_degree::Int = degree(K))
   @vprintln :NormRelation 1 "Computing automorphisms"
   A = automorphism_list(K)
@@ -440,7 +390,7 @@ function induce_action(N::NormRelation, i, j, s, FB, cache)
   if haskey(N.induced, auto)
     p = N.induced[auto]
   else
-    p = induce(FB, auto)
+    p = Hecke.induce(FB, auto)
     N.induced[auto] = p
   end
   #@show p

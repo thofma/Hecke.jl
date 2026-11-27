@@ -80,6 +80,14 @@ end
 
   k, z = cyclotomic_field(1)
   @test isone(t2(z))
+
+  # Working precision is determined by the element height. This example
+  # requires the first precision doubling beyond 2^18 bits.
+  k, z = quadratic_field(-1)
+  height = 262_200
+  high = t2(k(ZZ(2)^height) * z)
+  @test contains(high, ZZ(2)^(2 * height + 1))
+  @test Hecke.radiuslttwopower(high, -32)
 end
 
 @testset "signs" begin
@@ -142,6 +150,15 @@ end
   f = x^12-3502319*x^10-3032677266943*x^8+17220065055936439179*x^6+26436504739687580368857995*x^4+12508949875084010197801010438203*x^2+1495531630727918278288148065057756816
   K, a = number_field(f, "a")
   @test 19619386 >= t2(a) >= 19619385
+
+  # conjugates of rationals, with the same tolerance as for field elements
+  for q in [QQ(1, 2), QQ(1, 3), QQ(10)^30 + QQ(1, 3)], prec in [32, 256]
+    co = @inferred conjugates(q, prec)
+    @test length(co) == 1
+    @test contains(co[1], q)
+    @test Hecke.radiuslttwopower(co[1], -prec)
+  end
+  @test contains(only(conjugates(QQ(1, 3))), QQ(1, 3))
 end
 
 @testset "(real) cyclotomic fields" begin

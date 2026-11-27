@@ -28,21 +28,28 @@ jobs:
       matrix:
         julia-version:
           - '1.10'
-          - '1.11'
-          - '1.12'
-          - '1.13-nightly'
+          - '1.13'
+          - '1.14-nightly'
           - 'nightly'
         os:
           - ubuntu-latest
+        assertions:
+          - false
         include:
+          # Run one dedicated assertion-enabled job on the latest stable Julia.
+          - julia-version: '1'
+            os: ubuntu-latest
+            assertions: true
           # Add a few windows and macOS jobs (not too many, the number we can run in parallel is limited)
           - julia-version: '1.10'
             os: macOS-latest
+            assertions: false
           - julia-version: '1.10'
             os: windows-latest
+            assertions: false
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: "Set up Julia"
         uses: julia-actions/setup-julia@v3
         with:
@@ -54,9 +61,15 @@ jobs:
       - name: "Run tests"
         uses: julia-actions/julia-runtest@v1
         env:
-          HECKE_TEST_PARALLEL: "2"
+          # The macOS runners have 7 GB of memory; two workers swap, and the
+          # job spends more time in GC than in the tests.
+          NUMPROCS: ${{ matrix.os == 'macOS-latest' && '1' || '2' }}
+          HECKE_TEST_ASSERTIONS: "${{ matrix.assertions }}"
         with:
           depwarn: error
+          # coverage is not processed (see below), but instrumentation slows
+          # the tests by about 15%
+          coverage: false
         #      - name: "Process code coverage"
         #        uses: julia-actions/julia-processcoverage@v1
         #      - name: "Upload coverage data to Codecov"
@@ -66,7 +79,7 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - run: |
           echo $RELEASE_VERSION
@@ -75,7 +88,7 @@ jobs:
           git config user.name github-actions # mike needs a user name, but we do not push the commit, so all is fine
           git config user.email github-actions@github.com
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer
       - uses: julia-actions/setup-julia@v3
@@ -87,3 +100,60 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+
+  # Build the manual as a PDF. This also catches math that LaTeX rejects but
+  # KaTeX, which renders the math of the website, accepts.
+  docs-pdf:
+    name: Documentation (PDF)
+    # Pin Ubuntu to 24.04 for now, because latexminted in Ubuntu 26.04 fails
+    # on Python 3.14, see
+    # https://bugs.launchpad.net/ubuntu/+source/texlive-extra/+bug/2154292
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: '1.10'
+      - uses: julia-actions/cache@v3
+      - uses: julia-actions/julia-buildpkg@v1
+      - name: Install TeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            latexmk \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-luatex \
+            texlive-xetex \
+            python3-pygments \
+            fontconfig \
+            fonts-dejavu-core \
+            fonts-dejavu-extra
+      - name: Prepare building docs
+        run: |
+          julia --color=yes --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()))'
+          julia --color=yes --project=docs/ -e 'using Pkg; Pkg.instantiate()'
+      - name: Build PDF
+        env:
+          DOCUMENTER_LATEX_SHOW_LOGS: 'true'
+          # keep the LaTeX sources and log
+          DOCUMENTER_LATEX_DEBUG: ${{ runner.temp }}/latex
+        run: julia --color=yes --project=docs/ docs/make.jl --pdf
+      - name: Check for dropped characters
+        # LuaTeX drops characters that its fonts lack, such as Greek letters,
+        # subscripts or math symbols written as Unicode in a formula, and
+        # only logs this
+        run: |
+          log="$RUNNER_TEMP/latex/Hecke.jl.log"
+          test -f "$log"
+          if grep 'Missing character' "$log"; then
+            exit 1
+          fi
+      - name: Upload PDF
+        uses: actions/upload-artifact@v7
+        with:
+          path: docs/build/Hecke.jl.pdf
+          archive: false
+          if-no-files-found: error

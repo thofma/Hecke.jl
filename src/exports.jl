@@ -66,6 +66,7 @@ export HypellCrvIsom
 export HypellCrvPt
 export IdealSet
 export InfPlc
+export IntegerUnion
 export Isogeny
 export KInftyElem
 export KInftyRing
@@ -140,6 +141,7 @@ export absolute_inertia_degree
 export absolute_minpoly
 export absolute_norm
 export absolute_primitive_element
+export absolute_prime_decomposition_type
 export absolute_ramification_index
 export absolute_representation_matrix
 export absolute_simple_field
@@ -236,6 +238,7 @@ export composition_factors_with_multiplicity
 export composition_series
 export compositum
 export conductor
+export conic_curve
 export conj
 export conjugacy_classes
 export conjugate
@@ -246,8 +249,10 @@ export conjugates_complex
 export conjugates_init
 export conjugates_log
 export conjugates_real
+export connecting_ideal
 export constant_coefficient
 export constant_field
+export constant_field_degree
 export contains_equation_order
 export content_ideal
 export contract
@@ -277,6 +282,7 @@ export decompose_into_p_rings
 export decomposition_field
 export decomposition_group
 export deepcopy
+export defining_constant_field
 export defining_modulus
 export defining_polynomial
 export defining_polynomials
@@ -295,6 +301,7 @@ export dickman_rho
 export different
 export different_divisor
 export differential
+export differentiation
 export dim
 export dimension
 export dimension_of_center
@@ -305,7 +312,10 @@ export disc_log
 export disc_log_mod
 export discriminant
 export discriminant_group
+export discriminant_of_ternary_quartic
 export div
+export divisor
+export dixmier_ohno_invariants
 export divexact
 export divexact!
 export divisibility
@@ -319,7 +329,10 @@ export dual
 export dual_isogeny
 export dual_of_frobenius
 export echelon_with_transform
+export eichler_level
 export eisenstein_extension
+export eisenstein_reduction
+export eisenstein_reduction_with_transform
 export elem_in_algebra
 export elem_in_nf
 export elem_order_bsgs
@@ -328,6 +341,7 @@ export elementary_divisors
 export elements
 export elliptic_curve
 export elliptic_curve_from_j_invariant
+export elliptic_curve_with_point_of_order
 export embed_in_unimodular
 export embedded_number_field
 export embedding
@@ -373,15 +387,17 @@ export function_field
 export fundamental_discriminant
 export g2_from_igusa
 export g2_invariants
+export g4_invariants
 export galois_module
+export gap_numbers
 export gcd
-export gcd_into!
 export gen_index
 export generators
 export generic_group
 export gens_with_data
 export genus
 export genus_field
+export genus_from_gram
 export genus_representatives
 export get_assertion_level
 export get_verbosity_level
@@ -393,6 +409,9 @@ export gram_matrix_bilinear
 export gram_matrix_of_generators
 export gram_matrix_of_rational_span
 export gram_matrix_quadratic
+export gross_gram_matrix
+export gross_lattice
+export gross_lattice_basis
 export group
 export group_algebra
 export grunwald_wang
@@ -402,6 +421,8 @@ export has_finite_multiplicative_order
 export has_global_minimal_model
 export has_image_with_image
 export has_preimage_with_preimage
+export has_rational_point
+export has_rational_point_with_point
 export hasse_interval
 export hasse_invariant
 export hcat
@@ -429,6 +450,7 @@ export howell_form
 export hyperbolic_plane_lattice
 export hyperelliptic_curve
 export hyperelliptic_polynomials
+export hyperelliptic_transform
 export hyperkaehler_lattice
 export id
 export id_hom
@@ -506,6 +528,7 @@ export is_discriminant
 export is_dyadic
 export is_effective
 export is_eichler
+export is_eisenstein_reduced
 export is_elementary
 export is_elementary_with_prime
 export is_equal_locally
@@ -562,6 +585,7 @@ export is_norm
 export is_normal
 export is_on_curve
 export is_ordinary
+export is_p_rational
 export is_positive
 export is_positive_definite
 export is_power
@@ -575,9 +599,11 @@ export is_principal_with_data
 export is_probable_supersingular
 export is_pure
 export is_quadratic
+export is_quasi_p_rational
 export is_radical_extension
 export is_ramified
 export is_rationally_isometric
+export is_real_cyclotomic_field_p_rational
 export is_reduced
 export is_regular
 export is_represented_by
@@ -651,10 +677,13 @@ export lattice_name
 export lattice_with_local_conditions
 export lcm
 export leading_coefficient
+export least_connecting_norm
+export least_norm_ideal
 export leech_lattice
 export left_ideal
 export left_order
 export level
+export line_orbits
 export lll
 export lll_basis
 export lll_gram_indef_isotropic
@@ -698,6 +727,7 @@ export mod!
 export mod_sym!
 export modord
 export modular_init
+export module_index
 export modulus_bilinear_form
 export modulus_quadratic_form
 export morphisms
@@ -708,6 +738,7 @@ export mul_sparse
 export multiples
 export multiplication_by_m_map
 export multiplication_table
+export multiplicative_generator
 export multiplicative_group
 export multiplicative_group_generators
 export multiplicative_order
@@ -752,6 +783,8 @@ export orthogonal_submodule
 export overlattice
 export overlattices
 export overorders
+export p_rationality_context
+export parametrization
 export parent
 export periods
 export permute_row
@@ -766,6 +799,7 @@ export postinverse
 export poverorder
 export poverorders
 export powermod
+export power_representation
 export pr_torsion_basis
 export pradical
 export precision
@@ -798,18 +832,21 @@ export push!
 export push_through_isogeny
 export quadratic_defect
 export quadratic_field
+export quadratic_kummer_generator
 export quadratic_lattice
 export quadratic_product
 export quadratic_space
 export quadratic_twist
 export quadratic_twists
 export quaternion_algebra
+export quaternion_algebra_ramified_at
 export quo
 export quotient
 export radical
 export radical_bilinear
 export radical_extension
 export radical_quadratic
+export ramification_divisor
 export ramification_group
 export ramification_index
 export ramified_primes
@@ -820,6 +857,7 @@ export rank
 export ranks
 export rational_canonical_form
 export rational_maps
+export rational_point
 export rational_reconstruction
 export rational_span
 export rationals_as_number_field
@@ -828,6 +866,10 @@ export ray_class_group
 export real_embeddings
 export real_period
 export real_places
+export reconstruct_from_dixmier_ohno_invariants
+export reconstruct_from_igusa_invariants
+export reconstruct_from_g2_invariants
+export reconstruct_from_g4_invariants
 export reduce_full
 export reduce_binary_form
 export reduced_charpoly
@@ -852,6 +894,7 @@ export restrict_scalars
 export restrict_scalars_with_map
 export resultant
 export riemann_roch_space
+export right_class_set
 export right_ideal
 export right_order
 export ring_of_integers
@@ -879,6 +922,7 @@ export set_var!
 export set_vars!
 export set_verbosity_level
 export shift
+export shioda_invariants
 export short_vectors
 export short_vectors_affine
 export short_vectors_affine_iterator
@@ -905,7 +949,6 @@ export snf
 export snf_with_transform
 export solve
 export solve_init
-export sparse
 export sparse_matrix
 export sparse_matrix_type
 export sparse_row
@@ -945,6 +988,7 @@ export tates_algorithm_global
 export tates_algorithm_local
 export tensor_product
 export theta
+export theta_series
 export tidy_model
 export torsion_bound
 export torsion_free_rank
@@ -966,13 +1010,17 @@ export trace_of_frobenius
 export trailing_coefficient
 export transform
 export transform_rstu
+export transformation_GLn
 export transvectant
+export transvectant_sequence
 export triangularize
 export trivial_divisor
 export trivial_morphism
 export trred
 export trred_matrix
 export twists
+export type_number
+export type_set
 export twosided_ideal
 export uniformizer
 export unit_group
@@ -987,7 +1035,9 @@ export vcat!
 export vectors_of_square_and_divisibility
 export vector_space_dim
 export volume
+export weierstrass_places
 export weighted_equality
+export weighted_multiply
 export weighted_reduction
 export weil_pairing
 export wildanger_field

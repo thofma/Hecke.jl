@@ -15,6 +15,8 @@ _can_canonicalize(::Type{<:PolyRingElem{T}}) where {T <: FieldElem} = true
 
 _can_canonicalize(::Type{<:FieldElem}) = true
 
+_can_canonicalize(::Type{<:KInftyElem}) = true
+
 function _canonicalize(x::ZZRingElem)
   if x > 0
     return x
@@ -33,15 +35,13 @@ end
 
 _canonicalize(x::FieldElem) = iszero(x) ? x : one(x)
 
+_canonicalize(x::KInftyElem) = iszero(x) ? x : divexact(x, canonical_unit(x))
+
 _canonicalize(x) = x
 
 Base.hash(x::PIDIdeal{T}, h::UInt) where {T} = _can_canonicalize(T) ? hash(gen(x), h) : zero(UInt)
 
 # constructors
-*(R::Ring, x::IntegerUnion) = ideal(R, x)
-
-*(x::IntegerUnion, R::Ring) = ideal(R, x)
-
 function _ideal_pid(R::Ring, x::RingElement, y::RingElement...)
   return PIDIdeal(mapreduce(z -> parent(z) === R ? z : R(z), gcd, (x,y...)))
 end
@@ -58,6 +58,14 @@ function ideal(R::PolyRing{<:FieldElem}, xs::Vector)
   return _ideal_pid(R, xs)
 end
 
+function ideal(R::KInftyRing, x::RingElement, y::RingElement...)
+  return _ideal_pid(R, x, y...)
+end
+
+function ideal(R::KInftyRing, xs::Vector)
+  return _ideal_pid(R, xs)
+end
+
 function ideal(R::Field, x::RingElement, y::RingElement...)
   return _ideal_pid(R, x, y...)
 end
@@ -69,6 +77,8 @@ end
 ideal_type(::Type{T}) where {T<:Field} = PIDIdeal{elem_type(T)}
 
 ideal_type(::Type{T}) where {T<:PolyRing{<:FieldElem}} = PIDIdeal{elem_type(T)}
+
+ideal_type(::Type{T}) where {T<:KInftyRing} = PIDIdeal{elem_type(T)}
 
 
 # Show
@@ -112,7 +122,9 @@ lcm(x::PIDIdeal, y::PIDIdeal) = intersect(x, y)
 
 *(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(x.gen * y.gen)
 
-^(x::PIDIdeal, n::IntegerUnion) = PIDIdeal(x.gen ^ n)
+^(x::PIDIdeal, n::Integer) = PIDIdeal(x.gen ^ n)
+
+^(x::PIDIdeal, n::ZZRingElem) = PIDIdeal(x.gen ^ n)
 
 intersect(x::PIDIdeal, y::PIDIdeal) = PIDIdeal(lcm(x.gen, y.gen))
 

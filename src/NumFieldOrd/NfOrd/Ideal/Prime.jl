@@ -98,8 +98,8 @@ function lift(K::AbsSimpleNumField, f::T) where {T <: Zmodn_poly}
     f = mod(f, change_base_ring(base_ring(parent(f)), K.pol; parent = parent(f)))
   end
   r = K()
-  for i=0:f.length-1
-    u = ccall((:nmod_poly_get_coeff_ui, libflint), UInt, (Ref{T}, Int), f, i)
+  for i=0:degree(f)
+    u = Nemo.coeff_raw(f, i)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -110,9 +110,9 @@ function lift(K::AbsSimpleNumField, f::FpPolyRingElem)
     f = mod(f, parent(f)(K.pol))
   end
   r = K()
-  for i=0:f.length-1
+  for i=0:degree(f)
     u = ZZRingElem()
-    ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FpPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), u, f, i, f.parent.base_ring.ninv)
+    ccall((:fmpz_mod_poly_get_coeff_fmpz, libflint), Nothing, (Ref{ZZRingElem}, Ref{FpPolyRingElem}, Int, Ref{fmpz_mod_ctx_struct}), u, f, i, base_ring(parent(f)).ninv)
     _num_setcoeff!(r, i, u)
   end
   return r
@@ -210,6 +210,11 @@ function prime_decomposition(O::AbsSimpleNumFieldOrder, p::IntegerUnion, degree_
   end
 
   if is_defining_polynomial_nice(nf(O))
+    if !contains_equation_order(O)
+      @assert O.is_maximal == 1 || p in O.primesofmaximality ||
+              !is_divisible_by(discriminant(O), p)
+      return prime_dec_gen(O, p, degree_limit, lower_limit)
+    end
     if cached || is_index_divisor(O, p)
       if haskey(O.index_div, ZZRingElem(p))
         lp = O.index_div[ZZRingElem(p)]::Vector{Tuple{AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, Int}}
@@ -251,7 +256,8 @@ function prime_dec_gen(O::AbsNumFieldOrder, p::Union{ZZRingElem, Int}, degree_li
   lp = Hecke._decomposition(O, Jp, Ip, ideal(O, 1), ZZRingElem(p))
   z = Tuple{ideal_type(O), Int}[]
   for (Q, e) in lp
-    if degree(Q) <= degree_limit && degree(Q) >= lower_limit
+    if (iszero(degree_limit) || degree(Q) <= degree_limit) &&
+       degree(Q) >= lower_limit
       push!(z, (Q, e))
     end
   end
@@ -357,7 +363,11 @@ function anti_uniformizer(P::AbsNumFieldOrderIdeal)
   if isdefined(P, :anti_uniformizer)
     return P.anti_uniformizer
   end
-  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P)) && is_defining_polynomial_nice(nf(order(P)))
+  # For non-simple fields, mod on field elements clears denominators coprime
+  # to p coefficientwise, rescaling the coefficients by p-adic units. This
+  # need not preserve the valuation at P: reducing the inverse ideal's
+  # generator can turn valuation -1 into -2. Use the construction below.
+  if has_2_elem_normal(P) && is_maximal_known_and_maximal(order(P)) && is_simple(nf(order(P))) && is_defining_polynomial_nice(nf(order(P)))
     Pinv = inv(P)
     P.anti_uniformizer = mod(divexact(Pinv.num.gen_two.elem_in_nf, Pinv.den), minimum(P))
     return P.anti_uniformizer
@@ -388,7 +398,7 @@ end
 function _factor_distinct_deg(x::fpPolyRingElem)
   degs = Vector{Int}(undef, degree(x))
   degss = [ pointer(degs) ]
-  fac = Nemo.gfp_poly_factor(x.mod_n)
+  fac = Nemo.gfp_poly_factor(modulus(x))
   ccall((:nmod_poly_factor_distinct_deg, libflint), UInt,
           (Ref{Nemo.gfp_poly_factor}, Ref{fpPolyRingElem}, Ptr{Ptr{Int}}),
           fac, x, degss)
@@ -405,7 +415,7 @@ end
 function _factor_distinct_deg(x::FpPolyRingElem)
   degs = Vector{Int}(undef, degree(x))
   degss = [ pointer(degs) ]
-  n = x.parent.base_ring.ninv
+  n = base_ring(parent(x)).ninv
   fac = Nemo.gfp_fmpz_poly_factor(n)
   ccall((:fmpz_mod_poly_factor_distinct_deg, libflint), UInt,
           (Ref{Nemo.gfp_fmpz_poly_factor}, Ref{FpPolyRingElem}, Ptr{Ptr{Int}}, Ref{fmpz_mod_ctx_struct}),
@@ -441,7 +451,7 @@ Returns an array of tuples whose length is the number of primes lying over $p$ a
 gives the splitting type of the corresponding prime, ordered as inertia degree and ramification index.
 """
 function prime_decomposition_type(O::AbsSimpleNumFieldOrder, p::T) where T <: IntegerUnion
-  if !is_defining_polynomial_nice(nf(O))
+  if !is_defining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     return Tuple{Int, Int}[(degree(x[1]), x[2]) for x = prime_decomposition(O, p)]
   end
   if (mod(discriminant(O), p)) != 0 && (mod(ZZRingElem(index(O)), p) != 0)
@@ -458,6 +468,38 @@ function prime_decomposition_type(O::AbsSimpleNumFieldOrder, p::T) where T <: In
     return decomposition_type_polygon(O, p)
   end
 
+end
+
+@doc raw"""
+    _number_of_degree_one_primes(O::AbsSimpleNumFieldOrder, p::IntegerUnion) -> Int
+
+Return the number of distinct prime ideals of inertia degree one above the
+prime `p`, without weighting by ramification indices. The maximality
+requirements at exceptional primes are those of `prime_decomposition_type`.
+"""
+function _number_of_degree_one_primes(O::AbsSimpleNumFieldOrder,
+                                      p::IntegerUnion)::Int
+  # For an unramified prime not dividing the index of the monic integral defining
+  # polynomial, Dedekind's factorization theorem identifies these primes with its
+  # linear factors modulo `p`. The polynomial `x^p - x` is the product of the
+  # distinct monic linear polynomials over the prime field, so the degree of its
+  # gcd with the reduced defining polynomial gives the count. Exceptional primes
+  # use `prime_decomposition_type`.
+  if typeof(p) != Int && fits(Int, p)
+    return _number_of_degree_one_primes(O, Int(p))
+  end
+  if typeof(p) != ZZRingElem && typeof(p) != Int
+    return _number_of_degree_one_primes(O, ZZRingElem(p))
+  end
+  if is_defining_polynomial_nice(nf(O)) && contains_equation_order(O) &&
+      !iszero(mod(discriminant(O), p)) && !iszero(mod(ZZRingElem(index(O)), p))
+    f = defining_polynomial(nf(O))
+    Zf = numerator(f, Globals.Zx)
+    fmodp = change_base_ring(Native.GF(p, cached = false), Zf; cached = false)
+    x = gen(parent(fmodp))
+    return degree(gcd(fmodp, powermod(x, p, fmodp) - x))
+  end
+  return count(t -> isone(t[1]), prime_decomposition_type(O, p))
 end
 
 @doc raw"""
@@ -841,12 +883,15 @@ function factor_easy(I::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFie
     r = is_perfect_power_with_data(r)[2]
     if !isone(r)
       r = ppio(minimum(I), r)[1]
+      isone(r) && continue
       J = gcd(I, r)
+      @assert !isone(J)
       ideals[J] = 1
     end
   end
   @hassert :AbsNumFieldOrder 1 prod(x^y for (x, y) in ideals; init = 1 * OK) == I
   @hassert :AbsNumFieldOrder 1 all(!iszero, values(ideals))
+  @hassert :AbsNumFieldOrder 1 all(!isone, keys(ideals))
   @hassert :AbsNumFieldOrder 1 is_pairwise_coprime(collect(keys(ideals)))
   return ideals
 end
@@ -1337,6 +1382,7 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
   RT = []
   RE = []
   while true
+    cs = all_c
     re = elem_type(Fpx)[]
     RE = []
     #= TODO: this is suboptimal...
@@ -1376,8 +1422,8 @@ function prime_dec_nonindex(O::AbsNumFieldOrder{AbsNonSimpleNumField,AbsNonSimpl
         end
         push!(RT, [_lift_p2(Fq2, change_base_ring(ZZ, to_univariate(Globals.Qx, all_f[ti]); parent = Zx), i) for i = rt[end]])
       end
-      append!(re, [minpoly(Fpx, sum([rrt[i] * all_c[i] for i=1:length(all_c)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
-      append!(RE, [sum([rrt[i] * all_c[i] for i=1:length(all_c)]) for rrt in cartesian_product_iterator(RT), inplace = true])
+      append!(re, [minpoly(Fpx, sum([rrt[i] * cs[i] for i=1:length(cs)])) for rrt in cartesian_product_iterator(rt, inplace = true)])
+      append!(RE, [sum([rrt[i] * cs[i] for i=1:length(cs)]) for rrt in cartesian_product_iterator(RT), inplace = true])
     end
     if length(Set(re)) < length(re)
       all_c = [rand(1:p-1) for f = all_c]
@@ -1540,21 +1586,36 @@ end
 
 # Return b in K with a \equiv b mod I and b_v >= 0 for v in pos_places
 # Cohen, Advanced Topics in Computational Number Theory, Algorithm 4.2.20
-function approximate(a::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdeal, pos_places::Vector{<: InfPlc})
-  F2 = GF(2)
-  v = matrix(F2, length(pos_places), 1, [ is_positive(a, p) ? F2(0) : F2(1) for p in pos_places ])
-  if all(iszero, v[:, 1])
-    return a
+function approximate(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, I::AbsNumFieldOrderIdeal, pos_places::Vector{<: InfPlc})
+  return a*approximate_factor(a, I, pos_places, [is_positive(a, p) for p = pos_places])
+end
+
+function approximate_factor(a::Union{AbsSimpleNumFieldElem, FacElem{AbsSimpleNumFieldElem, AbsSimpleNumField}}, I::AbsNumFieldOrderIdeal, pos_places::Vector{<: InfPlc}, vals::Vector{Bool})
+  @req length(pos_places) == length(vals) "Expected one sign per place"
+  if all(vals)
+    return one(parent(a))
+  end
+  @req !iszero(I) "A correction factor modulo the zero ideal must be one"
+  if !allunique(pos_places)
+    signs = unique(zip(pos_places, vals))
+    pos_places = first.(signs)
+    @req allunique(pos_places) "Conflicting signs for a repeated place"
+    vals = last.(signs)
   end
   bound = 5
   count = 1
   F2 = GF(2)
+  v = matrix(F2, length(pos_places), 1, [p ? F2(0) : F2(1) for p in vals])
   M = zero_matrix(F2, length(pos_places), length(pos_places))
   betas = Vector{elem_type(order(I))}()
   r = 0
   while r != length(pos_places)
     count += 1
     b = 1 + rand(I, bound)
+    if count > 2^length(pos_places)*bound
+      bound += 5
+    end
+    iszero(b) && continue
     N = deepcopy(M)
     for i = 1:length(pos_places)
       N[i, r + 1] = is_positive(b, pos_places[i]) ? F2(0) : F2(1)
@@ -1565,13 +1626,10 @@ function approximate(a::AbsSimpleNumFieldElem, I::AbsNumFieldOrderIdeal, pos_pla
       r = rr
       push!(betas, b)
     end
-    if count > 2^length(pos_places)*bound
-      bound += 5
-    end
   end
 
   w = inv(M)*v
-  b = a
+  b = one(parent(a))
   for i = 1:nrows(w)
     if !iszero(w[i, 1])
       b *= betas[i]
@@ -1681,6 +1739,9 @@ the domain of `m`.
 """
 function decomposition_group(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, mG::Map)
   iner = decomposition_group(P)
+  if domain(mG) isa MultTableGroup
+    return sub(domain(mG), [mG\a for a in iner]; complete = true)
+  end
   return sub(domain(mG), [mG\a for a in iner])
 end
 
@@ -1787,6 +1848,9 @@ the domain of `m`.
 """
 function inertia_subgroup(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, mG::Map)
   iner = inertia_subgroup(P)
+  if domain(mG) isa MultTableGroup
+    return sub(domain(mG), [mG\a for a in iner]; complete = true)
+  end
   return sub(domain(mG), [mG\a for a in iner])
 end
 
@@ -1822,5 +1886,8 @@ the domain of `m`.
 """
 function ramification_group(K::AbsSimpleNumField, P::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}, i::Int, mG::Map)
   iner = ramification_group(P, i)
+  if domain(mG) isa MultTableGroup
+    return sub(domain(mG), [mG\a for a in iner]; complete = true)
+  end
   return sub(domain(mG), [mG\a for a in iner])
 end

@@ -13,4 +13,9 @@ let
   R,z = QQBarField()[:z]
   @test length(roots(z^2)) == 1
   @test length(roots(z^0)) == 0
+
+  K = QQBarField()
+  Kx, x = K[:x]
+  u = factor(one(Kx))
+  @test one(Kx) == unit(u)
 end

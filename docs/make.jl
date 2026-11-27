@@ -4,9 +4,14 @@ using Pkg
 
 include(normpath(joinpath(Hecke.pkgdir, "docs", "Build.jl")))
 
-Build.build_all_tutorials(Hecke)
+const render_pdf = "--pdf" in ARGS
 
-Build.make(Hecke; strict=Documenter.except(:missing_docs), local_build=true, doctest=false, format=:vitepress, warnonly=false)
+Build.build_all_tutorials(Hecke; pdf=render_pdf)
+
+Build.make(Hecke; strict=Documenter.except(:missing_docs), local_build=true, doctest=false, format=render_pdf ? :pdf : :vitepress, warnonly=false)
+
+# the PDF is a CI artifact, not deployed
+render_pdf && exit()
 
 should_push_preview = true
 if get(ENV, "GITHUB_ACTOR", "") == "dependabot[bot]"

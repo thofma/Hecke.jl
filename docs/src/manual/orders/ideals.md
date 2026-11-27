@@ -73,6 +73,7 @@ or ring class group in general.
 class_group(::AbsSimpleNumFieldOrder)
 narrow_class_group(::AbsSimpleNumFieldOrder)
 picard_group(::AbsSimpleNumFieldOrder)
+class_number(::AbsSimpleNumFieldOrder)
 ring_class_group(::AbsNumFieldOrder)
 ```
 

@@ -150,7 +150,6 @@ end
 @deprecate iskummer_extension is_kummer_extension
 @deprecate isleaf is_leaf
 @deprecate isleft_ideal is_left_ideal
-@deprecate islessorequal is_lessorequal
 @deprecate islinearly_disjoint is_linearly_disjoint
 @deprecate islll_reduced is_lll_reduced
 @deprecate islocal_norm is_local_norm
@@ -161,7 +160,6 @@ end
 @deprecate islocally_isometric is_locally_isometric
 @deprecate islocally_isometric_kirschmer is_locally_isometric_kirschmer
 @deprecate islocally_isomorphic is_locally_isomorphic
-@deprecate islocally_isomorphic_with_isomophism is_locally_isomorphic_with_isomophism
 @deprecate islocally_represented_by is_locally_represented_by
 @deprecate ismaximal is_maximal
 @deprecate ismaximal_integral is_maximal_integral
@@ -287,3 +285,25 @@ end
 
 @deprecate hom(G::FinGenAbGroup, B::Vector{FinGenAbGroupElem}; check::Bool=true) hom(G, parent(B[1]), B; check)
 @deprecate hom(A::Vector{FinGenAbGroupElem}, B::Vector{FinGenAbGroupElem}; check::Bool=true) hom(parent(A[1]), parent(B[1]), A, B; check)
+
+# Deprecated in 0.39.21
+@deprecate is_locally_isomorphic_with_isomophism is_locally_isomorphic_with_isomorphism
+@deprecate islocally_isomorphic_with_isomophism is_locally_isomorphic_with_isomorphism
+
+# Deprecated in 0.41.0
+@deprecate genus(A::MatElem) genus_from_gram(A)
+@deprecate genus(A::QQMatrix, p::IntegerUnion) genus_from_gram(A, p)
+@deprecate genus(A::ZZMatrix, p::IntegerUnion) genus_from_gram(A, p)
+@deprecate genus(A::ZZMatrix, p::ZZRingElem, val::Int; offset::Int = 0) genus_from_gram(A, p, val; offset)
+
+# Deprecated in 0.41.2
+@deprecate cholesky_decomposition(x::ArbMatrix) cholesky(x) false
+@deprecate gcd_into!(a, b, c) gcd!(a, b, c)
+
+# Keyword `isbasis` renamed to `is_basis` in 0.41.1
+function _is_basis_kwarg(is_basis::Bool, isbasis::Union{Nothing, Bool}, f::Symbol)
+  isnothing(isbasis) && return is_basis
+  # TODO: enable in the next breaking release
+  # Base.depwarn("The keyword `isbasis` is deprecated, use `is_basis` instead.", f)
+  return isbasis
+end

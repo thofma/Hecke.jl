@@ -142,7 +142,7 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   ctx = Nemo.LLLContext(0.99, 0.51, :gram)
 
   one!(g)
-  ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
+  Nemo._lll_gram_with_transform!(d, g, ctx)
 
   l, t = d, g
   ## test if entries in l are small enough, if not: increase precision
@@ -180,6 +180,30 @@ function _lll(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}
   return FakeFmpqMat(deepcopy(l), ZZRingElem(2)^prec), t*t1
 end
 
+function lll_basis_profile(A::AbsNumFieldOrderIdeal{AbsSimpleNumField, AbsSimpleNumFieldElem}; prec::Int = 100)
+  c = minkowski_matrix(nf(order(A)), prec)
+  l = lll(basis_matrix(A))
+  b = FakeFmpqMat(l)*basis_matrix(FakeFmpqMat, order(A))
+  rt_c = roots_ctx(Hecke.nf(order(A)))
+  if !isdefined(rt_c, :cache)
+    rt_c.cache = 0*c
+  end
+  d = rt_c.cache
+  d = mul!(d, Matrix{BigInt}(b.num), c)
+
+  g = setprecision(BigFloat, prec) do
+    Hecke.round_scale(d, prec)
+  end
+
+  g = g*transpose(g)
+  Hecke.shift!(g, -prec)
+  g += nrows(g)*one(parent(g))
+
+  l = lll_gram(g)
+
+  lp = [ div(l[i,i], ZZRingElem(2)^prec) for i=1:nrows(l)]
+  return lp
+end
 
 ###############################################################################
 #
@@ -571,7 +595,7 @@ function _lll_sublattice(M::AbsNumFieldOrder, u::Vector{Int}; prec = 100)
       fmpz_mat_entry_add_ui!(d1, i, i, UInt(l))
     end
     ctx = Nemo.LLLContext(0.99, 0.51, :gram)
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d1, g, ctx)
+    @vtime :LLL 3 Nemo._lll_gram_with_transform!(d1, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       prec *= 2
@@ -637,7 +661,7 @@ function _lll_with_parameters(M::AbsNumFieldOrder, parameters::Tuple{Float64, Fl
     for i=1:n
       fmpz_mat_entry_add_ui!(d, i, i, UInt(nrows(d)))
     end
-    @vtime :LLL 3 ccall((:fmpz_lll, libflint), Nothing, (Ref{ZZMatrix}, Ref{ZZMatrix}, Ref{Nemo.LLLContext}), d, g, ctx)
+    @vtime :LLL 3 Nemo._lll_gram_with_transform!(d, g, ctx)
 
     if nbits(maximum(abs, g)) <= div(prec, 2)
       fl = true

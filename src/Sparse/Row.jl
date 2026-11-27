@@ -615,7 +615,7 @@ end
 #
 ################################################################################
 
-function *(b::T, A::SRow{T}) where T
+function *(b::T, A::SRow{T}) where {T <: NCRingElement}
   B = sparse_row(parent(b))
   sizehint!(B.pos, length(A))
   sizehint!(B.values, length(A))
@@ -632,14 +632,14 @@ function *(b::T, A::SRow{T}) where T
   return B
 end
 
-function *(b, A::SRow)
+function *(b::NCRingElement, A::SRow)
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end
   return base_ring(A)(b)*A
 end
 
-function *(A::SRow{T}, b::T) where T
+function *(A::SRow{T}, b::T) where {T <: NCRingElement}
   B = sparse_row(parent(b))
   if iszero(b)
     return B
@@ -654,7 +654,7 @@ function *(A::SRow{T}, b::T) where T
   return B
 end
 
-function *(A::SRow, b)
+function *(A::SRow, b::NCRingElement)
   if length(A.values) == 0
     return sparse_row(base_ring(A))
   end
@@ -917,14 +917,16 @@ end
 
 function addmul!(z::SRow{T}, x::SRow{T}, y) where T
   if z === x
-    return scale_row_right!(x, y+1)
+    R = base_ring(x)
+    return scale_row_right!(x, R(y) + 1)
   end
   return add_right_scaled_row!(x, z, y)
 end
 
 function addmul!(z::SRow{T}, x, y::SRow{T}) where T
-  if z === x
-    return scale_row_left!(y, x+1)
+  if z === y
+    R = base_ring(y)
+    return scale_row_left!(y, R(x) + 1)
   end
   return add_left_scaled_row!(y, z, x)
 end
@@ -934,25 +936,27 @@ function submul!(z::SRow{T}, x::SRow{T}, y::SRow{T}) where T
 end
 
 function submul!(z::SRow{T}, x::SRow{T}, y) where T
+  R = base_ring(x)
+  c = R(y)
   if z === x
-    return scale_row_right!(x, -y+1)
+    return scale_row_right!(x, 1 - c)
   end
-  return add_right_scaled_row!(x, z, -y)
+  return add_right_scaled_row!(x, z, -c)
 end
 
 function submul!(z::SRow{T}, x, y::SRow{T}) where T
-  if z === x
-    return scale_row_left!(y, -x+1)
+  R = base_ring(y)
+  c = R(x)
+  if z === y
+    return scale_row_left!(y, 1 - c)
   end
-  return add_left_scaled_row!(y, z, -x)
+  return add_left_scaled_row!(y, z, -c)
 end
 
 
 # ignore temp variable
-addmul!(z::SRow{T}, x::SRow{T}, y, t) where T = addmul!(z, x, y)
-addmul!(z::SRow{T}, x, y::SRow{T}, t) where T = addmul!(z, x, y)
-submul!(z::SRow{T}, x::SRow{T}, y, t) where T = submul!(z, x, y)
-submul!(z::SRow{T}, x, y::SRow{T}, t) where T = submul!(z, x, y)
+addmul!(z::SRow, x, y, t) = addmul!(z, x, y)
+submul!(z::SRow, x, y, t) = submul!(z, x, y)
 
 
 ################################################################################

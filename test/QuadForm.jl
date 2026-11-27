@@ -8,6 +8,7 @@
   include("QuadForm/MassQuad.jl")
   include("QuadForm/Quad.jl")
   include("QuadForm/QuadBin.jl")
+  include("QuadForm/TernaryQF.jl")
   include("QuadForm/Herm.jl")
   include("QuadForm/Torsion.jl")
   include("QuadForm/Quad/PadicLift.jl")

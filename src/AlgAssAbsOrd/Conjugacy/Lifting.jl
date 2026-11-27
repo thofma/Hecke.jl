@@ -202,8 +202,8 @@ function _lift2(MM)
   return M, left
 end
 
-euclid(n::zzModRingElem) = gcd(n.data, modulus(parent(n)))
-euclid(n::Nemo.ZZModRingElem) = gcd(n.data, modulus(parent(n)))
+euclid(n::zzModRingElem) = gcd(data(n), modulus(parent(n)))
+euclid(n::Nemo.ZZModRingElem) = gcd(data(n), modulus(parent(n)))
 
 function Base.divrem(n::T, m::T) where T <: Union{zzModRingElem,Nemo.ZZModRingElem}
   @assert !iszero(m)
@@ -215,7 +215,7 @@ function Base.divrem(n::T, m::T) where T <: Union{zzModRingElem,Nemo.ZZModRingEl
     return q, zero(R)
   end
 
-  cp = coprime_base(ZZRingElem[n.data, m.data, modulus(R)])::Vector{ZZRingElem}
+  cp = coprime_base(ZZRingElem[data(n), data(m), modulus(R)])::Vector{ZZRingElem}
 
   q = Vector{Tuple{ZZRingElem, ZZRingElem}}()
   for i=1:length(cp)

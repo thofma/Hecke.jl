@@ -22,12 +22,28 @@
     end
   end
 
+  @testset "Isomorphism over a relative field" begin
+    K, = quadratic_field(2)
+    _, t = K[:t]
+    L, = number_field(t^2 - 3)
+    A, = StructureConstantAlgebra(matrix_algebra(L, 2))
+    f = isomorphism(Hecke.QuaternionAlgebra, A)
+    Q = domain(f)
+    @test Q isa Hecke.QuaternionAlgebra
+    @test base_ring(Q) === L
+    @test codomain(f) === A
+    @test f(one(Q)) == one(A)
+    B = basis(Q)
+    @test all(preimage(f, f(b)) == b for b in B)
+    @test all(f(b * c) == f(b) * f(c) for b in B, c in B)
+  end
+
   let
     K, a = quadratic_field(5)
     A = Hecke.quaternion_algebra2(K, K(-1), K(-1))
     O = maximal_order(A)
     I = basis(A)[2] * O
-    fl, b = Hecke._is_principal_maximal_quaternion_generic_proper(I, O)
+    fl, b = Hecke._is_principal_with_data_definite_quaternion(I, O, :right)
     @assert fl
     @test b * O == I
 
@@ -35,7 +51,7 @@
     A = Hecke.quaternion_algebra(K, -1, -1)
     O = maximal_order(A)
     I = basis(A)[2] * O
-    fl, b = Hecke._is_principal_maximal_quaternion_generic_proper(I, O)
+    fl, b = Hecke._is_principal_with_data_definite_quaternion(I, O, :right)
     @assert fl
     @test b * O == I
   end
@@ -63,11 +79,15 @@
     @test left_order(P) == Gamma
     @test Gamma * P == P
     @test P * Gamma != P
-    # we can only test right ideals so far ...
+    # P is a left ideal of Gamma that is not principal, tested directly and
+    # through its image, a right ideal, in the opposite algebra
+    fl, _ = Hecke._is_principal_with_data_definite_quaternion(P, Gamma, :left)
+    @test !fl
     BOp, BtoBOp = opposite_algebra(B)
     GammaOp = Hecke._get_order_from_gens(BOp, [BtoBOp(elem_in_algebra(x)) for x in absolute_basis(Gamma)])
     POp = +([BtoBOp(x) * GammaOp for x in absolute_basis(P)]...)
-    fl, _ = Hecke._is_principal_maximal_quaternion_generic_proper(POp, GammaOp)
+    fl, _ = Hecke._is_principal_with_data_definite_quaternion(POp, GammaOp,
+                                                              :right)
     @test !fl
   end
 
@@ -124,6 +144,16 @@
   end
 
   let
+    R, t = polynomial_ring(GF(2), "t")
+    K = fraction_field(R)
+    tt = K(t)
+    A = quaternion_algebra(K, tt, tt + 1)
+    z = A([1, tt, tt^2 + 1, tt^3 + tt + 1])
+    @test normred(z) == coefficients(z * conjugate(z), copy = false)[1]
+    @test trred(z) == coefficients(z + conjugate(z), copy = false)[1]
+  end
+
+  let
     # opposite algebra
     for K in [QQ, quadratic_field(2)[1], GF(3), rational_function_field(GF(3), :x)[1]]
       A = quaternion_algebra(K, K(-1), K(-2))
@@ -175,5 +205,45 @@
     O = order(A, sub(pseudo_hnf(pseudo_matrix(matrix(B)), :lowerleft), length(data[4])-3:length(data[4]), 1:4));
     ugens = Hecke.unit_group_modulo_scalars(O)
     @test length(ugens) == 8 && allunique(ugens) && all(is_unit, ugens)
+  end
+
+  let # quaternion_algebra_ramified_at
+    # Ibukiyama's conditions on q, Nagoya Math. J. 88 (1982), p. 181
+    admissible(p, q) =
+      is_prime(q) && mod(q, 8) == 3 && kronecker_symbol(ZZ(p), ZZ(q)) == -1
+    # 2, 3 and every class modulo 8
+    for p in [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 73, 89, 97, 241,
+              257, 647, 1811]
+      A = quaternion_algebra_ramified_at(QQ, p)
+      a, b = Hecke.standard_form(A)
+      q = -ZZ(b)
+      @test a == -p
+      @test admissible(p, q) && !any(s -> admissible(p, s), 2:(q - 1))
+      # the ramification, of the same (a, b) built by quaternion_algebra,
+      # which carries no maximal order
+      B = quaternion_algebra(QQ, a, b)
+      @test Hecke.local_schur_indices(B) == [ZZ(0) => 2, ZZ(p) => 2]
+      # the order carried is maximal: rebuilt with the closure check, its
+      # discriminant is p^2 (Voight, Quaternion algebras, Thm. 15.5.5)
+      O = maximal_order(A)
+      @test O === maximal_order(A)
+      bO = [elem_in_algebra(x) for x in basis(O)]
+      @test abs(discriminant(order(A, bO; is_basis = true, check = true))) ==
+            ZZ(p)^2
+      # and it is Ibukiyama's O(q, r), p. 182
+      e, i, j, _ = basis(A)
+      r = only(filter(r -> mod(r^2 + p, q) == 0, 1:div(q, 2)))
+      @test bO == [e, QQ(1, 2) * (e + j), QQ(1, 2) * (i * (e + j)),
+                   QQ(1, q) * ((r * e + i) * j)]
+    end
+    @test Hecke.standard_form(quaternion_algebra_ramified_at(QQ, 97)) ==
+          (-97, -19)
+    @test Hecke.standard_form(quaternion_algebra_ramified_at(QQ, ZZ(647))) ==
+          (-647, -3)
+    @test_throws ArgumentError quaternion_algebra_ramified_at(QQ, 91)
+    @test_throws ArgumentError quaternion_algebra_ramified_at(QQ, 1)
+    @test_throws ArgumentError quaternion_algebra_ramified_at(QQ, -5)
+    A = quaternion_algebra_ramified_at(QQ, 97; check = false)
+    @test Hecke.standard_form(A) == (-97, -19)
   end
 end

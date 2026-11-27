@@ -1,3 +1,16 @@
+@testset "Function field basis" begin
+  for k in [GF(3), QQ]
+    K, x = rational_function_field(k, :x)
+    R, y = polynomial_ring(K, :y)
+    for d in 1:3
+      F, a = function_field(y^d - x)
+      B = @inferred basis(F)
+      @test length(B) == degree(F) == d
+      @test B == [a^i for i in 0:(d - 1)]
+    end
+  end
+end
+
 @testset "GenOrd" begin
   # Test first the ring interface
   Qx, x = QQ["x"]
@@ -24,6 +37,17 @@
   u = canonical_unit(one(Ofin))
   @test parent(u) === Ofin
   @test is_unit(u)
+
+  @testset "Coordinates" begin
+    k, t = rational_function_field(GF(3), "t")
+    K, _ = function_field(polynomial(k, [t, 0, 1]))
+    O = finite_maximal_order(K)
+    c = @inferred coordinates(one(O))
+    @test c == [one(base_ring(O)), zero(base_ring(O))]
+    @test eltype(c) === elem_type(base_ring(O))
+    @test all(x -> parent(x) === base_ring(O), c)
+    @test O(c) == one(O)
+  end
 
   let # some weird rings
     Qt,t = rational_function_field(QQ, :t)

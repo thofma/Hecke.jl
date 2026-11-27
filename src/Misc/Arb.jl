@@ -1,5 +1,5 @@
 function _arb_get_fmpq(x::ArbFieldElem)
-  mid = ccall((:arb_mid_ptr, libflint), Ptr{arf_struct}, (Ref{ArbFieldElem}, ), x)
+  mid = Nemo._mid_ptr(x)
   e = ZZRingElem()
   m = ZZRingElem()
   b = ccall((:arf_get_fmpz_2exp, libflint), Cint, (Ref{ZZRingElem}, Ref{ZZRingElem}, Ref{arf_struct}), m, e, mid)
@@ -25,17 +25,17 @@ function muleq!(z::ArbFieldElem, x::ArbFieldElem, y::ZZRingElem)
 end
 
 function abs!(z::ArbFieldElem, x::ArbFieldElem)
-  ccall((:arb_abs, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, parent(x).prec)
+  ccall((:arb_abs, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, precision(parent(x)))
   return nothing
 end
 
 function abs!(z::ArbFieldElem, x::AcbFieldElem)
-  ccall((:acb_abs, libflint), Nothing, (Ref{ArbFieldElem}, Ref{AcbFieldElem}, Int), z, x, parent(x).prec)
+  ccall((:acb_abs, libflint), Nothing, (Ref{ArbFieldElem}, Ref{AcbFieldElem}, Int), z, x, precision(parent(x)))
   return nothing
 end
 
 function log!(z::ArbFieldElem, x::ArbFieldElem)
-  ccall((:arb_log, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, parent(x).prec)
+  ccall((:arb_log, libflint), Nothing, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), z, x, precision(parent(x)))
   return nothing
 end
 
@@ -145,24 +145,4 @@ function lower_bound(x::ArbFieldElem, ::Type{ZZRingElem})
   ccall((:arf_clear, libflint), Nothing, (Ref{arf_struct}, ), tarf)
 
   return bound
-end
-
-################################################################################
-#
-#  Maximum
-#
-################################################################################
-
-function _max(a::ArbFieldElem, b::ArbFieldElem)
-  RR = parent(a)
-  c = RR()
-  ccall((:arb_max, libflint), Cvoid, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), c, a, b, precision(RR))
-  return c
-end
-
-function _min(a::ArbFieldElem, b::ArbFieldElem)
-  RR = parent(a)
-  c = RR()
-  ccall((:arb_min, libflint), Cvoid, (Ref{ArbFieldElem}, Ref{ArbFieldElem}, Ref{ArbFieldElem}, Int), c, a, b, precision(RR))
-  return c
 end

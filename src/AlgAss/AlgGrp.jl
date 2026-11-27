@@ -36,8 +36,13 @@ group(A::GroupAlgebra) = A.group
 
 has_one(A::GroupAlgebra) = true
 
+characteristic(A::GroupAlgebra) = characteristic(base_ring(A))
+
 function (A::GroupAlgebra{T, S, R})(c::Union{Vector, SRow}; copy::Bool = false) where {T, S, R}
-  c isa Vector && length(c) != dim(A) && error("Dimensions don't match.")
+  if c isa Vector
+    @req _is_dense(A) "Sparse group algebras do not accept coefficient vectors"
+    length(c) == dim(A) || error("Dimensions don't match.")
+  end
   return GroupAlgebraElem{T, typeof(A)}(A, copy ? deepcopy(c) : c)
 end
 
@@ -68,6 +73,9 @@ _is_identity_elem(x::GroupElem) = isone(x)
 _identity_elem(G::AbstractAlgebra.AdditiveGroup) = zero(G)
 _identity_elem(G::Group) = one(G)
 
+_inv_group_elem(x::AbstractAlgebra.AdditiveGroupElem) = -x
+_inv_group_elem(x::GroupElem) = inv(x)
+
 ################################################################################
 #
 #  Construction
@@ -75,10 +83,16 @@ _identity_elem(G::Group) = one(G)
 ################################################################################
 
 @doc raw"""
-    group_algebra(K::Ring, G::Group; cached::Bool = true) -> GroupAlgebra
+    group_algebra(R::Ring, G::Group; sparse::Bool = ..., cached::Bool = true)
+      -> GroupAlgebra
 
 Return the group algebra of the group $G$ over the ring $R$. Shorthand syntax
 for this construction is `R[G]`.
+
+Set `sparse = true` to use a sparse representation, or `sparse = false` to use
+a dense representation. By default, a sparse representation is used if $G$
+is infinite or has order at least 1000; otherwise, a dense representation is
+used. A dense representation requires $G$ to be finite.
 
 # Examples
 
@@ -89,10 +103,10 @@ Group algebra
   over rational field
 ```
 """
-group_algebra(K::Ring, G; cached = true) =  _group_algebra(K, G; cached)
+group_algebra(R::Ring, G; sparse = _use_sparse_group_algebra(G), cached = true) =
+  _group_algebra(R, G; sparse, cached)
 
-# one additional level of indirection to hide the non-user facing options
-# `op` and `sparse`.
+# One additional level of indirection to hide the non-user facing option `op`.
 function _group_algebra(K::Ring, G; op = _op(G), sparse = _use_sparse_group_algebra(G), cached::Bool = true)
   A = GroupAlgebra(K, G; op = op , sparse = sparse, cached = cached)
   if !(K isa Field)
@@ -697,8 +711,9 @@ mutable struct AbsAlgAssMorGen{S, T, U, V} <: Map{S, T, HeckeMap, Any}#AbsAlgAss
     z.M = M
     z.tempcodomain = zero_matrix(base_ring(Minv), 1, nrows(Minv))
     z.tempcodomain2 = zero_matrix(base_ring(Minv), 1, ncols(Minv))
-    z.tempcodomain_threaded = [zero_matrix(base_ring(Minv), 1, nrows(Minv)) for i in 1:Threads.nthreads()]
-    z.tempcodomain2_threaded = [zero_matrix(base_ring(Minv), 1, ncols(Minv)) for i in 1:Threads.nthreads()]
+    nt = _maxthreadid()
+    z.tempcodomain_threaded = [zero_matrix(base_ring(Minv), 1, nrows(Minv)) for i in 1:nt]
+    z.tempcodomain2_threaded = [zero_matrix(base_ring(Minv), 1, ncols(Minv)) for i in 1:nt]
     @assert nrows(Minv) == degree(base_ring(codomain)) * dim(codomain)
     z.Minv = Minv
     return z
@@ -731,9 +746,10 @@ end
 
 function preimage(f::AbsAlgAssMorGen, z)
   @assert parent(z) === codomain(f)
-  if Threads.nthreads() > 1
-    ftc = f.tempcodomain_threaded[Threads.threadid()]
-    ftc2 = f.tempcodomain2_threaded[Threads.threadid()]
+  if length(f.tempcodomain_threaded) > 1
+    tid = Threads.threadid()
+    ftc = f.tempcodomain_threaded[tid]
+    ftc2 = f.tempcodomain2_threaded[tid]
   else
     ftc = f.tempcodomain
     ftc2 = f.tempcodomain2

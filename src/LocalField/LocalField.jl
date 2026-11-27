@@ -449,7 +449,7 @@ function residue_field(K::LocalField{S, EisensteinLocalField}) where {S <: Field
     @assert parent(a) === ks
     return setprecision(K(mks\(a)), precision(K))
   end
-  mp = MapFromFunc(K, ks, proj, lift)
+  mp = map_from_func(K, ks, proj, lift)
 
   K.residue_field_map = mp
 
@@ -487,7 +487,7 @@ function residue_field(K::LocalField{S, UnramifiedLocalField}) where {S <: Field
      end
      return sum(col)
    end
-   mp = MapFromFunc(K, kk, proj, lift)
+   mp = map_from_func(K, kk, proj, lift)
    K.residue_field_map = mp
   return kk, mp
 end

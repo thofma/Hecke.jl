@@ -21,7 +21,7 @@ function residue_field(K::Generic.LaurentSeriesField{T}) where {T <: FinFieldEle
   ktoK = function(x::T)
     return K(x)
   end
-  mk = MapFromFunc(K, k, Ktok, ktoK)
+  mk = map_from_func(K, k, Ktok, ktoK)
   set_attribute!(K, :ResidueField => mk)
   return k, mk
 end

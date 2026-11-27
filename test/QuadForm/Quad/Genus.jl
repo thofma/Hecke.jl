@@ -214,3 +214,33 @@ end
   G = genus(L)
   @test length(unique([G, G, G])) == 1
 end
+
+
+@testset "representative at a prime above 2^63" begin
+  p = next_prime(ZZ(2)^63)
+  while p % 4 != 3
+    p = next_prime(p)
+  end
+  # II_(0,4) p^2: two copies of the even binary form of determinant p
+  B = ZZ[2 1; 1 divexact(p + 1, 2)]
+  L = integer_lattice(gram = -block_diagonal_matrix([B, B]))
+  G = genus(L)
+  # the symbol alone, with no representative attached to it
+  G2 = genus(discriminant_group(L), (0, 4))
+  @test genus(representative(G2)) == G
+end
+
+@testset "direct sum of global genera" begin
+  # the local symbols of the summands store equal but non-identical primes
+  Qx, x = QQ["x"]
+  K, a = number_field(x^2 - 2, "a", cached = false)
+  Ls = [quadratic_lattice(K, gram = diagonal_matrix(K, [K(3), K(1)])),
+        quadratic_lattice(K, gram = identity_matrix(K, 2)),
+        quadratic_lattice(K, gram = diagonal_matrix(K, [K(5), K(-1), a])),
+        quadratic_lattice(K, gram = diagonal_matrix(K, [a, 2*a + 1]))]
+  for L1 in Ls, L2 in Ls
+    G = @inferred direct_sum(genus(L1), genus(L2))
+    @test G == genus(direct_sum(L1, L2)[1])
+    @test G.rank == rank(L1) + rank(L2)
+  end
+end

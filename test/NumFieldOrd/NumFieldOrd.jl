@@ -74,6 +74,7 @@ end
   P = prime_decomposition(OE,p)[1][1]
   PP = prime_decomposition(OL, P)[1][1]
   FL, projL = relative_residue_field(OL, PP)
+  @test (@inferred kernel(projL)) === PP
   mL = extend(projL, L)
 
   e,f = PP.splitting_type
@@ -96,6 +97,7 @@ end
   P = prime_decomposition(OE, p)[1][1]
   @test is_index_divisor(OE, p)
   FE, projE = relative_residue_field(OE, P)
+  @test (@inferred kernel(projE)) === P
   _, f = P.splitting_type
   @test degree(defining_polynomial(FE)) == f
   mE = extend(projE, E)
@@ -186,6 +188,25 @@ let # extend_easy for bad polynomials
   end
 end
 
+let # extend_easy for a degree one prime over a large p
+  Qx, x = QQ[:x]
+  k, a = number_field(x^3 + 2; cached = false)
+  ok = maximal_order(k)
+  p = ZZ(2)^70 + 25
+  P = only(P for P in prime_ideals_over(ok, p) if degree(P) == 1)
+  F, h = Hecke._residue_field_nonindex_divisor_helper(k.pol, Qx(P.gen_two.elem_in_nf), p, Val(true))
+  mF = Hecke.Mor(ok, F, h)
+  @test mF isa Hecke.NfOrdToGFFmpzMor
+  mFF = Hecke.extend_easy(mF, k)
+  for i in 1:10
+    b = rand(ok, -2:2)
+    @test mF(b) == mFF(k(b))
+    @test mFF(k(b)//3) == mF(b) * inv(F(3))
+  end
+  b = a + 1
+  @test image(mFF, FacElem(Dict(b => ZZ(3), a => ZZ(-2)))) == mF(ok(b))^3 * mF(ok(a))^-2
+end
+
 @testset "Misc-subsets" begin
   #without 
   # a=[314721,x^4-x^3-46*x^2-47*x+2209]
@@ -210,4 +231,14 @@ end
   @test order(G) == 40
 end
 
-
+let # rand and uniformizer for prime ideals of a non-simple field
+  Qx, x = QQ[:x]
+  K, = number_field([x^2 - 2, x^2 - 3])
+  OK = maximal_order(K)
+  for p in [2, 3], (P, _) in prime_decomposition(OK, p)
+    @test rand(P, 5) in P
+    Q = ideal(OK, basis_matrix(P))
+    @test is_prime(Q)
+    @test valuation(uniformizer(Q), P) == 1
+  end
+end

@@ -488,7 +488,7 @@ function _infinite_uniformizers(K::AbsSimpleNumField)
   for i = 1:length(p)
     D[p[i]] = r[i]
     @hassert :AbsNumFieldOrder 1 sign(r[i], p[i]) == -1
-    #@hassert :AbsNumFieldOrder 1 all(x -> isone(x), values(signs(r[i], [P for P in p if P != p[i]])))
+    #@hassert :AbsNumFieldOrder 1 all(isone, values(signs(r[i], [P for P in p if P != p[i]])))
   end
   return D
 end

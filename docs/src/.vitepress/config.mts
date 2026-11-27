@@ -124,6 +124,7 @@ export default defineConfig({
                 { text: 'Number field operations', link: '/manual/number_fields/fields'},
                 { text: 'Elements', link: '/manual/number_fields/elements'},
                 { text: 'Complex embeddings', link: '/manual/number_fields/complex_embeddings'},
+                { text: 'p-rationality', link: '/manual/number_fields/p_rationality'},
                 { text: 'Class field theory', link: '/manual/number_fields/class_fields'},
                 { text: 'Internals', link: '/manual/number_fields/internal'}
               ]
@@ -203,6 +204,7 @@ export default defineConfig({
                 { text: 'Conjugacy of integer matrices', link: '/manual/misc/conjugacy'},
                 { text: 'Multisets', link: '/manual/misc/mset'},
                 { text: 'Pseudo-matrices', link: '/manual/misc/pmat'},
+                { text: 'Embedded modules', link: '/manual/misc/embedded_modules'},
               ]
             },
           ]

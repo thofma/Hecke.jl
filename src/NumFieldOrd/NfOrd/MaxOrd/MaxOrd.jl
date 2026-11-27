@@ -88,7 +88,7 @@ function pmaximal_overorder_at(O::AbsSimpleNumFieldOrder, primes::Vector{ZZRingE
   end
   OO = O
 
-  if !is_defining_polynomial_nice(nf(O)) || !isinteger(gen_index(O))
+  if !is_defining_polynomial_nice(nf(O)) || !contains_equation_order(O)
     for i in 1:length(primes)
       p = primes[i]
       @vprintln :AbsNumFieldOrder 1 "Computing p-maximal overorder for $p ..."
@@ -493,7 +493,7 @@ function TameOverorderBL(O::AbsSimpleNumFieldOrder, lp::Vector{ZZRingElem}=ZZRin
   end
   push!(l, discriminant(OO))
   append!(l,lp)
-  filter!(x-> !iszero(x), l)
+  filter!(!iszero, l)
   for i=1:length(l)
     l[i]=abs(l[i])
   end
@@ -1080,6 +1080,6 @@ function _gcd_with_failure(a::ZZModPolyRingElem, b::ZZModPolyRingElem)
   f = ZZRingElem()
   G = parent(a)()
   ccall((:fmpz_mod_poly_gcd_euclidean_f, libflint), Nothing,
-        (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), f, G, a, b, a.parent.base_ring.ninv)
+        (Ref{ZZRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{ZZModPolyRingElem}, Ref{fmpz_mod_ctx_struct}), f, G, a, b, base_ring(parent(a)).ninv)
   return f, G
 end

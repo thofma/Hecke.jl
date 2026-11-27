@@ -12,6 +12,40 @@
   @test unit(fac) * prod(p^e for (p, e) in fac) == f
   @test all(isone(degree(p)) for (p, _) in fac)
 
+  # The factors of the norm need not be monic over a rational function field.
+  Qt, = rational_function_field(QQ, :t)
+  Qtx, x = Qt[:x]
+  K, a = function_field(x^2 + 1//2*x + 1, :a)
+  Ky, y = K[:y]
+  f = y - a
+  fac = factor(f)
+  @test evaluate(fac) == f
+  @test all(isone(degree(p)) for (p, _) in fac)
+
+  let
+    Qt, t = rational_function_field(QQ, :t)
+    Qtx, x = Qt[:x]
+    # Multiplication by a unit in QQ(t) preserves absolute irreducibility.
+    for c in (Qt(1), t, t + 1, t/(t + 1))
+      @test is_absolutely_irreducible(c*(x^2 - t))
+      @test !is_absolutely_irreducible(c*(x^2 - 2*t^2))
+      @test !is_absolutely_irreducible(c*(x^2 - t^2))
+    end
+    @test is_absolutely_irreducible((t + 1)*x + t)
+    for f in (zero(Qtx), one(Qtx), Qtx(t), Qtx(inv(t)))
+      @test !is_absolutely_irreducible(f)
+    end
+  end
+
+  # swinnerton_dyer(n, y) over a rational function field
+  let
+    Qt, t = rational_function_field(QQ, :t)
+    Qty, y = Qt[:y]
+    f = swinnerton_dyer(2, y)
+    @test f == swinnerton_dyer([1, 2], y)
+    @test degree(f) == 4
+  end
+
   # inseparable extension
   let
     k, o = finite_field(9)
@@ -27,5 +61,13 @@
     fac = factor(f)
     @test evaluate(fac) == f
     @test length(fac) == 1
+  end
+
+  # swinnerton_dyer over QQ(t) has the roots sum(+-sqrt(-(t + v_i)))
+  let
+    Qt, t = rational_function_field(QQ, :t)
+    Qty, y = Qt[:y]
+    @test swinnerton_dyer([5], y) == y^2 + t + 5
+    @test swinnerton_dyer([1, 2], y) == y^4 + 2*(2*t + 3)*y^2 + 1
   end
 end

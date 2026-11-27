@@ -1462,7 +1462,7 @@ function non_square(F::FinField)
 end
 
 function inv(f::Hecke.LocMultGrpModSquMap)
-  return MapFromFunc(codomain(f), domain(f), x -> preimage(f, x))
+  return map_from_func(codomain(f), domain(f), x -> preimage(f, x))
 end
 
 ################################################################################
@@ -1750,7 +1750,7 @@ function _genus_representatives_binary_quadratic_definite_helper(L::QuadLat; max
     end
     pm = sub(pm, i:nrows(pm), 1:ncols(pm))
 
-    _pm = pseudo_matrix(matrix(pm), coefficient_ideals(pm))
+    _pm = pseudo_matrix(base_ring(pm), matrix(pm), coefficient_ideals(pm))
 
     _new_cand = lattice(V, pm)
 
@@ -1851,7 +1851,7 @@ function _intersect_lattice_down_contained(xps, _ps, Lambda)
 
   for q in support(norm(LL))
     if !(q in _ps)
-      @assert _padic_index(LL, d * Lambda, q) == (0, 0)
+      @assert _padic_index(LL, Lambda, q) == (0, 0)
     end
   end
 
@@ -1938,7 +1938,7 @@ end
 
 function *(a::AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem}, b::AlgAssRelOrdIdl{AbsSimpleNumFieldElem,Hecke.AbsNumFieldOrderFractionalIdeal{AbsSimpleNumField,AbsSimpleNumFieldElem},StructureConstantAlgebra{AbsSimpleNumFieldElem}})
   pm = basis_pmatrix(b)
-  pmnew = pseudo_matrix(matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
+  pmnew = pseudo_matrix(base_ring(pm), matrix(pm), map(z -> a * z, coefficient_ideals(pm)))
   return ideal(algebra(order(b)), pmnew)
 end
 

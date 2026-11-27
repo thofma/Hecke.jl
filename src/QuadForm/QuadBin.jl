@@ -158,24 +158,40 @@ end
 
 For a binary quadratic form `f` with negative discriminant and an integer `n`,
 return the tuple `(true, (x, y))` if $f(x, y) = n$ for integers `x`, `y`.
-If no such integers exist, return `(false, (0, 0))`
+If no such integers exist, return `(false, (0, 0))`.
+
+Note that $f(0, 0) = 0$, so `n == 0` is always solvable.
 """
 function can_solve_with_solution(f::QuadBin, n::IntegerUnion; sol::Bool = true)
-  @req discriminant(f) < 0 "f must have negative discriminant"
-  for y in 1:Int(floor(sqrt(Int(4*f[1]*n)//abs(Int(discriminant(f))))))
+  D = discriminant(f)
+  @req D < 0 "f must have negative discriminant"
+  a = f[1]
+  _n = ZZ(n)
+  # A definite form only represents values of the sign of its leading
+  # coefficient, so there is nothing to enumerate otherwise.
+  if sign(a) * sign(_n) < 0
+    return false, (ZZ(0), ZZ(0))
+  end
+  # f = a x^2 + b xy + c y^2
+  # D = b^2 - 4ac
+  # From 4*a*f(x, y) = (2*a*x + b*y)^2 - D*y^2 we get, for f(x, y) = n,
+  # that abs(D)*y^2 <= 4*a*n. Both signs of y give the same values of f, but
+  # y == 0 has to be looked at as well.
+  ybound = isqrt(fdiv(4 * a * _n, abs(D)))
+  for y in ZZ(0):ybound
     #now f(x,y) quadratic in one variable -> use quadratic formula
-    aq = f[1]
+    aq = a
     bq = f[2] * y
-    cq = f[3] * y^2 - n
+    cq = f[3] * y^2 - _n
     d = bq^2 - 4*aq*cq
     if is_square(d)
       if divides(-bq + sqrt(d), 2*aq)[1]
         !sol && return true, (ZZ(0), ZZ(0))
-        return true, (divexact(-bq + sqrt(d), 2*aq), ZZ(y))
+        return true, (divexact(-bq + sqrt(d), 2*aq), y)
       end
       if divides(-bq - sqrt(d), 2*aq)[1]
         !sol && return true, (ZZ(0), ZZ(0))
-        return true, (divexact(-bq - sqrt(d), 2*aq), ZZ(y))
+        return true, (divexact(-bq - sqrt(d), 2*aq), y)
       end
     end
   end
@@ -362,14 +378,15 @@ end
 ###############################################################################
 
 function _sqrtmod4P(d::ZZRingElem, p::ZZRingElem)
-    if jacobi_symbol(mod(d, p), p) == -1
-        error("$d is no square modulo $p")
-    end
+    # for p prime, b^2 = d mod 4p is solvable if and only if d = 0, 1 mod 4 and
+    # the Kronecker symbol, which unlike the Jacobi symbol is defined at p = 2,
+    # is not -1
+    @req mod(d, 4) <= 1 && kronecker_symbol(d, p) != -1 "$d is not a square modulo $(4 * p)"
     if p == 2
         if iseven(d)
             return 2 * mod(divexact(d, 4), 2)
         else
-            return 1
+            return one(ZZ)
         end
     else
         r = sqrtmod(d, p)
@@ -382,7 +399,9 @@ function _sqrtmod4P(d::ZZRingElem, p::ZZRingElem)
 end
 
 function _number_of_primeforms(d::ZZRingElem, p::ZZRingElem)
-    return jacobi_symbol(mod(d, p), p) + 1
+    # the number of b in [0, 2p) with b^2 = d mod 4p, for p prime
+    mod(d, 4) <= 1 || return 0
+    return kronecker_symbol(d, p) + 1
 end
 
 @doc raw"""
@@ -391,6 +410,7 @@ Returns an integral binary quadratic form of discriminant $d$ and leading coeffi
 $p$ where $p$ is a prime number.
 """
 function prime_form(d::ZZRingElem, p::ZZRingElem)
+    @req is_probable_prime(p) "$p is not prime"
     if !is_discriminant(d)
         error("$d is no discriminant")
     end
@@ -410,9 +430,12 @@ end
 is_isometric(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}) = is_equivalent(f, g, proper=false)
 
 @doc raw"""
-    is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = false)
+    is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = true)
 
-Return whether `f` and `g` are (properly) equivalent.
+Return whether `f` and `g` are properly equivalent or, if `proper` is `false`,
+equivalent: whether $g(x, y) = f(sx + ty, ux + vy)$ for an integer matrix with
+rows $(s, t)$ and $(u, v)$ of determinant $1$, or of determinant $\pm 1$
+([Cox22](@cite), Section 2, (2.2)).
 """
 function is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::Bool = true)
   d = discriminant(f)
@@ -434,6 +457,14 @@ function is_equivalent(f::QuadBin{ZZRingElem}, g::QuadBin{ZZRingElem}; proper::B
     if proper || is_prop
       return is_prop
     end
+
+    # Our improper equivalence, GL_2(Z) acting by f(sx + ty, ux + vy) with
+    # no determinant factor, is that of [Cox22, (2.2)]. It was taken from
+    # Kani's course notes "Quadratic Forms and Elliptic Curves" (2010), whose
+    # Remark 1.3(c) calls it the definition found in the literature since
+    # Gauss, Buchmann and Vollmer [BV07, (2.4)] being the exception; see
+    # #2605.
+    # https://www.queensu.ca/academia/kani/sites/acadkaniwww/files/uploaded_files/Course%20Notes/quadformsJan10.pdf
 
     # note that our definition of improper equivalence
     # differs from that of Buchmann and Vollmer
@@ -514,9 +545,19 @@ end
 @doc raw"""
     reduction(f::QuadBin{ZZRingElem}) -> QuadBin{ZZRingElem}
 
-Return a reduced binary quadratic form equivalent to `f`.
+Return a reduced binary quadratic form equivalent to `f`, reduced in the sense
+of `is_reduced`.
+
+If `f` is definite, this is the unique reduced form properly equivalent to `f`
+([BV07](@cite), Theorem 5.7.7, for positive definite `f`; a negative
+definite `[a, b, c]` is reduced exactly when `[-a, b, -c]` is, and this map
+preserves proper equivalence, [BV07](@cite), Section 5.1).
 """
 function reduction(f::QuadBin{ZZRingElem})
+  if discriminant(f) < 0
+    g, _ = _reduction_definite(f, false)
+    return g
+  end
   g, _ = _reduction(f)
   return g
 end
@@ -526,6 +567,9 @@ end
 
 Return a reduced binary quadratic form `g` equivalent to `f` and a matrix `T`
 such that `f.T = g`.
+
+If `f` is definite, `g` is the unique reduced form properly equivalent to `f`,
+as for `reduction`, and `T` has determinant 1.
 """
 function reduction_with_transformation(f::QuadBin{ZZRingElem})
   return _reduction(f)
@@ -544,7 +588,59 @@ function _reduction(f::QuadBin{ZZRingElem})
     return _reduction_indefinite(f)
   end
 
-  throw(NotImplemented())
+  return _reduction_definite(f, true)
+end
+
+# The reduction of a definite form f = [a, b, c] by [BV07, Algorithm 5.3]
+# (normalization, then the reduction operator rho until the form is reduced),
+# and, if `transform` is true, the matrix U of determinant 1 with
+# _action(f, U) == g (otherwise the identity). A negative definite f is reduced
+# through the positive definite h = [-a, b, -c], the image of f under
+# D = diag(1, -1) in the action of [BV07, (2.4), Section 5.1], which carries
+# the factor det(D) = -1; so h is -f transformed by D in _action. If
+# _action(h, V) == [a', b', c'], then _action(f, D * V * D) == [-a', b', -c'],
+# which is reduced in the sense of is_reduced exactly when [a', b', c'] is.
+function _reduction_definite(f::QuadBin{ZZRingElem}, transform::Bool)
+  sgn = sign(Int, f[1])
+  # fresh copies, as they are changed in place below
+  a = sgn * f[1]
+  b = set!(ZZRingElem(), f[2])
+  c = sgn * f[3]
+  # U = [s t; u v]
+  s, t, u, v = one(ZZ), zero(ZZ), zero(ZZ), one(ZZ)
+  n, a2, w = ZZRingElem(), ZZRingElem(), ZZRingElem()
+  while true
+    # normalization [BV07, Algorithm 5.2]: (x, y) -> (x - n*y, y), with n the
+    # integer such that -a < b - 2*a*n <= a
+    mul!(a2, a, 2)
+    cdiv!(n, sub!(w, b, a), a2)
+    if !is_zero(n)
+      # c = c + (a*n - b)*n, b = b - 2*a*n
+      addmul!(c, sub!(w, mul!(w, a, n), b), n)
+      submul!(b, a2, n)
+      if transform
+        submul!(t, n, s)
+        submul!(v, n, u)
+      end
+    end
+    a <= c && break
+    # (x, y) -> (-y, x), with the normalization above the operator rho
+    # [BV07, Definition 5.3.4]; this decreases a, so the loop ends
+    a, c = c, a
+    neg!(b)
+    if transform
+      s, t, u, v = t, neg!(s), v, neg!(u)
+    end
+  end
+  # a = c and b < 0: one more step of rho, which only changes the sign of b
+  if a == c && b < 0
+    neg!(b)
+    if transform
+      s, t, u, v = t, neg!(s), v, neg!(u)
+    end
+  end
+  g = binary_quadratic_form(sgn * a, b, sgn * c)
+  return g, matrix(ZZ, 2, 2, [s, sgn * t, sgn * u, v])
 end
 
 # TODO (TH):
@@ -696,10 +792,12 @@ Return whether `f` is reduced in the following sense. Let `f = [a, b, c]`
 be of discriminant `D`.
 
 If `f` is positive definite (`D < 0` and `a > 0`), then `f` is reduced if and
-only if `|b| <= a <= c`, and `b >= 0` if `a = b` or `a = c`.
+only if `|b| <= a <= c`, and `b >= 0` if `a = |b|` or `a = c`
+([BV07](@cite), Definition 5.3.1).
 
 If `f` is negative definite (`D < 0` and `a < 0`), then `f` is reduced if and
-only if `[-a, b, -c]` is reduced.
+only if `[-a, b, -c]` is reduced; this is the positive definite form that
+[BV07](@cite), Section 5.1, assigns to `f`.
 
 If `f` is indefinite (`D > 0), then `f` is reduced if and only if
 `|sqrt{D} - 2|a|| < b < \sqrt{D}` or `a = 0` and `-b < 2c <= b` or `c = 0` and
@@ -724,15 +822,12 @@ function is_reduced(f::QuadBin{ZZRingElem})
       return false
     end
 
-    R = ArbField(64, cached = false)
-    d = sqrt(R(D))
-    z = abs(d - 2 * abs(a))
-    @assert !contains(z, b)
-    if z < b
-      return true
-    else
-      return false
-    end
+    # The remaining condition is abs(sqrt(D) - 2*abs(a)) < b. Decide it with
+    # exact integer arithmetic: writing t = 2*abs(a), it says that b > 0, that
+    # sqrt(D) < t + b, and that sqrt(D) > t - b.
+    b <= 0 && return false
+    t = 2 * abs(a)
+    return D < (t + b)^2 && (t - b < 0 || D > (t - b)^2)
   end
 end
 
@@ -847,18 +942,62 @@ end
 #
 ################################################################################
 
+@doc raw"""
+    binary_quadratic_form_representatives(d::ZZRingElem; proper::Bool = true,
+                                          primitive::Bool = false)
+                                          -> Vector{QuadBin{ZZRingElem}}
+
+Return representatives of the classes of binary quadratic forms of
+discriminant `d`, under proper equivalence or, if `proper` is `false`, under
+$\mathrm{GL}_2(\mathbf{Z})$, where the matrix with rows $(s, t)$ and $(u, v)$
+sends $f(x, y)$ to $f(sx + ty, ux + vy)$, as in [Cox22](@cite), (2.2). If
+`primitive` is `true`, only the classes of primitive forms are returned.
+
+Unlike the action of [BV07](@cite), (2.4), this action has no factor given by
+the determinant, so it keeps a positive definite form positive definite.
+
+If `d < 0`, the classes of positive definite forms are returned, each by its
+reduced form in the sense of `is_reduced`; the negative definite classes are
+the classes of their negatives.
+"""
 function binary_quadratic_form_representatives(d::ZZRingElem; proper = true, primitive = false)
-  d4 = mod(d, 4)
-  if d4 == 2 || d4 == 3
-    error("Not a discriminant")
-  end
+  @req is_discriminant(d) "$d is not a discriminant"
   if d > 0
     # indefinite
     return _equivalence_classes_binary_quadratic_indefinite(d, proper = proper,
                                                             primitive = primitive)
   else
-    throw(NotImplemented())
+    return _binary_quadratic_form_representatives_definite(d, proper, primitive)
   end
+end
+
+# The reduced positive definite forms [a, b, c] of discriminant d < 0, one in
+# each proper class [BV07, Theorem 5.7.7], as in [BV07, Section 5.11] but
+# by a rather than by b. Reduced forms have |b| <= a <= c, so
+# 3a^2 <= 4ac - b^2 = -d [BV07, Lemma 5.4.1]. For each a, the b in [0, a]
+# are the square roots of d modulo 4a, which give c = (b^2 - d)/(4a). The form
+# [a, -b, c] is reduced, and in another proper class, exactly when
+# 0 < b < a < c; it is in the class of [a, b, c] under GL_2(ZZ).
+function _binary_quadratic_form_representatives_definite(d::ZZRingElem,
+                                                         proper::Bool,
+                                                         primitive::Bool)
+  res = QuadBin{ZZRingElem}[]
+  amax = isqrt(div(-d, 3))
+  a = one(ZZ)
+  while a <= amax
+    for b in sqrtmod_all(d, 4 * a)
+      b > a && break
+      c = divexact(b^2 - d, 4 * a)
+      c < a && continue
+      primitive && !isone(gcd(a, b, c)) && continue
+      push!(res, binary_quadratic_form(a, b, c))
+      if proper && 0 < b < a < c
+        push!(res, binary_quadratic_form(a, -b, c))
+      end
+    end
+    a += 1
+  end
+  return res
 end
 
 ################################################################################

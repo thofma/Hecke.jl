@@ -134,6 +134,21 @@ end
   c = frobenius(c)-c
   Hecke.artin_schreier_equation(1, c)
   Hecke.artin_schreier_equation(Hecke.ArtinSchreierSolveCtx(K, 1), c)
+
+  # frobenius_equation over fqPolyRepField, compared with FqField
+  F, z = Native.finite_field(3, 2, "z")
+  @test absolute_representation_matrix(z) == representation_matrix(z)
+  c = z^4
+  @test isone(norm(c))
+  y = Hecke.frobenius_equation(1, c)
+  @test !iszero(y)
+  @test frobenius(y) == y*c
+  G, w = finite_field(3, 2, "w")
+  FtoG(t) = Int(coeff(t, 0)) + Int(coeff(t, 1))*w
+  @test FtoG(z^2) == w^2
+  yG = Hecke.frobenius_equation(1, w^4)
+  @test frobenius(yG) == yG*w^4
+  @test yG == FtoG(y) || yG == -FtoG(y)
 end
 
 @testset "Misc LocalField" begin
@@ -152,5 +167,13 @@ end
 
   K, b = radical_extension(2, a+1)
   @test is_local_norm(K, norm(b+a)) == true
+
+  gaussian, _ = quadratic_field(-1)
+  @test !is_local_norm(gaussian, QQ(1//3))
+  @test is_local_norm(gaussian, QQ(1//9))
+
+  cyclotomic_quartic, _ = cyclotomic_field(5)
+  @test !is_local_norm(cyclotomic_quartic, QQ(1//3))
+  @test is_local_norm(cyclotomic_quartic, QQ(1//81))
 end
 

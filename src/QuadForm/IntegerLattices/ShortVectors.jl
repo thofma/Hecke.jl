@@ -1,0 +1,1173 @@
+@doc raw"""
+    short_vectors(L::ZZLat, [lb = 0], ub, [elem_type = ZZRingElem]; check::Bool = true)
+                                       -> Vector{Tuple{Vector{elem_type}, QQFieldElem}}
+
+Return all tuples `(v, n)` such that $n = |v G v^t|$ satisfies `lb <= n <= ub`,
+where `G` is the Gram matrix of `L` and `v` is non-zero.
+
+Note that the vectors are computed up to sign (so only one of `v` and `-v`
+appears).
+
+It is assumed and checked that `L` is definite.
+
+See also [`short_vectors_iterator`](@ref) for an iterator version.
+"""
+short_vectors
+
+@doc raw"""
+    short_vectors_iterator(L::ZZLat, [lb = 0], ub,
+                           [elem_type = ZZRingElem]; check::Bool = true)
+                                    -> Tuple{Vector{elem_type}, QQFieldElem} (iterator)
+
+Return an iterator for all tuples `(v, n)` such that $n = |v G v^t|$ satisfies
+`lb <= n <= ub`, where `G` is the Gram matrix of `L` and `v` is non-zero.
+
+Note that the vectors are computed up to sign (so only one of `v` and `-v`
+appears).
+
+It is assumed and checked that `L` is definite.
+
+See also [`short_vectors`](@ref).
+"""
+short_vectors_iterator
+
+function short_vectors(L::ZZLat, ub, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
+  if check
+    @req ub >= 0 "The upper bound must be non-negative"
+    @req is_definite(L) "Lattice must be definite"
+  end
+  if rank(L) == 0
+    return Tuple{Vector{S}, QQFieldElem}[]
+  end
+  _G = gram_matrix(L)
+  if _G[1, 1] < 0
+    _G = -_G
+  end
+  return _short_vectors_gram(FinckePohstInt, _G, ub, S)
+end
+
+function short_vectors_iterator(L::ZZLat, ub, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
+  if check
+    @req ub >= 0 "The upper bound must be non-negative"
+    @req is_definite(L) "Lattice must be definite"
+  end
+  _G = gram_matrix(L)
+  if rank(L) != 0 && _G[1, 1] < 0
+    _G = -_G
+  end
+  return _short_vectors_gram(FinckePohstIntIterCtx, _G, ub, S)
+end
+
+function short_vectors(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=true) where {S}
+  if check
+    @req lb >= 0 "The lower bound must be non-negative"
+    @req ub >= 0 "The upper bound must be non-negative"
+    @req is_definite(L) "Lattice must be definite"
+  end
+  if rank(L) == 0
+    return Tuple{Vector{S}, QQFieldElem}[]
+  end
+  _G = gram_matrix(L)
+  if _G[1, 1] < 0
+    _G = -_G
+  end
+  return _short_vectors_gram(FinckePohstInt, _G, lb, ub, S)
+end
+
+function short_vectors_iterator(L::ZZLat, lb, ub, elem_type::Type{S} = ZZRingElem; check=true) where {S}
+  if check
+    @req lb >= 0 "The lower bound must be non-negative"
+    @req ub >= 0 "The upper bound must be non-negative"
+    @req is_definite(L) "Lattice must be definite"
+  end
+  _G = gram_matrix(L)
+  if rank(L) != 0 && _G[1, 1] < 0
+    _G = -_G
+  end
+  return _short_vectors_gram(FinckePohstIntIterCtx, _G, lb, ub, S)
+end
+
+################################################################################
+#
+#  Bases of short vectors
+#
+################################################################################
+
+@doc raw"""
+    _reduce_allombert_chenevier(L::ZZLat, b::Integer, [t::Integer = 10000];
+                                 rng = Random.default_rng(), check::Bool = true) -> Bool, ZZMatrix
+
+Try to find a basis of the integral positive definite lattice `L` consisting of
+vectors of squared length at most `b`. The integer `t` controls the number of
+tries.
+
+The result is a unimodular matrix whose rows are the coordinates of the new
+basis with respect to the standard basis of `L`. The first return value
+indicates whether a basis was found. If it is `false`, the returned matrix is
+unspecified.
+
+# Examples
+```jldoctest; filter = r".*"
+julia> G = ZZ[19 6; 6 2];
+
+julia> maximum(diagonal(G))
+19
+
+julia> L = integer_lattice(gram = G);
+
+julia> success, B = Hecke._reduce_allombert_chenevier(L, 2);
+
+julia> success
+true
+
+julia> B
+[0    1]
+[1   -3]
+
+julia> B * G * transpose(B)
+[2   0]
+[0   1]
+```
+
+This is the reduction algorithm from Section 4 of Allombert--Chenevier,
+*Unimodular hunting II*.
+"""
+function _reduce_allombert_chenevier(
+    L::ZZLat,
+    b::IntegerUnion,
+    t::IntegerUnion = 10000;
+    rng::AbstractRNG = Random.default_rng(),
+    check::Bool = true
+  )
+  if check
+    @req b >= 0 "The bound must be non-negative"
+    @req t >= 0 "The number of attempts must be non-negative"
+    @req t <= typemax(Int) "The number of attempts is too large"
+    @req is_integral(L) "Lattice must be integral"
+    @req is_positive_definite(L) "Lattice must be positive definite"
+  end
+
+  d = rank(L)
+  candidate = zero_matrix(ZZ, d, d)
+  d == 0 && return false, candidate
+
+  short_with_norms = short_vectors(L, b; check = false)
+  isempty(short_with_norms) && return false, candidate
+  short = first.(short_with_norms)
+
+  # The rows generate L precisely when the Smith invariants are all one.
+  short_matrix = matrix(ZZ, short)
+  elementary_divs = elementary_divisors(short_matrix)
+  if length(elementary_divs) < d || !all(isone, elementary_divs)
+    return false, candidate
+  end
+
+  smaller = [v for (v, n) in short_with_norms if n < b]
+  smaller_rank = isempty(smaller) ? 0 : rank(matrix(ZZ, smaller))
+  k0 = max(1, d - smaller_rank)
+
+  for k in k0:d
+    for _ in 1:Int(t)
+      for j in 1:k
+        candidate[j, :] = rand(rng, short)
+      end
+      for j in (k + 1):d
+        candidate[j, :] = rand(rng, smaller)
+      end
+      isone(abs(det(candidate))) && return true, candidate
+    end
+  end
+  return false, candidate
+end
+
+function _reduce_gram_matrix(
+    G::Union{ZZMatrix, QQMatrix},
+    b::IntegerUnion,
+    t::IntegerUnion = 10000;
+    rng::AbstractRNG = Random.default_rng()
+  )
+  @req nrows(G) == ncols(G) "Gram matrix must be square"
+  @req is_symmetric(G) "Gram matrix must be symmetric"
+  L = integer_lattice(; gram = G, check = false)
+  return _reduce_allombert_chenevier(L, b, t; rng)
+end
+
+################################################################################
+#
+#  Shortest vectors
+#
+################################################################################
+
+@doc raw"""
+    shortest_vectors(L::ZZLat, [elem_type = ZZRingElem]; check::Bool = true)
+                                               -> QQFieldElem, Vector{elem_type}, QQFieldElem}
+
+Return the list of shortest non-zero vectors in absolute value. Note that the
+vectors are computed up to sign (so only one of `v` and `-v` appears).
+
+It is assumed and checked that `L` is definite.
+
+See also [`minimum`](@ref).
+"""
+shortest_vectors(L::ZZLat, ::ZZRingElem)
+
+function shortest_vectors(L::ZZLat, elem_type::Type{S} = ZZRingElem; check::Bool = true) where {S}
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  if iszero(rank(L))
+    return Vector{S}[]
+  end
+  _G = gram_matrix(L)
+  if _G[1, 1] < 0
+    _G = -_G
+  end
+  min, V = _shortest_vectors_gram(FinckePohstInt, _G)
+  L.minimum = min
+  if S === Int
+    return V
+  else
+    return [S.(i) for i in V]
+  end
+end
+
+################################################################################
+#
+#  Minimum
+#
+################################################################################
+
+@doc raw"""
+    minimum(L::ZZLat) -> QQFieldElem
+
+Return the minimum absolute squared length among the non-zero vectors in `L`.
+"""
+function minimum(L::ZZLat)
+  @req rank(L) > 0 "Lattice must have positive rank"
+  if !isdefined(L, :minimum)
+    shortest_vectors(L)
+  end
+
+  return L.minimum
+end
+
+###############################################################################
+#
+#  Density
+#
+###############################################################################
+
+@doc raw"""
+    center_density(L::ZZLat) -> RealFieldElem
+
+Return the center density of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n``, absolute determinant ``d`` and
+minimum ``m`` (in absolute value), we define the **center density** of ``L``
+to be the real number defined by:
+
+```math
+\delta := \frac{(\sqrt{m}/2)^n}{\sqrt{d}}
+```
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 6);
+
+julia> center_density(L)
+[0.0721687836487032205 +/- 9.72e-20]
+```
+"""
+@attr RealFieldElem function center_density(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  RR = real_field()
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))
+  rho = sqrt(mu)/2
+  return rho^(rank(L))/sqrt(d)
+end
+
+@doc raw"""
+    density(L::ZZLat) -> RealFieldElem
+
+Return the density of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n`` and minimum ``m``, the density of
+``L`` is the proportion of the real space ``L\otimes \mathbb{R}`` covered by
+non-overlapping balls of radius ``m`` centered in points of ``L``. It can
+be computed as the product of the [`center_density(::ZZLat)`](@ref) of ``L``
+times the volume of the unit ``n``-ball.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 8);
+
+julia> density(L)
+[0.253669507901048014 +/- 6.66e-19]
+```
+"""
+@attr RealFieldElem function density(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  n = rank(L)
+  RR = real_field()
+  RRpi = RR(pi)
+  m = div(n, 2, RoundDown)
+
+  # Volume unit n-sphere
+  if iseven(n)
+    Vn = RRpi^m/RR(factorial(m))
+  else
+    Vn = RR(2^n)*RRpi^m*RR(factorial(m))/RR(factorial(n))
+  end
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))
+  rho = sqrt(mu)/2
+  return Vn*rho^n/sqrt(d)
+end
+
+###############################################################################
+#
+#  Hermite number
+#
+###############################################################################
+
+@doc raw"""
+    hermite_number(L::ZZLat) -> RealFieldElem
+
+Return the Hermite number of the definite lattice ``L``.
+
+For a definite lattice ``L`` of rank ``n``, absolute determinant ``d`` and
+minimum ``m``, the Hermite number of ``L`` is defined by:
+
+```math
+\gamma := \frac{m}{d^{1/n}}.
+```
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:E, 7);
+
+julia> hermite_number(L)
+[1.811447328527813353 +/- 5.13e-19]
+```
+"""
+@attr RealFieldElem function hermite_number(L::ZZLat)
+  @req is_definite(L) "Only implemented for definite lattices"
+  RR = real_field()
+  mu = RR(minimum(L))
+  d = RR(abs(det(L)))^(1/rank(L))
+  return mu/d
+end
+
+################################################################################
+#
+#  Kissing number
+#
+################################################################################
+
+@doc raw"""
+    kissing_number(L::ZZLat) -> Int
+
+Return the Kissing number of the sphere packing defined by `L`.
+
+This is the number of non-overlapping spheres touching any
+other given sphere.
+"""
+@attr Int function kissing_number(L::ZZLat)
+  @req is_definite(L) "Lattice must have positive rank"
+  if rank(L) == 0
+    return 0
+  end
+  return 2 * length(shortest_vectors(L))
+end
+
+################################################################################
+#
+#  Theta series
+#
+################################################################################
+
+@doc raw"""
+    theta_series(L::ZZLat, n::Int) -> ZZAbsPowerSeriesRingElem
+
+Return the theta series of the definite lattice ``L`` up to ``O(q^{n+1})``,
+that is,
+
+```math
+\sum_{k=0}^{n} N_k q^k + O(q^{n+1}),
+```
+
+where ``N_k`` is the number of vectors ``v`` in ``L`` with ``|b(v, v)| = k``,
+counting ``v`` and ``-v`` separately; see [CS99](@cite), Chapter 2,
+Section 2.3. The constant term ``N_0 = 1`` counts the zero vector. For ``L``
+negative definite, this is the theta series of `rescale(L, -1)`.
+
+The norm of ``L`` must be integral, so that every ``b(v, v)`` is an integer.
+
+The series lies in `power_series_ring(ZZ, n + 1, :q; model = :capped_absolute)`,
+so the theta series of two lattices with the same ``n`` can be compared.
+
+# Examples
+```jldoctest
+julia> L = root_lattice(:A, 2);
+
+julia> theta_series(L, 6)
+1 + 6*q^2 + 6*q^6 + O(q^7)
+```
+"""
+function theta_series(L::ZZLat, n::Int)
+  @req n >= 0 "The precision must be non-negative"
+  @req is_definite(L) "Lattice must be definite"
+  @req is_integral(norm(L)) "The norm of the lattice must be integral"
+  c = zeros(Int, n + 1)
+  c[1] = 1
+  if rank(L) > 0
+    # Only the norms are counted, on an LLL-reduced Gram matrix G/d with G
+    # integral; d is 1 or 2, since the norm of L is integral
+    G, d = _integral_split_gram(lll(L; same_ambient = false))
+    if G[1, 1] < 0
+      G = -G
+    end
+    _count_norms!(c, __short_vectors_it(G, nothing, d * n), Int(d))
+  end
+  R, _ = power_series_ring(ZZ, n + 1, :q; model = :capped_absolute)
+  return R(ZZRingElem.(c), n + 1, n + 1)
+end
+
+# Add 2 to c[k + 1] for each vector of norm d * k from the iterator, which
+# gives one of v and -v; a function barrier, as the type of the iterator is
+# only known at run time
+function _count_norms!(c::Vector{Int}, it, d::Int)
+  for (_, m) in it
+    c[Int(divexact(m, d)) + 1] += 2
+  end
+  return c
+end
+
+################################################################################
+#
+#  Successive minima
+#
+################################################################################
+
+@doc raw"""
+    successive_minima(L::ZZLat) -> Vector{QQFieldElem}
+
+Given a positive definite lattice $L$, return the successive minima of $L$.
+See [`successive_minima_with_vectors`](@ref) for the definition.
+"""
+function successive_minima(L::ZZLat)
+  return successive_minima_with_vectors(L)[1]
+end
+
+@doc raw"""
+    successive_minima_with_vectors(L::ZZLat) -> Vector{QQFieldElem},
+                                                Vector{Vector{ZZRingElem}}
+
+Given a positive definite lattice $L$, return the successive minima of $L$ and
+a list of vectors realizing the minima.
+
+By definition, the $i$-th successive minima of $L$ is the smallest non-negative
+integer $\lambda_i$, such that the vectors of $L$ of norm bounded by
+$\lambda_i$ span a lattice of rank $i$.
+
+# Examples
+
+```jldoctest
+julia> L = integer_lattice(gram = ZZ[1 0 0; 0 2 0; 0 0 3]);
+
+julia> successive_minima_with_vectors(L)
+(QQFieldElem[1, 2, 3], Vector{ZZRingElem}[[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+```
+"""
+function successive_minima_with_vectors(L::ZZLat)
+  @req is_positive_definite(L) "Lattice must be positive definite"
+  n = rank(L)
+  # the ouput consists of two lists of length n,
+  # so we can already initialize said lists
+  res = Array{QQFieldElem}(undef, n)
+  resv = Array{Vector{ZZRingElem}}(undef, n)
+
+  # Trivial case
+  if iszero(n)
+    return res, resv
+  end
+
+  # Sometimes L has a good Gram matrix so there is nothing to do
+  min_length = minimum(L)
+  if all(isequal(min_length), diagonal(gram_matrix(L)))
+    _v = zeros(ZZRingElem, n)
+    for i in 1:n
+      res[i] = min_length
+      ei = deepcopy(_v)
+      add!(ei[i], 1)
+      resv[i] = ei
+    end
+    return res, resv
+  end
+
+  ind = Int(1) # Index of new successive minima
+  m = min(maximum(diagonal(gram_matrix(lll(L)))), maximum(diagonal(gram_matrix(L))))
+
+  # We iterate on vectors up to norm m; we put in a buffer list the vectors
+  # of norm greater than min_length so that we treat shortest vectors first
+  S = short_vectors_iterator(L, m)
+  buffer = Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+  H = zero_matrix(ZZ, n, n) # hnf of current Q-generating set
+  w = zero_matrix(ZZ, 1, n)
+  for x in S
+    if x[2] > min_length
+      push!(buffer, deepcopy(x))
+      continue
+    end
+    w[1:1, :] = first(x)
+    # check whether the vector is already in the ZZ-span
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    # Checks whether the vector is in the QQ-span
+    H[ind:ind, :] = w
+    hnf!(H)
+    is_zero_row(H, ind) && continue
+    # Rank increases
+    res[ind] = last(x)
+    resv[ind] = first(x)
+    # We have found the good number of vectors so are done
+    # We do not look for a basis of L, just of a finite index sublattice
+    if ind == n
+      return res, resv
+    end
+    ind += 1
+  end
+
+  sort!(buffer; by=last)
+  while !isempty(buffer)
+    x = popfirst!(buffer)
+    w[1:1, :] = first(x)
+    reduce_mod_hnf_ur!(w, H)
+    iszero(w) && continue
+    H[ind:ind, :] = w
+    hnf!(H)
+    is_zero_row(H, ind) && continue
+    res[ind] = last(x)
+    resv[ind] = first(x)
+    if ind == n
+      return res, resv
+    end
+    ind += 1
+  end
+  error("Something went wrong")
+end
+
+################################################################################
+#
+# Short vectors affine
+#
+################################################################################
+
+@doc raw"""
+    enumerate_quadratic_triples(
+        Q::MatrixElem{T},
+        b::MatrixElem{T},
+        c::RationalUnion;
+        algorithm::Symbol=:short_vectors,
+        equal::Bool=false
+      ) where T <: Union{ZZRingElem, QQFieldElem}
+                              -> Vector{Tuple{Vector{ZZRingElem}, QQFieldElem}}
+
+Given the Gram matrix ``Q`` of a positive definite quadratic form, return
+the list of pairs ``(v, d)`` so that ``v`` satisfies $v*Q*v^T + 2*v*Q*b^T + c \leq 0$
+where ``b`` is seen as a row vector and ``c`` is a rational number.
+Moreover ``d`` is so that $(v-b)*Q*(v-b)^T = d$.
+
+For the moment, only the algorithm `:short_vectors` is available. The function
+uses the data required for the closest vector problem for the quadratic triple
+`[Q, b, c]`; in particular, ``d`` is smaller than the associated upper-bound $M$
+(see [`close_vectors`](@ref)).
+
+If `equal` is set to `true`, the function returns only the pairs ``(v, d)`` such
+that $d=M$.
+"""
+function enumerate_quadratic_triples(
+    Q::MatrixElem{T},
+    b::MatrixElem{T},
+    c::RationalUnion;
+    algorithm::Symbol=:short_vectors,
+    equal::Bool=false
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  return [deepcopy(i) for i in enumerate_quadratic_triples_iterator(Q,b,c,algorithm,equal)]
+end
+
+function enumerate_quadratic_triples_iterator(
+    Q::MatrixElem{T},
+    b::MatrixElem{T},
+    c::RationalUnion;
+    algorithm::Symbol=:short_vectors,
+    equal::Bool=false
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  if algorithm == :short_vectors
+    if T == ZZRingElem
+      _Q = map_entries(QQ, Q)
+      _b = map_entries(QQ, b)
+      L, p, dist = _convert_type(_Q, _b, QQ(c))
+    else
+      L, p, dist = _convert_type(Q, b, QQ(c))
+    end
+    dist < 0 && return Tuple{Vector{ZZRingElem}, QQFieldElem}[]
+    if equal
+      cv = close_vectors_iterator(L, vec(collect(p)), dist, dist, ZZRingElem; check=false)
+    else
+      cv = close_vectors_iterator(L, vec(collect(p)), dist, ZZRingElem; check=false)
+    end
+  else
+    error("Algorithm ($(algorithm)) not (yet) implemented for this function")
+  end
+  return cv
+end
+
+
+########################################################################################
+#
+#        Short vectors affine
+#
+########################################################################################
+
+
+@doc raw"""
+    short_vectors_affine(
+        S::ZZLat,
+        v::QQMatrix,
+        alpha::RationalUnion,
+        d::RationalUnion
+      ) -> Vector{QQMatrix}
+
+Given a hyperbolic or negative definite $\mathbb{Z}$-lattice ``S``, return the
+set of vectors
+
+```math
+\{x \in S : x^2=d, x.v=\alpha \}.
+```
+where ``v`` is a given vector in the ambient space of ``S`` with positive square,
+and ``\alpha`` and ``d`` are rational numbers.
+
+The vectors in output are given in terms of their coordinates in the ambient
+space of ``S``.
+
+The implementation is based on Algorithm 2.2 in [Shi15](@cite)
+"""
+function short_vectors_affine(
+    S::ZZLat,
+    v::QQMatrix,
+    alpha::RationalUnion,
+    d::RationalUnion
+  )
+  p, _, n = signature_tuple(S)
+  @req p <= 1 || n <= 1 "Lattice must be definite or hyperbolic"
+  _alpha = QQ(alpha)
+  _d = QQ(d)
+  gram = gram_matrix(S)
+  tmp = v*gram_matrix(ambient_space(S))*transpose(basis_matrix(S))
+  v_S = solve(gram_matrix(S), tmp; side=:left)
+  if n > 1
+    sol = _short_vectors_affine(gram, v_S, _alpha, _d)
+  else
+    # `gram` is the cached Gram matrix of `S`, so it must not be negated in place
+    sol = _short_vectors_affine(-gram, v_S, -_alpha, -_d)
+  end
+  B = basis_matrix(S)
+  return QQMatrix[s*B for s in sol]
+end
+
+@doc raw"""
+    short_vectors_affine
+        gram::MatrixElem{T},
+        v::MatrixElem{T},
+        alpha::RationalUnion,
+        d::RationalUnion
+      ) where T <: Union{ZZRingElem, QQFieldElem} -> Vector{MatrixElem{T}}
+
+Given the Gram matrix `gram` of a hyperbolic or negative definite
+$\mathbb{Z}$-lattice ``S``, return the set of vectors
+
+```math
+\{x \in S : x^2=d, x.v=\alpha \}.
+```
+where ``v`` is a given vector of positive square, represented by its coordinates
+in the standard basis of the rational span of ``S``, and ``\alpha`` and ``d``
+are rational numbers.
+
+The vectors in output are given in terms of their coordinates in the rational
+span of ``S``.
+
+The implementation is based on Algorithm 2.2 in [Shi15](@cite)
+"""
+function short_vectors_affine(
+    gram::MatrixElem{T},
+    v::MatrixElem{T},
+    alpha::RationalUnion,
+    d::RationalUnion
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  return _short_vectors_affine(gram, v, alpha, d)
+end
+
+@doc raw"""
+    short_vectors_affine_iterator
+        gram::MatrixElem{T},
+        v::MatrixElem{T},
+        alpha::RationalUnion,
+        d::RationalUnion
+      ) where T <: Union{ZZRingElem, QQFieldElem} -> Vector{MatrixElem{T}}
+
+Given the Gram matrix `gram` of a hyperbolic or negative definite
+$\mathbb{Z}$-lattice ``S``, return an iterator over the following set of vectors
+
+```math
+\{x \in S : x^2=d, x.v=\alpha \}.
+```
+where ``v`` is a given vector of positive square, represented by its coordinates
+in the standard basis of the rational span of ``S``, and ``\alpha`` and ``d``
+are rational numbers.
+
+The vectors in output are given in terms of their coordinates in the rational
+span of ``S``.
+
+The implementation is based on Algorithm 2.2 in [Shi15](@cite)
+"""
+function short_vectors_affine_iterator(
+    gram::MatrixElem{T},
+    v::MatrixElem{T},
+    alpha::RationalUnion,
+    d::RationalUnion
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  return _short_vectors_affine_iterator(gram, v, alpha, d)
+end
+
+# In this function we assume that gram is the Gram matrix of a definite or
+# hyperbolic lattice. If not, then close_vectors will complain
+function _short_vectors_affine(
+    gram::MatrixElem{T},
+    v::MatrixElem{T},
+    alpha::RationalUnion,
+    d::RationalUnion
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  return [deepcopy(i) for i in _short_vectors_affine_iterator(gram,v,alpha,d)]
+end
+
+@doc raw"""
+    short_vectors_affine_iterator(
+        S::ZZLat,
+        v::QQMatrix,
+        alpha::RationalUnion,
+        d::RationalUnion
+      ) -> Vector{QQMatrix}
+
+Given a hyperbolic or negative definite $\mathbb{Z}$-lattice ``S``, return the
+iterator that returns vectors
+
+```math
+\{x \in S : x^2=d, x.v=\alpha \}.
+```
+where ``v`` is a given vector in the ambient space of ``S`` with positive square,
+and ``\alpha`` and ``d`` are rational numbers.
+
+The vectors in output are given in terms of their coordinates in the ambient
+space of ``S``.
+
+The implementation is based on Algorithm 2.2 in [Shi15](@cite)
+"""
+function short_vectors_affine_iterator(
+    S::ZZLat,
+    v::QQMatrix,
+    alpha::RationalUnion,
+    d::RationalUnion
+  )
+  p, _, n = signature_tuple(S)
+  @req p <= 1 || n <= 1 "Lattice must be definite or hyperbolic"
+  _alpha = QQ(alpha)
+  _d = QQ(d)
+  gram = gram_matrix(S)
+  tmp = v*gram_matrix(ambient_space(S))*transpose(basis_matrix(S))
+  v_S = solve(gram_matrix(S), tmp; side=:left)
+  if n > 1
+    sol = _short_vectors_affine_iterator(gram, v_S, _alpha, _d)
+  else
+    # `gram` is the cached Gram matrix of `S`, so it must not be negated in place
+    sol = _short_vectors_affine_iterator(-gram, v_S, -_alpha, -_d)
+  end
+  B = basis_matrix(S)
+  elem_type = typeof(v)
+  sv_affine_iterator = ShortVectorsAffineLatIterator{typeof(sol), elem_type}(sol, B, zero(B, 1, number_of_columns(B)))
+  return sv_affine_iterator
+end
+
+function _short_vectors_affine_iterator(
+    gram::MatrixElem{T},
+    v::MatrixElem{T},
+    alpha::RationalUnion,
+    d::RationalUnion
+  ) where T <: Union{ZZRingElem, QQFieldElem}
+  # find a solution <x,v> = alpha with x in L if it exists
+  res = MatrixElem{T}[]
+  w = gram*transpose(v)
+  if T == QQFieldElem
+    wd = lcm(denominator(w), denominator(alpha))
+    wn = map_entries(ZZ, wd*w)
+    beta = numerator(alpha*wd)
+  else
+    wd = ZZ(denominator(alpha))
+    wn = wd*w
+    beta = numerator(alpha*wd)
+  end
+
+  ok, x = can_solve_with_solution(transpose(wn), matrix(ZZ, 1, 1, [beta]); side=:right)
+  if !ok
+    return res
+  end
+
+  K = kernel(wn; side=:left)
+  # (x + y*K)*gram*(x + y*K) = x gram x + 2xGKy + y K G K y
+
+  # now we want to formulate this as a cvp
+  # (x +y K) gram (x+yK) == d
+  GK = gram*transpose(K)
+  Q = K * GK
+  b = transpose(x) * GK
+  c = (transpose(x)*gram*x)[1,1] - d
+  # solve the quadratic triple
+  if Q[1, 1] < 0
+    map_entries!(-, Q, Q)
+    cv_vec = enumerate_quadratic_triples_iterator(Q, transpose(-b), -c; equal=true)
+  else
+    cv_vec = enumerate_quadratic_triples_iterator(Q, transpose(b), c; equal=true)
+  end
+  xt = map_entries(base_ring(gram), transpose(x))
+  elem_type = typeof(v)
+  sv_affine_iterator = ShortVectorsAffineIterator{typeof(cv_vec), elem_type}(cv_vec, base_ring(gram), nrows(Q), K, xt, zero_matrix(base_ring(gram), 1, number_of_columns(xt)), zero_matrix(base_ring(gram), 1, nrows(Q)))
+  return sv_affine_iterator
+end
+
+struct ShortVectorsAffineIterator{S, elem_type}
+  cv_vec::S
+  b_ring
+  nrows
+  K
+  xt
+  v
+  u
+end
+
+Base.IteratorSize(::Type{<:ShortVectorsAffineIterator}) = Base.SizeUnknown()
+Base.eltype(::Type{ShortVectorsAffineIterator{X, elem_type}}) where {X, elem_type} = elem_type
+
+function Base.iterate(C::ShortVectorsAffineIterator{X, elem_type}, start = nothing) where {X, elem_type}
+  if start === nothing
+    it = iterate(C.cv_vec)
+  else
+    it = iterate(C.cv_vec, start)
+  end
+
+  if it === nothing
+    return nothing
+  end
+  #Cv = C.xt + matrix(C.b_ring, 1, C.nrows, it[1][1])*C.K
+  for i in 1:C.nrows
+    C.u[i] = it[1][1][i]
+  end
+  add!(C.v, C.xt, mul!(C.v, C.u, C.K))
+  return (deepcopy(C.v)), it[2]
+end
+
+struct ShortVectorsAffineLatIterator{S, elem_type}
+  sv_it::S
+  B
+  sv
+end
+
+
+Base.IteratorSize(::Type{<:ShortVectorsAffineLatIterator}) = Base.SizeUnknown()
+Base.eltype(::Type{ShortVectorsAffineLatIterator{X, elem_type}}) where {X, elem_type} = elem_type
+
+function Base.iterate(C::ShortVectorsAffineLatIterator{X, elem_type}, start = nothing) where {X, elem_type}
+  if start === nothing
+    it = iterate(C.sv_it)
+  else
+    it = iterate(C.sv_it, start)
+  end
+
+  if it === nothing
+    return nothing
+  end
+
+  mul!(C.sv, it[1], C.B)
+  return (deepcopy(C.sv)), it[2]
+end
+
+
+
+########################################################################################
+#
+#        Short vectors with given divisibility
+#
+########################################################################################
+
+
+@doc raw"""
+    vectors_of_square_and_divisibility(
+      L::ZZLat,
+      S::ZZLat,
+      n::RationalUnion,
+      d::RationalUnion = scale(L);
+      coordinates_representation::Symbol=:S,
+      check::Bool=true,
+    ) -> Vector{Tuple{QQMatrix}, RationalUnion, RationalUnion}}
+
+Given a nondegenerate $\mathbb{Z}$-lattice ``L`` and a nondegenerate definite
+$\mathbb{Z}$-lattice ``S`` in the ambient space of ``L``, return all the
+vectors in $S \cap (L\otimes \mathbb{Q})$ whose square has absolute value $|n|$
+and whose divisibility in ``L`` is in the ideal $d\mathbb{Z}$.
+
+For a vector ``v`` in the ambient quadratic space $(V, \Phi)$ of ``L``,
+we call the divisibility of ``v`` in ``L`` the nonnegative generator of the
+fractional ideal $\Phi(v, L)$ of $\mathbb{Z}$.
+
+The entry `n` must be nonzero and `d` must be a positive rational number,
+set to `scale(L)` by default.
+
+!!! note
+    Alternatively, instead of single values `n` and `d` one can input:
+    * a list of pairs of rational numbers `(n, d)` where `n` is nonzero and
+      `d` is positive;
+    * a dictionary whose keys are positive rational numbers `d` and the
+      associated list of numbers consist of nonzero rational numbers `n`.
+
+The output consists of a list of triples `(v, n', d')` where `v` is a vector
+of ``S`` of square of absolute value $n'$ and of divisibility $d'$ in ``L``.
+
+!!! note
+    In the case where one wants to choose ``S`` to be ``L`` itself, one can
+    call instead `vectors_of_square_and_divisibility(L, n, d)`.
+
+One can choose in which coordinates system each vector `v` in output is
+represented by changing the symbol `coordinates_representation`.
+There are three possibilities:
+  - `coordinates_representation = :L`: the vector `v` is given in terms of its
+    coordinates in the standard basis of the rational span of the lattice
+    ``L``;
+  - `coordinates_representation = :S` (default): the vector `v` is given in
+    terms of its coordinates in the fixed basis of the lattice ``S``;
+  - `coordinates_representation = :ambient`: the vector `v` is given in terms
+    of its coordinates in the standard basis of the ambient space of ``L``.
+
+If the keyword argument `check` is set to true, the function checks whether
+``S`` is definite.
+
+# Examples
+```jldoctest
+julia> E6 = root_lattice(:E, 6)
+Integer lattice of rank 6 and degree 6
+with gram matrix
+[ 2   -1    0    0    0    0]
+[-1    2   -1    0    0    0]
+[ 0   -1    2   -1    0   -1]
+[ 0    0   -1    2   -1    0]
+[ 0    0    0   -1    2    0]
+[ 0    0   -1    0    0    2]
+
+julia> A2 = lattice_in_same_ambient_space(E6, basis_matrix(E6)[1:2, :])
+Integer lattice of rank 2 and degree 6
+with gram matrix
+[ 2   -1]
+[-1    2]
+
+julia> C = orthogonal_submodule(E6, A2)
+Integer lattice of rank 4 and degree 6
+with gram matrix
+[12   -3    0   -3]
+[-3    2   -1    0]
+[ 0   -1    2    0]
+[-3    0    0    2]
+
+julia> vectors_of_square_and_divisibility(E6, C, 12, 3; coordinates_representation=:L)
+9-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
+ ([-1 -2 -3 -1 1 0], 12, 3)
+ ([-2 -4 -6 -5 -1 -3], 12, 3)
+ ([-1 -2 -3 -4 -2 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 0], 12, 3)
+ ([-2 -4 -6 -5 -4 -3], 12, 3)
+ ([-1 -2 -3 -1 -2 -3], 12, 3)
+ ([-2 -4 -6 -2 -1 -3], 12, 3)
+ ([-1 -2 -3 -1 1 -3], 12, 3)
+ ([-1 -2 -3 -4 -2 0], 12, 3)
+
+julia> L = integer_lattice(; gram=matrix(QQ, 2, 2, [2 1; 1 4]))
+Integer lattice of rank 2 and degree 2
+with gram matrix
+[2   1]
+[1   4]
+
+julia> vectors_of_square_and_divisibility(L, 8, 2)
+1-element Vector{Tuple{QQMatrix, QQFieldElem, QQFieldElem}}:
+ ([-2 0], 8, 2)
+
+julia> length(short_vectors(L, 8, 8))
+3
+```
+"""
+vectors_of_square_and_divisibility
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    n::RationalUnion,
+    d::RationalUnion = scale(L);
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
+  end
+  @req d > 0 "Divisibility ($d) must be positive"
+  @req !iszero(n) "Square ($n) must be nonzero"
+  nQQ = abs(QQ(n))
+  de = denominator(n)
+  if de > 1
+    L = rescale(L, de; cached=false)
+    S = lattice_in_same_ambient_space(L, basis_matrix(S))
+    n = n*de^2
+    d = d*de
+  end
+  Sd = intersect(d*dual(L), S)
+  BSd = basis_matrix(Sd)
+  l = short_vectors(Sd, n, n)
+  if coordinates_representation == :S
+    B = solve(basis_matrix(S), basis_matrix(Sd); side=:left)
+  elseif coordinates_representation == :L
+    B = solve(basis_matrix(L), basis_matrix(Sd); side=:left)
+  elseif coordinates_representation == :ambient
+    B = BSd
+  else
+    error("Wrong symbol for coordinates representation")
+  end
+  out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
+  for a in l
+    v = matrix(QQ, 1, rank(Sd), a[1])
+    dv = divisibility(L, v*BSd)
+    v = v*B
+    push!(out, (v, nQQ, dv))
+  end
+  sort!(out; lt=(a,b) -> a[3] < b[3])
+  return out
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    n::RationalUnion,
+    d::RationalUnion = scale(L);
+    coordinates_representation::Symbol=:ambient,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, n, d; coordinates_representation, check=false)
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    vector_type::Vector;
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
+  end
+  ns = sort!(unique!(first.(vector_type)))
+  ds = [gcd([a[2] for a in vector_type if a[1] == n]) for n in ns]
+  vector_type_dict = Dict{eltype(ds), Vector{eltype(ns)}}()
+  for d in unique(ds)
+    vector_type_dict[d] = [ns[i] for i in 1:length(ns) if ds[i] == d]
+  end
+  return vectors_of_square_and_divisibility(L, S, vector_type_dict; coordinates_representation, check=false)
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    vector_type::Vector;
+    coordinates_representation::Symbol=:L,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    S::ZZLat,
+    vector_type::Dict;
+    coordinates_representation::Symbol=:S,
+    check::Bool=true,
+  )
+  @req ambient_space(L) === ambient_space(S) "Lattices do not lie in the same ambient space"
+  if check
+    @req is_definite(S) "Second input must be definite"
+  end
+  @req all(>(0), keys(vector_type)) "Divisibilities must be positive"
+  out = Tuple{QQMatrix, QQFieldElem, QQFieldElem}[]
+  for d in keys(vector_type)
+    @req all(!iszero, vector_type[d]) "Squares for the divisibility $d must be nonzero"
+    de = lcm(denominator.(vector_type[d]))
+    if de > 1
+      _L = rescale(L, de; cached=false)
+      _S = lattice_in_same_ambient_space(_L, basis_matrix(S))
+      _d = d*de
+    else
+      _L = L
+      _S = S
+      _d = d
+    end
+    Sd = intersect(_d*dual(_L), _S)
+    BSd = basis_matrix(Sd)
+    for n in vector_type[d]
+      nQQ = abs(QQ(n))
+      if de > 1
+        _n = n*de^2
+      else
+        _n = n
+      end
+      l = short_vectors(Sd, _n, _n)
+      if coordinates_representation == :S
+        B = solve(basis_matrix(_S), basis_matrix(Sd); side=:left)
+      elseif coordinates_representation == :L
+        B = solve(basis_matrix(_L), basis_matrix(Sd); side=:left)
+      elseif coordinates_representation == :ambient
+        B = BSd
+      else
+        error("Wrong symbol for coordinates representation")
+      end
+      for a in l
+        v = matrix(QQ, 1, rank(Sd), a[1])
+        dv = divisibility(L, v*BSd)
+        v = v*B
+        push!(out, (v, nQQ, dv))
+      end
+    end
+  end
+  sort!(out, lt=(a,b) -> a[2] < b[2] || a[2] == b[2] && a[3] < b[3])
+  return out
+end
+
+function vectors_of_square_and_divisibility(
+    L::ZZLat,
+    vector_type::Dict;
+    coordinates_representation::Symbol=:L,
+    check::Bool=true,
+  )
+  if check
+    @req is_definite(L) "Lattice must be definite"
+  end
+  return vectors_of_square_and_divisibility(L, L, vector_type; coordinates_representation, check=false)
+end

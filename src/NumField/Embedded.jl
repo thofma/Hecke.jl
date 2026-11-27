@@ -115,6 +115,17 @@ isone(x::EmbeddedNumFieldElem) = isone(data(x))
 
 is_unit(x::EmbeddedNumFieldElem) = is_unit(data(x))
 
+is_square(x::EmbeddedNumFieldElem) = is_square(data(x))
+
+function is_square_with_sqrt(x::EmbeddedNumFieldElem)
+  fl, s = is_square_with_sqrt(data(x))
+  return fl, parent(x)(s)
+end
+
+function sqrt(x::EmbeddedNumFieldElem; check::Bool = true)
+  return parent(x)(sqrt(data(x); check))
+end
+
 zero(E::EmbeddedNumField) = E(zero(number_field(E)))
 
 one(E::EmbeddedNumField) = E(one(number_field(E)))
@@ -141,9 +152,9 @@ function isless(x::EmbeddedNumFieldElem, y::EmbeddedNumFieldElem)
   end
 end
 
-isless(x::EmbeddedNumFieldElem, y) = isless(x, parent(x)(y))
+isless(x::EmbeddedNumFieldElem, y::RingElement) = isless(x, parent(x)(y))
 
-isless(x, y::EmbeddedNumFieldElem) = isless(parent(y)(x), y)
+isless(x::RingElement, y::EmbeddedNumFieldElem) = isless(parent(y)(x), y)
 
 # Support comparing with floats
 
