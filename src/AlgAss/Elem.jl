@@ -277,6 +277,7 @@ function _mul_sparse(a::GroupAlgebraElem{T}, b::GroupAlgebraElem{T}) where {T}
   pos = Int[]
   vals = T[]
   h = _identity_elem(group(A)) # scratch; __elem_index copies it on insertion
+  t = zero(base_ring(A)) # scratch for addmul!
   for (i, ci) in _coeffs_sparse(a)
     gi = A.base_to_group[i]
     for (j, cj) in bterms
@@ -289,7 +290,7 @@ function _mul_sparse(a::GroupAlgebraElem{T}, b::GroupAlgebraElem{T}) where {T}
         push!(vals, ci * cj)
         slot[k] = length(pos)
       else
-        vals[s] = addmul!(vals[s], ci, cj)
+        vals[s] = addmul!(vals[s], ci, cj, t)
       end
     end
   end
