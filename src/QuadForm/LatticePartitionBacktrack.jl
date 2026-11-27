@@ -340,8 +340,7 @@ end
 function compress_forms(exact_forms::Vector{ZZMatrix})
   tmp = ZZ()
   wrapped = [_int_matrix_with_overflow(F, tmp) for F in exact_forms]
-  small = all(F -> abs(@ccall libflint.fmpz_mat_max_bits(F::Ref{ZZMatrix})::Int)
-                   < 63, exact_forms)
+  small = all(fits_int, exact_forms)
   # If the entries fit, symmetry is read off from the machine integers.
   symmetric(i) = small ? wrapped[i] == transpose(wrapped[i]) :
                          is_symmetric(exact_forms[i])
@@ -354,6 +353,10 @@ function compress_forms(exact_forms::Vector{ZZMatrix})
   end
   return form, small ? wrapped : Matrix{Int}[]
 end
+
+# Whether all entries of `A` fit into a machine integer.
+fits_int(A::ZZMatrix) =
+  abs(@ccall libflint.fmpz_mat_max_bits(A::Ref{ZZMatrix})::Int) < 63
 
 # The largest absolute value of the entries of `A`, or `typemax(Int)`.
 maxabs(A) = mapreduce(x -> x == typemin(Int) ? typemax(Int) : abs(x), max, A;
@@ -727,7 +730,11 @@ end
 #   `matrix`      the matrix with rows b_1, ..., b_m
 #   `solver`      an integer matrix with `solver * matrix == 1`, which exists
 #                 because the sequence generates the lattice; see
-#                 `is_isometry`
+#                 `is_isometry`. Its entries can be much larger than those
+#                 of `matrix`.
+#   `small_solver`
+#                 the same matrix with machine integers if its entries fit,
+#                 and an empty matrix otherwise
 #   `negation`    whether -v has the label of v for all points v; then -1
 #                 is an automorphism
 #   `ordered`     whether the order of the sequence is prescribed, see
@@ -740,7 +747,8 @@ mutable struct Reference
   kept::Vector{Vector{Int}}
   branch::Vector{Int}
   matrix::Matrix{Int}
-  solver::Matrix{Int}
+  solver::ZZMatrix
+  small_solver::Matrix{Int}
   negation::Bool
   ordered::Bool
 end
@@ -1402,7 +1410,8 @@ function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
   n = dim(S)
   reference = Reference(S, copy(sequence), Vector{Int}[], Int[],
                         Vector{Int}[], Int[], zeros(Int, 0, n),
-                        zeros(Int, n, 0), true, ordered)
+                        zero_matrix(ZZ, n, 0), zeros(Int, 0, 0), true,
+                        ordered)
   walk = Walk(S, reference, :record, true)
   advance!(walk, 0)
   m = length(sequence)
@@ -1419,8 +1428,14 @@ function record(S::ShortVectors, sequence::Vector{Int} = generators(S);
   # as for the standard basis. In general the Hermite normal form of B is
   # the identity matrix on top of zero rows.
   Bt = permutedims(B)
-  reference.solver = m == n && isone(B * Bt) ? Bt :
-    Matrix{Int}(sub(hnf_with_transform(matrix(ZZ, B))[2], 1:n, 1:m))
+  if m == n && isone(B * Bt)
+    reference.solver, reference.small_solver = matrix(ZZ, Bt), Bt
+  else
+    solver = sub(hnf_with_transform(matrix(ZZ, B))[2], 1:n, 1:m)
+    reference.solver = solver
+    reference.small_solver = fits_int(solver) ? Matrix{Int}(solver) :
+                                                zeros(Int, 0, 0)
+  end
   # -1 respects the colours if and only if -v has the colour of v for all v.
   reference.negation = all(iszero, S.labels)
   return walk
@@ -1491,14 +1506,21 @@ function is_isometry(walk::Walk)
   @inbounds for j in 1:n, k in 1:m
     X[k, j] = sign(sequence[k]) * vectors[j, abs(sequence[k])]
   end
-  B, solver = reference.matrix, reference.solver
+  B, solver = reference.matrix, reference.small_solver
   # The bound is computed in ZZ, so that it cannot overflow itself.
-  if ZZ(m) * maxabs(solver) * maxabs(X) * maxabs(B) * n < typemax(Int)
+  if !isempty(solver) &&
+     ZZ(m) * maxabs(solver) * maxabs(X) * maxabs(B) * n < typemax(Int)
     M = solver * X
     (m == n || B * M == X) || return false
   else
-    Z = matrix(ZZ, solver) * matrix(ZZ, X)
+    Z = reference.solver * matrix(ZZ, X)
     matrix(ZZ, B) * Z == matrix(ZZ, X) || return false
+    if !fits_int(Z)
+      # Only an isometry with such entries is an error.
+      all(Z * T * transpose(Z) == F for (F, T) in
+          zip(source.exact_forms, target.exact_forms)) || return false
+      error("the entries of an isometry do not fit into a machine integer")
+    end
     M = Matrix{Int}(Z)
   end
   preserves_forms(source, target, M) || return false
@@ -1548,7 +1570,7 @@ function inverse(S::ShortVectors, M::Matrix{Int})
     if S.gram_inverse[][2] == 0
       N, d = pseudo_inv(S.exact_forms[1])
       small = fits(Int, d) &&
-              abs(@ccall libflint.fmpz_mat_max_bits(N::Ref{ZZMatrix})::Int) < 63
+              fits_int(N)
       S.gram_inverse[] = small ? (Matrix{Int}(N), Int(d)) : (G, -1)
     end
     N, d = S.gram_inverse[]
@@ -2288,7 +2310,8 @@ function canonical_form(forms::Vector{ZZMatrix}, vector_set = (),
         short_vectors(forms, vector_set, labels, unsigned_labels;
                       everything = true, kwargs...)
   best = Reference(S, Int[], Vector{Int}[], Int[], Vector{Int}[], Int[],
-                   zeros(Int, 0, n), zeros(Int, n, 0), true, true)
+                   zeros(Int, 0, n), zero_matrix(ZZ, n, 0), zeros(Int, 0, 0),
+                   true, true)
   walk = Walk(S, best, :minimize, false)
   walk.improved = -1
   advance!(walk, 0)

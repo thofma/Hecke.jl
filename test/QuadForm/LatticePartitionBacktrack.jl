@@ -402,4 +402,11 @@
                       [([1, 0], 0), ([2^62, 1], 0)])
   @test !fl || U * G * transpose(U) == G
 
+  # generators for which the inverse of their coordinate matrix has entries
+  # beyond machine integers, while their own entries are small
+  n = 33
+  V = [(Int[j == i ? 1 : (j == i + 1 ? 4 : 0) for j in 1:n], 0) for i in 1:n]
+  fl, U = PB.isometry([identity_matrix(ZZ, n)], [identity_matrix(ZZ, n)], V, V)
+  @test fl && U * transpose(U) == 1
+
 end
