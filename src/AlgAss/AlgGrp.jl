@@ -229,21 +229,14 @@ end
 
 ###############################################################################
 #
-#  Trace basis
+#  Trace
 #
 ###############################################################################
 
-function _assure_trace_basis(A::GroupAlgebra{T}) where {T}
-  if isdefined(A, :trace_basis_elem)
-    return nothing
-  end
-
-  A.trace_basis_elem = Vector{T}(undef, dim(A))
-  A.trace_basis_elem[1] = base_ring(A)(dim(A))
-  for i = 2:dim(A)
-    A.trace_basis_elem[i] = zero(base_ring(A))
-  end
-  return nothing
+function tr(x::GroupAlgebraElem)
+  A = parent(x)
+  # g acts on the regular representation with trace |G| if g = 1, else 0.
+  return base_ring(A)(dim(A)) * x[_identity_elem(group(A))]
 end
 
 ################################################################################

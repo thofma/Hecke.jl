@@ -518,24 +518,44 @@ end
 Returns `true` and an element $c$ such that $a = c \cdot b$ (if
 `action == :right`) respectively $a = b \cdot c$ (if `action == :left`) if
 such an element exists and `false` and $0$ otherwise.
+
+For sparse group algebras, this is only implemented if $b$ is invertible
+in the sense of `is_invertible`.
 """
 function is_divisible(a::AbstractAssociativeAlgebraElem, b::AbstractAssociativeAlgebraElem, action::Symbol)
   parent(a) != parent(b) && error("Parents don't match.")
-  # a/b = c <=> a = c*b, so we need to solve the system v_a = v_c*M_b for v_c
+  if _is_sparse(a)
+    return _is_divisible_sparse(a, b, action)
+  else
+    # a/b = c <=> a = c*b, so we need to solve the system v_a = v_c*M_b for v_c
 
-  A = parent(a)
-  M = transpose(representation_matrix(b, action))
-  va = matrix(base_ring(A), dim(A), 1, coefficients(a))
-  # a could be a zero divisor, so there will not be a unique solution
-  Ma = hcat(M, va)
-  r = rref!(Ma)
+    A = parent(a)
+    M = transpose(representation_matrix(b, action))
+    va = matrix(base_ring(A), dim(A), 1, coefficients(a))
+    # a could be a zero divisor, so there will not be a unique solution
+    Ma = hcat(M, va)
+    r = rref!(Ma)
 
-  if r == 0 || all(iszero, [ Ma[r, i] for i = 1:dim(A) ])
-    return false, A()
+    if r == 0 || all(iszero, [ Ma[r, i] for i = 1:dim(A) ])
+      return false, A()
+    end
+
+    vc = _solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
+    return true, A([ vc[i, 1] for i = 1:dim(A) ])
   end
+end
 
-  vc = _solve_ut(sub(Ma, 1:r, 1:dim(A)), sub(Ma, 1:r, (dim(A) + 1):(dim(A) + 1)))
-  return true, A([ vc[i, 1] for i = 1:dim(A) ])
+function _is_divisible_sparse(a::GroupAlgebraElem, b::GroupAlgebraElem, action::Symbol)
+  fl, binv = is_invertible(b)
+  if !fl
+    throw(NotImplementedError(:is_divisible, a, b, action))
+  elseif action == :right
+    return true, a * binv
+  elseif action == :left
+    return true, binv * a
+  else
+    error("Not yet implemented")
+  end
 end
 
 # Computes a/b if action is :right and b\a if action is :left (and if this is possible)
@@ -1320,12 +1340,15 @@ end
     coefficients(a::AbsAlgAbsElem; copy::Bool = true) -> Vector{RingElem}
 
 Returns the coefficients of $a$ in the basis of `algebra(a)`.
+
+Not implemented for sparse group algebras, which have no fixed basis order.
 """
 function coefficients(a::AbstractAssociativeAlgebraElem; copy::Bool = true)
-  if copy
-    return deepcopy(a.coeffs)
+  if _is_sparse(a)
+    throw(NotImplementedError(:coefficients, a))
+  else
+    return copy ? deepcopy(a.coeffs) : a.coeffs
   end
-  return a.coeffs
 end
 
 @doc raw"""
@@ -1359,7 +1382,13 @@ end
 ################################################################################
 
 function denominator(x::AbstractAssociativeAlgebraElem)
-  return lcm([ denominator(y) for y in coefficients(x, copy = false) ])
+  if _is_sparse(x)
+    d = [ denominator(y) for (_, y) in _coeffs_sparse(x) ]
+    # `lcm` rejects an empty vector, which the zero element gives.
+    return isempty(d) ? denominator(zero(base_ring(parent(x)))) : lcm(d)
+  else
+    return lcm([ denominator(y) for y in coefficients(x, copy = false) ])
+  end
 end
 
 ################################################################################

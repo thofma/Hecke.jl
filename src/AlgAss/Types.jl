@@ -149,7 +149,6 @@ end
   gens#::Vector{AssociativeAlgebraElem{T, StructureConstantAlgebra{T}} # "Small" number of algebra generators
   mult_table::Matrix{Int} # b_i * b_j = b_(mult_table[i, j])
   is_commutative::Int
-  trace_basis_elem::Vector{T}
   is_simple::Int
   issemisimple::Int
 
