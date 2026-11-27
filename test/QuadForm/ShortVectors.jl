@@ -459,6 +459,15 @@ end
   @test Hecke._generators_matrix(J) == ZZ[2 0; 3 4]
   @test rank(empty!(J)) == 0 && Hecke.add_generator!(J, [1, 1])
 
+  # a degree above 1024, where the residues are reduced on the way
+  n = 1100
+  J = Hecke.GrowingSubspace(1:n; exact = false)
+  unit(i) = Int[j == i ? 1 : 0 for j in 1:n]
+  @test all(i -> Hecke.add_generator!(J, unit(i) + unit(i + 1)), 1:(n - 1))
+  @test !Hecke.add_generator!(J, unit(1) + unit(n))
+  @test Hecke.add_generator!(J, unit(1))
+  @test rank(J) == n
+
   # the rank is the rank over the rationals
   for (n, c) in [(3, 2), (5, 3), (6, 10^6), (4, 2^40)]
     vectors = [rand(-c:c, n) for _ in 1:8]

@@ -645,7 +645,6 @@ mutable struct GrowingSubspace
 
   function GrowingSubspace(r::UnitRange{Int}; exact::Bool = true)
     n = length(r)
-    @req n < 2^10 "The degree must be less than 1024"
     return new(r, n, 0, exact, 0, Vector{ZZRingElem}[], Int[], Matrix{Int}[],
                Vector{Int}[], Int[], zeros(Int, n))
   end

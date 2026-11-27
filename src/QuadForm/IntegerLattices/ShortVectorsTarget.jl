@@ -964,8 +964,8 @@ function Base.copy!(z::GrowingSubspace, y::GrowingSubspace)
 end
 
 # The first of the primes which are used, in increasing order. They have 26
-# bits: so a product of two residues has at most 52 bits, and thousands of
-# them can be added up in a machine integer before reducing.
+# bits: so a product of two residues has at most 52 bits, and 1024 of them
+# can be added up in a machine integer before reducing.
 const GROWING_SUBSPACE_PRIME = 33554467
 
 _residue(a::Int, p::Int) = mod(a, p)
@@ -992,14 +992,23 @@ function _reduce!(z::GrowingSubspace, i::Int, x, offset::Int)
   @inbounds for j in 1:n
     w[j] = _residue(x[offset + j], p)
   end
-  # The entries stay non-negative and below (n + 1) * p^2 < 2^63; only the
-  # pivot entry is reduced on the way.
+  # Only the pivot entry is reduced on the way. Every step adds less than
+  # p^2 < 2^52 to an entry, so the entries stay non-negative and below 2^63
+  # if all of them are reduced after every 1024 steps.
+  steps = 0
   @inbounds for k in 1:z.ranks[i]
     c = mod(w[pivots[k]], p)
     c == 0 && continue
     c = p - c
     @simd for j in 1:n
       w[j] += c * E[j, k]
+    end
+    steps += 1
+    if steps == 1024
+      for j in 1:n
+        w[j] = mod(w[j], p)
+      end
+      steps = 0
     end
   end
   @inbounds for j in 1:n
