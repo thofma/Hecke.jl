@@ -922,6 +922,13 @@ end
 @testset "Shortest vectors sublattice" begin
   L = integer_lattice(gram = matrix(QQ, 3, 3, [2,0,0,0,2,1,0,1,6]))
   @test shortest_vectors_sublattice(L) == lattice(ambient_space(L), ZZ[1 0 0; 0 1 0])
+
+  # Computing the sublattice must preserve the minimum of a rational lattice.
+  L = integer_lattice(gram=QQ[3 2; 2 3] * QQ(1, 2))
+  @test minimum(L) == 1
+  S = shortest_vectors_sublattice(L)
+  @test gram_matrix(S) == identity_matrix(QQ, 1)
+  @test minimum(L) == 1
 end
 
 

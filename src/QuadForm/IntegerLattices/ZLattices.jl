@@ -2036,7 +2036,6 @@ function _shortest_vectors_span_with_is_shorter(L::ZZLat; dolll=true)
     end
     m = @inbounds minimum(i[2] for i in SV2)
     SV = [i[1] for i in SV2 if i[2]==m]
-    m = m//d
   else
     m, SV = _shortest_vectors_gram(FinckePohstInt, Glll; elem_type=Int, dolll=false)
   end
