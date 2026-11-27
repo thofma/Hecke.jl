@@ -252,7 +252,13 @@ function _short_vectors_with_condition(::Type{CoeffType},
                                                 grams::Vector{ZZMatrix};
                                                 search_fixed_vectors::Bool=true,
                                                 search_invariant_subspace::Bool=false,
-                                                mode::Symbol=:auto) where {CoeffType <: Union{Int, ZZRingElem}}
+                                                mode::Symbol=:auto,
+                                                targets::AbstractVector{Int}=1:rank(L),
+                                                max_enum::Int=typemax(Int)) where {CoeffType <: Union{Int, ZZRingElem}}
+  # The vectors which look like one of the basis vectors with index in
+  # `targets` are returned, or `nothing` as soon as there are more than
+  # `max_enum` of them at one of the stages below.
+  #
   # Let L_i := proj[i](L)
   # We lll reduce each L_i and work throughout with the basis
   # M = L_1 + L_2 + ... + L_n
@@ -290,8 +296,8 @@ function _short_vectors_with_condition(::Type{CoeffType},
   normalized_targets = Vector{CoeffType}[]  # needed for _vector_sums
   target_invariants = Vector{KeyType}()
   n1 = rkLL[1]
-  signs = Vector{Int}(undef, rank(L))
-  for i in 1:rkL
+  signs = Int[]
+  for i in targets
     norms = target_norms[i]
     _v1, _v1_weyl = target_fixed_part[i]
     v1 = CoeffType.(_v1)
@@ -306,7 +312,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     elseif v1_weyl == 0
       v1, _sign = _canonicalize_with_data!(v1)
     end
-    signs[i] = _sign
+    push!(signs, _sign)
     _key = (norms, CoeffType[], v1_weyl, v1, CoeffType[])
     push!(target_invariants, _key)
     if mode==:auto
@@ -419,8 +425,14 @@ function _short_vectors_with_condition(::Type{CoeffType},
     Gi = projL_gram[i] # already lll reduced
     tmp_s = __zeros_array(CoeffType, ncols(Gi))
     @vprintln :ShortVec 5 "gram=$Gi"
-    for (s, q) in __short_vectors(Gi, mi, ma)
+    number = 0
+    # Only the iterator can be given up, the list is faster. The iterator
+    # reuses s; it is copied whenever it is stored.
+    vectors = max_enum == typemax(Int) ? __short_vectors(Gi, mi, ma) :
+                                         __short_vectors_it(Gi, mi, ma)
+    for (s, q) in vectors
       # This is the innermost loop - do as little as possible here
+      number > max_enum && return nothing
       target_norm_q = get(target_norm, q, nothing)
       isnothing(target_norm_q) && continue
       if CoeffType===ZZRingElem
@@ -442,6 +454,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
             #push!(sv2t, __vcat(b, -tmp_s))
             push!(sv2t, __vcat_neg(b, tmp_s))
           end
+          number += length(Dt)
           pop!(t[1])
         end
       end
@@ -464,10 +477,12 @@ function _short_vectors_with_condition(::Type{CoeffType},
             #@assert !(__vcat(b, tmp_s) in reduce(vcat,values(short_vectors2)))
             push!(sv2t, __vcat(b, __copy_before_vcat(tmp_s)))
           end
+          number += length(Dt)
           pop!(t[1])
         end
       end
     end
+    number > max_enum && return nothing
 
     if search_fixed_vectors
       vs = _vector_sums(short_vectors2, projection_ranges[1:i], successive_grams) # with overflow
@@ -486,7 +501,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
   if search_invariant_subspace
     invariant_gram = _add_invariant_subspace_data!(CoeffType, grams, target_invariants,
                                                    short_vectors1, projection_ranges,
-                                                   projL_gram, Binv)
+                                                   projL_gram, Binv, targets)
   end
 
   output, invariants, target_invariants_output = _postprocess_short_vectors_with_condition(CoeffType, B, denoms, gramZZ, grams, signs, target_invariants, short_vectors1)
@@ -509,7 +524,7 @@ function _short_vectors_with_condition(::Type{CoeffType},
     # This test makes sense only in automorphism mode
     if mode == :auto
       E = CoeffType.(identity_matrix(ZZ, n))
-      for i in 1:n
+      for i in targets
         ei = E[i,:]
         @assert any(ei==j[1] ||-ei==j[1] for j in output) "Basis vector e_$i is missing"
         j = findfirst(==(ei), first.(output))
@@ -521,7 +536,9 @@ function _short_vectors_with_condition(::Type{CoeffType},
   return output, grams, (invariants, target_invariants_output)
 end
 
-function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matrix{Int}})
+# `invariants[2][i]` belongs to the basis vector with index `targets[i]`.
+function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matrix{Int}},
+                                  targets::AbstractVector{Int}=1:length(invariants[2]))
   @assert length(sv) == length(invariants[1])
   l = length(sv)
   invs, target_invs = invariants
@@ -558,7 +575,7 @@ function _add_multiset_invariant!(sv, invariants, dual_root_orbits::Vector{Matri
       w = wbuf[j]
       nr = nrows(R)
       for k in 1:nr
-        @inbounds w[k] = R[k, i]
+        @inbounds w[k] = R[k, targets[i]]
       end
       _fill_mset_counts!(ms, w)
       _fill_negated_mset_counts!(ms_neg, ms)
@@ -682,7 +699,8 @@ function _add_invariant_subspace_data!(::Type{CoeffType},
                                        short_vectors,
                                        projection_ranges::Vector{UnitRange{Int}},
                                        projL_gram::Vector{ZZMatrix},
-                                       Binv::ZZMatrix) where {CoeffType}
+                                       Binv::ZZMatrix,
+                                       targets::AbstractVector{Int}=1:nrows(Binv)) where {CoeffType}
   m = length(projection_ranges)
   rkL = nrows(Binv)
   G = zero_matrix(ZZ, rkL, rkL)
@@ -731,9 +749,9 @@ function _add_invariant_subspace_data!(::Type{CoeffType},
   end
 
   push!(grams, G)
-  for i in 1:rkL
+  for (i, t) in enumerate(targets)
     k0 = target_invariants[i]
-    target_invariants[i] = (k0[1], push!(copy(k0[2]), CoeffType(G[i,i])), k0[3], k0[4], k0[5])
+    target_invariants[i] = (k0[1], push!(copy(k0[2]), CoeffType(G[t,t])), k0[3], k0[4], k0[5])
   end
   invariant_gram = CoeffType === ZZRingElem ? G_work : _int_matrix_with_overflow(G_work, tmpZZ)
   _refine_short_vectors_by_gram!(CoeffType, short_vectors, invariant_gram)
@@ -864,7 +882,7 @@ function _update_short_vector_dict(D::Dict{KeyType,ValueType},
 end
 
 rank(z::GrowingSubspace) = z.rank
-degree(z::GrowingSubspace) = ncols(z.B1)
+degree(z::GrowingSubspace) = z.degree
 
 # satisfies _signed_hash(-x, seed) = -_signed_hash(x,seed)
 function _signed_hash(x::Vector, seed::UInt)
@@ -918,69 +936,201 @@ function neg!(x::Vector{ZZRingElem})
   end
 end
 
-function _zero!(z::GrowingSubspace)
-  zero!(z.B1)
-  zero!(z.B2)
+function Base.empty!(z::GrowingSubspace)
   z.rank = 0
-  z.dirty=true
-  zero!(z.pivs)
-  resize!(z.pivs, z.rank)
-  resize!(z.pure, z.rank)
+  z.bits = 0
+  empty!(z.generators)
+  fill!(z.ranks, 0)
+  foreach(empty!, z.pivots)
+  return z
 end
 
-function push!(z::GrowingSubspace, x, offset=0)
-  n = length(z.range)
-  z.rank == n && return nothing
-  B1 = z.B1
-  B2 = z.B2
-  nn = z.rank+1
-  r = offset
-  @inbounds for i in 1:n
-    B1[nn,i] = x[r+i]
-  end
-  if !_reduce_modulo_rref(B1, z.rank, z.pivs, z.pure, z.dirty)
-    # found something new
-    rref!(B1)
-    z.rank += 1
-    z.dirty = true
-    resize!(z.pivs, z.rank)
-    resize!(z.pure, z.rank)
-    rk = z.rank
-    @inbounds for i in 1:n
-      B2[rk, i] = x[r+i]
+function Base.copy!(z::GrowingSubspace, y::GrowingSubspace)
+  @req z.degree == y.degree "The subspaces must have the same degree"
+  z.rank, z.bits = y.rank, y.bits
+  copy!(z.generators, y.generators)
+  copy!(z.primes, y.primes)
+  copy!(z.ranks, y.ranks)
+  for i in 1:length(y.primes)
+    if i > length(z.echelons)
+      push!(z.echelons, copy(y.echelons[i]))
+      push!(z.pivots, copy(y.pivots[i]))
+    else
+      copyto!(z.echelons[i], y.echelons[i])
+      copy!(z.pivots[i], y.pivots[i])
     end
-  else
-    z.dirty = false
   end
-  nothing
+  return z
+end
+
+# The first of the primes which are used, in increasing order. They have 26
+# bits: so a product of two residues has at most 52 bits, and 1024 of them
+# can be added up in a machine integer before reducing.
+const GROWING_SUBSPACE_PRIME = 33554467
+
+_residue(a::Integer, p::Int) = Int64(mod(a, p))
+_residue(a::ZZRingElem, p::Int) = Int64(mod(a, ZZ(p)))
+
+# The number of bits of the squared norm of the entries of `x` which are used.
+function _norm_bits(x::AbstractVector{Int64}, offset::Int, n::Int)
+  s = Int128(0)
+  bound = Int64(2)^31
+  for j in 1:n
+    a = x[offset + j]
+    -bound < a < bound || return nbits(sum(ZZ(x[offset + k])^2 for k in 1:n))
+    s += a * a
+  end
+  return 128 - leading_zeros(s)
+end
+
+_norm_bits(x, offset::Int, n::Int) = nbits(sum(ZZ(x[offset + k])^2 for k in 1:n))
+
+# Reduce `x` by the span modulo the i-th prime, into `z.work`. Return whether
+# the result is non-zero, that is, whether `x` is not in that span.
+function _reduce!(z::GrowingSubspace, i::Int, x, offset::Int)
+  p, E, pivots, w = z.primes[i], z.echelons[i], z.pivots[i], z.work
+  n = z.degree
+  @inbounds for j in 1:n
+    w[j] = _residue(x[offset + j], p)
+  end
+  # Only the pivot entry is reduced on the way. Every step adds less than
+  # p^2 < 2^52 to an entry, so the entries stay non-negative and below 2^63
+  # if all of them are reduced after every 1024 steps.
+  steps = 0
+  @inbounds for k in 1:z.ranks[i]
+    c = mod(w[pivots[k]], p)
+    c == 0 && continue
+    c = p - c
+    @simd for j in 1:n
+      w[j] += c * E[j, k]
+    end
+    steps += 1
+    if steps == 1024
+      for j in 1:n
+        w[j] = mod(w[j], p)
+      end
+      steps = 0
+    end
+  end
+  @inbounds for j in 1:n
+    w[j] = mod(w[j], p)
+  end
+  return any(!iszero, w)
+end
+
+# Add the non-zero vector `z.work`, which is reduced by the span modulo the
+# i-th prime, to the basis of that span.
+function _enlarge!(z::GrowingSubspace, i::Int)
+  p, E, w = z.primes[i], z.echelons[i], z.work
+  pivot = findfirst(!iszero, w)
+  c = invmod(w[pivot], p)
+  k = z.ranks[i] += 1
+  for j in 1:z.degree
+    E[j, k] = mod(c * w[j], p)
+  end
+  push!(z.pivots[i], pivot)
+  return z
+end
+
+# Take one more prime, with the span of the generators found so far.
+function _add_prime!(z::GrowingSubspace)
+  p = isempty(z.primes) ? GROWING_SUBSPACE_PRIME : Int(next_prime(z.primes[end]))
+  push!(z.primes, p)
+  push!(z.ranks, 0)
+  i = length(z.primes)
+  if i > length(z.echelons)
+    push!(z.echelons, zeros(Int64, z.degree, z.degree))
+    push!(z.pivots, Int[])
+  end
+  for g in z.generators
+    _reduce!(z, i, g, 0) && _enlarge!(z, i)
+  end
+  return z
+end
+
+@doc raw"""
+    add_generator!(z::GrowingSubspace, x, offset::Int = 0) -> Bool
+
+Add the vector with entries `x[offset + 1], ..., x[offset + degree(z)]` to
+the generators of `z`. Return whether this made the span larger; exactly the
+vectors for which it did are counted by `rank(z)`.
+
+If `z` is exact, this is decided over the rationals. Let `S` be the vectors
+which enlarged the span so far; they are linearly independent. If `x` is
+independent of `S`, some minor `m` of size `rank(z) + 1` of `S` and `x` is
+non-zero, and by Hadamard's inequality `abs(m)` is at most the product of
+the norms of these vectors. The primes are taken so that their product is
+larger, hence one of them does not divide `m`: modulo that prime `S` is
+independent and `x` is not in its span. Conversely, if `S` is independent
+modulo a prime and `x` is not in its span there, then `S` and `x` are
+independent. So `x` enlarges the span if and only if this holds for one of
+the primes modulo which `S` is independent.
+
+If `z` is not exact, a single prime is used. Then a vector which is
+independent of the earlier ones may be taken for dependent; the rank which
+is found is the rank modulo this prime.
+"""
+function add_generator!(z::GrowingSubspace, x, offset::Int = 0)
+  n = z.degree
+  z.rank == n && return false
+  if z.exact
+    z.bits = max(z.bits, _norm_bits(x, offset, n))
+    # A minor of size rank + 1 is smaller than 2^(bits * (rank + 1) / 2),
+    # and a prime is larger than 2^25.
+    while 50 * length(z.primes) < z.bits * (z.rank + 1) + 2
+      _add_prime!(z)
+    end
+  elseif isempty(z.primes)
+    _add_prime!(z)
+  end
+  enlarged = false
+  for i in 1:length(z.primes)
+    # The generators have to be independent modulo the prime.
+    z.ranks[i] == z.rank || continue
+    if _reduce!(z, i, x, offset)
+      _enlarge!(z, i)
+      enlarged = true
+    end
+  end
+  enlarged || return false
+  z.rank += 1
+  z.exact && push!(z.generators, ZZRingElem[ZZ(x[offset + j]) for j in 1:n])
+  return true
+end
+
+# The vectors which enlarged the span, as the rows of a matrix.
+function _generators_matrix(z::GrowingSubspace)
+  B = zero_matrix(ZZ, z.rank, z.degree)
+  for (i, g) in enumerate(z.generators), j in 1:z.degree
+    B[i, j] = g[j]
+  end
+  return B
 end
 
 function _search_invariant_subspaces(D::Dict, r::UnitRange{Int})
    # collects invariant subspaces of rank 1,
-   # the rows of B2 are the rk 1 invariant subspaces,
-   # this is okay, since B2 does not get row reduced
+   # the generators of J1 are the rk 1 invariant subspaces
   subspaces = Set{ZZMatrix}()
   offset = first(r) - 1
   J1 = GrowingSubspace(r)
   J = GrowingSubspace(r)
   for vv in values(D)
-    _zero!(J)
+    empty!(J)
     for v in vv
-      push!(J, v, offset)
+      add_generator!(J, v, offset)
       J.rank == J.degree && break
     end
     if 1 < J.rank < J.degree
-      push!(subspaces, J.B2[1:J.rank,:])
+      push!(subspaces, _generators_matrix(J))
     end
     if J.rank == 1
-      w = J.B2[1,:]
-      push!(J1, w)
+      add_generator!(J1, J.generators[1])
     end
     if J1.rank == degree(J1)
       break
     end
   end
-  return subspaces, J1.B2[1:J1.rank,:]
+  return subspaces, _generators_matrix(J1)
 end
 
 ########################################################################################
@@ -1143,8 +1293,6 @@ function __short_vectors(G::ZZMatrix, lb, ub; chol = CholeskyIntegralDenom(G))
   return sv
 end
 
-(==)(a::T,b::T) where {T<:GrowingSubspace} = a.range==b.range && a.B1==b.B1  #not quite mathematically correct, but what we need
-hash(x::GrowingSubspace, y::UInt) = hash((x.B1,x.range),y)
 
 
 # type piracy

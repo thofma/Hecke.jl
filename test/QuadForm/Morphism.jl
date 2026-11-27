@@ -136,6 +136,47 @@
     @test red_after_order(rescale(L, 3//2)) == red(rescale(L, 3//2)) == 4
   end
 
+  # Roots of norm greater than 2 are used for the Weyl group: the order is
+  # that of the search for the whole group.
+  let
+    A2 = ZZ[2 -1; -1 2]
+    D4 = ZZ[2 0 -1 0; 0 2 -1 0; -1 -1 2 -1; 0 0 -1 2]
+    for (G, o) in [(diagonal_matrix(A2, 3 * A2, ZZ[5;]), 288),
+                   (diagonal_matrix(2 * A2, 3 * A2), 144),
+                   (diagonal_matrix(ZZ[2;], 3 * D4, 3 * D4), 5308416),
+                   (ZZ[2 1 0; 1 2 0; 0 0 6], 24), (ZZ[4 2; 2 10], 4)]
+      L = integer_lattice(; gram = G)
+      @test automorphism_group_order(L) == o
+      @test all(g -> g * G * transpose(g) == G, L.automorphism_group_generators)
+      M = integer_lattice(; gram = G)
+      Hecke.__assert_has_automorphisms(M; use_everything = false,
+                                       use_weyl = false)
+      @test automorphism_group_order(M) == o
+    end
+  end
+
+  # The complement of the roots can have norms beyond machine integers; then
+  # the roots of norm greater than 2 are not looked for.
+  let
+    m = 3 * ZZ(2)^60
+    G = matrix(ZZ, 2, 2, [m, div(m, 2), div(m, 2), m + 1])
+    @test automorphism_group_order(integer_lattice(; gram = G)) == 4
+  end
+
+  # The partition backtrack with the vectors which look like a short basis
+  # vector: with the limit 0 they are used whenever the basis vectors have
+  # different norms. They generate the lattice for the first norm, for the
+  # second one, and only for the last one, respectively.
+  let
+    for (G, o) in [(ZZ[3 1 -2; 1 3 0; -2 0 4], 12), (ZZ[3 0 3; 0 4 0; 3 0 7], 16),
+                   (ZZ[2 -1 0; -1 2 0; 0 0 3], 24)]
+      L = integer_lattice(; gram = G)
+      Hecke.__assert_has_automorphisms(L; do_lll = false, target_enum_limit = 0)
+      @test automorphism_group_order(L) == o
+      @test all(g -> g * G * transpose(g) == G, L.automorphism_group_generators)
+    end
+  end
+
   @testset "Gram matrix compression bounds" begin
     # Seed 2 produces a 50-bit invariant form in twisted_34.lattices#1034.
     G = matrix(ZZ, [

@@ -395,6 +395,10 @@ end
   @test is_definite(L)
   @test is_positive_definite(L)
   @test !is_negative_definite(L)
+  @test is_negative_definite(rescale(L, -1//3))
+  @test !is_positive_definite(rescale(L, -1//3))
+  @test !is_definite(integer_lattice(; gram = ZZ[0 1; 1 0]))
+  @test is_definite(integer_lattice(; gram = zero_matrix(ZZ, 0, 0)))
   @test L+L == L
   @test intersect(L,L) == L
   @test 2*L == L*2

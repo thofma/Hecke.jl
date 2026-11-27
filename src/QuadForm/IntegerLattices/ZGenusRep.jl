@@ -380,7 +380,7 @@ function _neighbours(
       push!(lifts, w0)
     end
     for v in lifts
-      LL = lll(neighbour(L, v, p))
+      LL = lll(neighbour(L, v, p); _is_definite = is_definite(L))
       @hassert :ZGenRep 3 is_locally_isometric(LL, L, p) # Should always hold by the neighbour construction
 
       if mode == :isometry_classes
@@ -530,6 +530,18 @@ function default_invariant_function(L::ZZLat)
     _L = orthogonal_submodule(_L, P)
   end
   return _invariants
+end
+
+# The canonical Gram matrix as an invariant: it determines the isometry class,
+# so `enumerate_definite_genus` needs no isometry tests with it. The
+# automorphism group comes with it.
+function _canonical_invariant(L::ZZLat)
+  C, _, gens, order = _canonical_gram_matrix(L)
+  if !isdefined(L, :automorphism_group_generators)
+    L.automorphism_group_generators = gens
+    L.automorphism_group_order = order
+  end
+  return C
 end
 
 # The number of vectors of norm 1, ..., n in L, up to sign
@@ -707,7 +719,7 @@ function enumerate_definite_genus(
     algorithm::Symbol = :default;
     rand_neigh::Int=10,
     distinct::Bool=false,
-    invariant_function::Function=default_invariant_function,
+    invariant_function::Function=_canonical_invariant,
     save_partial::Bool=false,
     save_path::Union{String, Nothing}=nothing,
     use_mass::Bool=true,
@@ -738,7 +750,7 @@ function _enumerate_definite_genus!(
     algorithm::Symbol = :default;
     rand_neigh::Int=10,
     distinct::Bool=false,
-    invariant_function::Function=default_invariant_function,
+    invariant_function::Function=_canonical_invariant,
     save_partial::Bool=false,
     save_path::Union{String, Nothing}=nothing,
     use_mass::Bool=true,
@@ -792,9 +804,11 @@ function _enumerate_definite_genus!(
     end
   end
 
+  # whether lattices with the same invariant are isometric
+  complete = invariant_function === _canonical_invariant
   if !distinct
     for l in values(inv_dict)
-      _unique_iso_class!(l)
+      complete ? resize!(l, 1) : _unique_iso_class!(l)
     end
     res = reduce(append!,values(inv_dict);init=ZZLat[])
   end
@@ -811,6 +825,7 @@ function _enumerate_definite_genus!(
     any(isequal(M), lats) && return false
     invM = _invariants(M)
     !haskey(inv_dict, invM) && return true
+    complete && return false
     keep = all(N -> !is_isometric(N, M), inv_dict[invM])
     return keep
   end
@@ -960,7 +975,7 @@ function spinor_genera_in_genus(L::ZZLat)
     N = only(_neighbours(L, p; mode=:spinor_generators))
     for i in 1:length(res)
       M = res[i]
-      LL = lll(intersect(p*M+N, 1//p*M))
+      LL = lll(intersect(p*M+N, 1//p*M); _is_definite = is_definite(L))
       push!(res, LL)
     end
   end
@@ -980,7 +995,7 @@ function enumerate_definite_genus(
     _L::ZZLat,
     algorithm::Symbol = :default;
     rand_neigh::Int=10,
-    invariant_function::Function=default_invariant_function,
+    invariant_function::Function=_canonical_invariant,
     save_partial::Bool=false,
     save_path::Union{IO, String, Nothing}=nothing,
     use_mass::Bool=true,
@@ -1058,7 +1073,7 @@ function enumerate_definite_genus(
     G::ZZGenus,
     algorithm::Symbol = :default;
     rand_neigh::Int=10,
-    invariant_function::Function=default_invariant_function,
+    invariant_function::Function=_canonical_invariant,
     save_partial::Bool=false,
     save_path::Union{IO, String, Nothing}=nothing,
     use_mass::Bool=true,

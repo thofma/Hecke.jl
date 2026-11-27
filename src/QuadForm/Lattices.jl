@@ -1422,7 +1422,9 @@ end
 # per default, the are given with respect to the basis of the ambient space
 # if ambient_representation = true, they are given with respect to the coordinate
 # space/ambient space
-function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
+function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0,
+                                  algorithm::Symbol = :plesken_souvignier)
+  @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
 
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
@@ -1455,16 +1457,20 @@ function assert_has_automorphisms(L::AbstractLat{<: NumField}; redo::Bool = fals
 
   # Create the automorphism context and compute generators as well as orders
 
-  C = ZLatAutoCtx(ZgramL)
-  fl, Csmall = try_init_small(C, depth = depth, bacher_depth = bacher_depth)
-  if fl
-    auto(Csmall)
-    _gens, order = _get_generators(Csmall)
-    gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
+  if algorithm == :partition_backtrack
+    gens, order = LatticePartitionBacktrack.automorphism_group(ZgramL)
   else
-    init(C, depth = depth, bacher_depth = bacher_depth)
-    auto(C)
-    gens, order = _get_generators(C)
+    C = ZLatAutoCtx(ZgramL)
+    fl, Csmall = try_init_small(C, depth = depth, bacher_depth = bacher_depth)
+    if fl
+      auto(Csmall)
+      _gens, order = _get_generators(Csmall)
+      gens = ZZMatrix[matrix(ZZ, g) for g in _gens]
+    else
+      init(C, depth = depth, bacher_depth = bacher_depth)
+      auto(C)
+      gens, order = _get_generators(C)
+    end
   end
 
   @hassert :Lattice 1 begin
@@ -1552,9 +1558,9 @@ heuristically depending on the rank of `L`. By default, `bacher_depth` is set to
 """
 automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, depth::Int = -1, bacher_depth::Int = 0)
 
-function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = -1, bacher_depth::Int = 0)
+function automorphism_group_generators(L::AbstractLat; ambient_representation::Bool = true, check = false, depth::Int = -1, bacher_depth::Int = 0, kwargs...)
 
-  assert_has_automorphisms(L; depth, bacher_depth)
+  assert_has_automorphisms(L; depth, bacher_depth, kwargs...)
 
   gens = L.automorphism_group_generators
 
@@ -1602,17 +1608,20 @@ Setting the parameters `depth` and `bacher_depth` to a positive value may improv
 performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 
-The underlying algorithm is by Plesken and Souvignier [PS97](@cite).
+The keyword `algorithm` selects the search: `:partition_backtrack`, the
+default for integer lattices, or `:plesken_souvignier`, the algorithm of
+Plesken and Souvignier [PS97](@cite) and the default for lattices over number
+fields. The parameters `depth` and `bacher_depth` only affect the latter.
 """
 automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
 
-function automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0)
+function automorphism_group_order(L::AbstractLat; redo::Bool = false, depth::Int = -1, bacher_depth::Int = 0, kwargs...)
   # In case one sets up the automorphism group order, from external knowledge
   if isdefined(L, :automorphism_group_order)
     return L.automorphism_group_order
   end
 
-  assert_has_automorphisms(L; redo, depth, bacher_depth)
+  assert_has_automorphisms(L; redo, depth, bacher_depth, kwargs...)
   return L.automorphism_group_order
 end
 
@@ -1631,10 +1640,10 @@ Setting the parameters `depth` and `bacher_depth` to a positive value may improv
 performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 """
-function is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0)
+function is_isometric(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0, kwargs...)
   rank(L) == rank(M) || return false
   if rank(L) == 0 || is_definite(L)
-    return is_isometric_with_isometry(L, M; depth = depth, bacher_depth = bacher_depth)[1]
+    return is_isometric_with_isometry(L, M; depth, bacher_depth, kwargs...)[1]
   end
   genus(L) == genus(M) || return false
   if isone(length(spinor_genera_in_genus(L)[1]))
@@ -1660,13 +1669,18 @@ Setting the parameters `depth` and `bacher_depth` to a positive value may improv
 performance. If set to `-1` (default), the used value of `depth` is chosen
 heuristically depending on the rank of `L`. By default, `bacher_depth` is set to `0`.
 
-The underlying algorithm is by Plesken and Souvignier [PS97](@cite).
+The keyword `algorithm` selects the search: `:partition_backtrack`, the
+default for integer lattices, or `:plesken_souvignier`, the algorithm of
+Plesken and Souvignier [PS97](@cite) and the default for lattices over number
+fields. The parameters `depth` and `bacher_depth` only affect the latter.
 """
 is_isometric_with_isometry(L::AbstractLat, M::AbstractLat; depth::Int = -1, bacher_depth::Int = 0) = throw(NotImplemented())
 
 
 function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{<: NumField};
-                                    depth::Int = -1, bacher_depth::Int = 0)
+                                    depth::Int = -1, bacher_depth::Int = 0,
+                                    algorithm::Symbol = :plesken_souvignier)
+  @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
   V = ambient_space(L)
   W = ambient_space(M)
   E = base_ring(V)
@@ -1713,13 +1727,17 @@ function is_isometric_with_isometry(L::AbstractLat{<: NumField}, M::AbstractLat{
     ZgramMsmall[i] = TM * ZgramM[i] * TMtr
   end
 
-  fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
-  if fl
-    b, _T = isometry(CLsmall, CMsmall)
-    T = matrix(ZZ, _T)
+  if algorithm == :partition_backtrack
+    b, T = LatticePartitionBacktrack.isometry(ZgramLsmall, ZgramMsmall)
   else
-    CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
-    b, T = isometry(CL, CM)
+    fl, CLsmall, CMsmall = _try_iso_setup_small(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
+    if fl
+      b, _T = isometry(CLsmall, CMsmall)
+      T = matrix(ZZ, _T)
+    else
+      CL, CM = _iso_setup(ZgramLsmall, ZgramMsmall, depth = depth, bacher_depth = bacher_depth)
+      b, T = isometry(CL, CM)
+    end
   end
 
   if b

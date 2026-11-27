@@ -11,6 +11,7 @@ function _norm_one_sublattice_automorphism_group(L::ZZLat, sv::Vector; doauto=tr
   S = lattice(V, M; is_basis = true, check = false)
   s = rank(S)
   T = orthogonal_submodule(lattice(V), S)
+  set_attribute!(T, :is_definite, true) # as L is
   gensOS = ZZMatrix[]
   if doauto
     push!(gensOS, diagonal_matrix(ZZ, append!([-1], (1 for _ in 1:s-1)))) # diag(-1,1,...,1)
@@ -52,8 +53,10 @@ function __assert_has_automorphisms(
   use_multiset::Bool=true,
   do_lll::Bool=true,
   use_dual::Bool=false,
+  algorithm::Symbol=:partition_backtrack,
+  target_enum_limit::Int=64000,
 )
-
+  @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
   if !redo && isdefined(L, :automorphism_group_generators)
     return nothing
   end
@@ -105,6 +108,9 @@ function __assert_has_automorphisms(
   end
   # disable everything for big lattices
   if !(all(fits(Int,i) for i in GL))
+    # The partition backtrack computes modulo 2^64, which need not tell the
+    # vectors of such a lattice apart.
+    algorithm = :plesken_souvignier
     use_weyl = false
     use_projections = false
     use_target_enum = false
@@ -112,14 +118,43 @@ function __assert_has_automorphisms(
     compress = false
   end
   vector_set = []
+  # Make the Gram matrix small: Glll == T*GL*transpose(T)
+  Glll, T = GL, identity_matrix(ZZ, nrows(GL))
+  if do_lll && !get_attribute(L, :is_lll_reduced, false)
+    G1, T1 = lll_gram_with_transform(GL)
+    # The short vectors are enumerated up to the largest diagonal entry. LLL
+    # does not minimise that entry, so keep the given basis if it is at
+    # least as good.
+    if maximum(diagonal(G1)) < maximum(diagonal(GL))
+      Glll, T = G1, T1
+    end
+  end
+  if maximum(abs, Glll) > ZZ(2)^62
+    # temporary fix TODO to it in _short_vectors_with_condition
+    # The Weyl route needs the target enumeration, and the projections
+    # enumerate with Int: proceed as for big lattices above.
+    use_weyl = false
+    use_projections = false
+    use_target_enum = false
+    compress = false
+  end
+  use_weyl_route = use_weyl && use_projections && use_target_enum
+  # The vectors of norm at most 2, up to sign, serve for the norm one test and
+  # for the root system.
+  sv2 = Tuple{Vector{Int}, Int}[]
+  if use_norm_one || use_weyl_route
+    sv2 = __short_vectors(Glll, nothing, 2)
+  end
   # Split off norm 1 vectors, which needs an integral lattice: the one with
   # Gram matrix GL, in the basis of L
-  if use_norm_one && (LGL = integer_lattice(; gram = GL);
-                      sv = short_vectors(LGL, 0, Int(1)); length(sv) > 0)
+  if use_norm_one && any(x -> isone(x[2]), sv2)
+    LGL = integer_lattice(; gram = GL)
+    sv = short_vectors(LGL, 0, Int(1); check = false)
     S, T, gensOS, orderOS = _norm_one_sublattice_automorphism_group(LGL, sv)
     __assert_has_automorphisms(T; redo, try_small, depth, bacher_depth, use_weyl,
                                use_projections, use_norm_one=false, search_fixed_vectors, search_invariant_subspace,
-                               compress, use_target_enum, allow_short_vectors_direct)
+                               compress, use_target_enum, allow_short_vectors_direct,
+                               algorithm, target_enum_limit)
     # we call directly .automorphism_group_generators, since we want the automorphisms as ZZMatrix
     # (with respect to the basis of T)
     gensOT = T.automorphism_group_generators
@@ -137,32 +172,36 @@ function __assert_has_automorphisms(
   end
   invariants = (Int[],Int[])
   unsigned_invariants = (UInt[], UInt[])
-  res = ZZMatrix[GL]
-  is_lll = get_attribute(L, :is_lll_reduced, false)
-  do_lll = !is_lll && do_lll
-  if do_lll
-    # Make the Gram matrix small
-    Glll, T = lll_gram_with_transform(res[1])
+  if !isone(T)
     _L = integer_lattice(gram=Glll; cached=false)
-    Ttr = transpose(T)
-    res = [Glll]
-    #res = ZZMatrix[T*g*Ttr for g in res]
-  else
-    Glll = GL
   end
-
-  if maximum(abs.(gram_matrix(_L)))>ZZ(2)^62
-    # temporary fix TODO to it in _short_vectors_with_condition
-    # The Weyl route needs the target enumeration, and the projections
-    # enumerate with Int: proceed as for big lattices above.
-    use_weyl = false
-    use_projections = false
-    use_target_enum = false
-    compress = false
-  end
-  if use_weyl && use_projections && use_target_enum
-    res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = _get_weyl_proj_and_vector_set(_L;force_direct=short_vectors_direct,
-                                                                    search_fixed_vectors, search_invariant_subspace, use_dual, allow_short_vectors_direct, use_multiset)
+  res = ZZMatrix[Glll]
+  if use_weyl_route
+    kw = (; sv2, force_direct=short_vectors_direct, search_fixed_vectors, search_invariant_subspace,
+          use_dual, allow_short_vectors_direct, use_multiset)
+    # The targeted enumeration returns the vectors which look like a basis
+    # vector. The partition backtrack only needs vectors which generate the
+    # lattice [BH, Section 3.2]. So if there are more than
+    # `target_enum_limit`, it takes those which look like a basis vector of
+    # norm at most N, for the smallest N for which they generate the lattice.
+    # Their number does not depend on the long basis vectors. Up to the limit
+    # the enumeration costs less than what is done for every lattice, and if
+    # all basis vectors have the same norm there is nothing to leave out.
+    d = diagonal(Glll)
+    limit = typemax(Int)
+    if algorithm == :partition_backtrack && !allequal(d)
+      limit = target_enum_limit
+    end
+    out = _get_weyl_proj_and_vector_set(_L; max_enum=limit, kw...)
+    if out === nothing
+      for N in sort!(unique(d))
+        out = _get_weyl_proj_and_vector_set(_L; targets=findall(<=(N), d), kw...)
+        N == maximum(d) && break
+        LatticePartitionBacktrack.generate(LatticePartitionBacktrack.short_vectors(
+          out[1], out[2], out[3][1], out[4][1])) && break
+      end
+    end
+    res, vector_set, invariants, unsigned_invariants, weyl_group_order, fundamental_roots = out
     use_projections = false # already added projections
   elseif use_weyl
     error("not implemented")
@@ -179,6 +218,15 @@ function __assert_has_automorphisms(
     for (v, n) in vector_set
       @assert all(dot(v * res[i], v) == n[i] for i in 1:length(res))
     end
+  end
+  if algorithm == :partition_backtrack
+    # The vector set and its labels are invariant under the group, which the
+    # algorithm of Plesken and Souvignier below relies on as well.
+    gens, order = LatticePartitionBacktrack.automorphism_group(
+                    res, vector_set, invariants[1], unsigned_invariants[1];
+                    invariant = true)
+    fl = true
+    @goto search_done
   end
   faithful = true
   if compress && length(res) > 1 # nothing to compress if there is only a single
@@ -233,26 +281,18 @@ function __assert_has_automorphisms(
     init(C; depth, bacher_depth, is_lll_reduced_known=true)
     gens, order = auto(C)
   end
+  @label search_done
 
+  number_reduced = length(gens)
   if use_weyl
-    reduced_gens = copy(gens)
-    _fundamental_roots = reduce(append!,[f[i:i,:] for i in 1:nrows(f)] for f in fundamental_roots; init=ZZMatrix[])
-    _orbit_rep_fundamental = _orbit_representatives(reduced_gens, _fundamental_roots)
-    _weyl_gens = _weyl_group_gens(Glll, fundamental_roots)
-    append!(gens, _weyl_gens)
+    append!(gens, _weyl_group_gens(Glll, fundamental_roots))
   end
 
   # Now translate back
-  if do_lll
+  if !isone(T)
     Tinv = inv(T)
     for i in 1:length(gens)
       gens[i] = Tinv * gens[i] * T
-    end
-
-    if use_weyl # translate reduced generators back
-      for i in 1:length(reduced_gens)
-        reduced_gens[i] = Tinv * reduced_gens[i] * T
-      end
     end
   end
 
@@ -277,9 +317,13 @@ function __assert_has_automorphisms(
       # when rho is trivial
       order_reduced = order
     end
-    L.reduced_automorphism_group_order = order_reduced
     L.automorphism_group_order = order_reduced*weyl_group_order
-    L.reduced_automorphism_group_generators = reduced_gens
+    # The reduced group refers to the roots of norm 1 and 2, see
+    # `reduced_automorphism_group_order`.
+    if all(f -> (f[1:1, :]*Glll*transpose(f[1:1, :]))[1, 1] <= 2, fundamental_roots)
+      L.reduced_automorphism_group_order = order_reduced
+      L.reduced_automorphism_group_generators = gens[1:number_reduced]
+    end
   else
     L.automorphism_group_order = order
   end
@@ -290,19 +334,24 @@ function __assert_has_automorphisms(
   end
 end
 
+# The vector set consists of the vectors which look like a basis vector with
+# index in `targets`. Returns `nothing` if the targeted enumeration yields
+# more than `max_enum` vectors at one of its stages.
 function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
                                        search_invariant_subspace::Bool=false,
                                        use_dual::Bool=false,
                                        allow_short_vectors_direct::Bool=false,
                                        force_direct::Bool=false,
+                                       sv2=__short_vectors(_integral_split_gram(_L)[1], nothing, 2),
+                                       targets::AbstractVector{Int}=1:rank(_L),
+                                       max_enum::Int=typemax(Int),
                                        use_multiset::Bool=true)
   tmp = ZZ()
   gramZZ, _ = _integral_split_gram(_L)
   gramInt = _int_matrix_with_overflow(gramZZ, tmp)
-  chol = CholeskyIntegralDenom(gramZZ)
-  sv2 = __short_vectors(gramZZ, nothing, 2; chol)
   n = rank(_L)
   fundamental_roots = [matrix(ZZ,1,n,i) for i in _fundamental_roots(sv2, gramInt)]
+  _append_long_roots!(fundamental_roots, gramZZ, gramInt)
 
   root_types, fundamental_roots = _root_lattice_recognition_fundamental(_L, fundamental_roots)
   fixed_matrix, isotypic_cofix_spaces, weyl_vector, root_orbits = _weyl_group(_L, root_types, fundamental_roots)
@@ -316,18 +365,21 @@ function _get_weyl_proj_and_vector_set(_L; search_fixed_vectors::Bool=true,
   if !do_direct
     @vprintln :Lattice 2 "short vectors choosing target=true"
     T = _short_vectors_with_condition_preprocessing(_L, fundamental_roots,weyl_vector, fixed_matrix, isotypic_cofix_spaces, :rank, use_dual)
-    @vtime :Lattice 2 vector_set, grams, invariants  = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace)
+    @vtime :Lattice 2 out = _short_vectors_with_condition(Int, T...; search_fixed_vectors, search_invariant_subspace, targets, max_enum)
+    out === nothing && return nothing
+    vector_set, grams, invariants = out
     grams = T[end]
   else
     @vprintln :Lattice 2 "short vectors choosing direct=true"
     grams = ZZMatrix[]
     search_invariant_subspace=false
+    chol = CholeskyIntegralDenom(gramZZ)
     @vtime :Lattice 2 vector_set, grams, invariants  = __short_vectors_with_condition_direct(gramZZ, gramInt, grams,fixed_matrix, root_types, fundamental_roots, chol; search_fixed_vectors, search_invariant_subspace)
   end
   unsigned_invariants = (UInt[], UInt[])
   if use_multiset
     dual_root_orbits = [M*gramInt for M in root_orbits]
-    vector_set, invariants, unsigned_invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits)
+    vector_set, invariants, unsigned_invariants = _add_multiset_invariant!(vector_set, invariants, dual_root_orbits, targets)
   end
   if get_assertion_level(:Lattice) > 1
     for (v, n) in vector_set
@@ -617,7 +669,7 @@ end
 
 # documented in ../Lattices.jl
 
-function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
+function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, kwargs...)
   if L == M
     return true
   end
@@ -631,7 +683,7 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
   end
 
   if is_definite(L) && is_definite(M)
-    return is_isometric_with_isometry(L, M, depth = depth, bacher_depth = bacher_depth)[1]
+    return is_isometric_with_isometry(L, M; depth, bacher_depth, kwargs...)[1]
   end
 
   if rank(L) == 2
@@ -648,7 +700,7 @@ function is_isometric(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0
   return _is_isometric_indef(L, M)
 end
 
-function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0)
+function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, kwargs...)
 
   # cornercase
   if rank(L) == 0
@@ -656,7 +708,7 @@ function is_isometric_with_isometry(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_
   end
 
   if is_definite(L) && is_definite(M)
-    return _is_isometric_with_isometry_definite(L, M; depth, bacher_depth)
+    return _is_isometric_with_isometry_definite(L, M; depth, bacher_depth, kwargs...)
   end
 
   error("Not implemented for indefinite lattices")
@@ -665,7 +717,9 @@ end
 # assumes rank >0, definite, no genus check
 _is_isometric_with_isometry_definite(L, M; kwargs...) = __is_isometric_with_isometry_definite(L, M; kwargs...)
 
-function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, use_norm_one=true)
+function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = -1, bacher_depth::Int = 0, use_norm_one=true,
+                                              algorithm::Symbol = :partition_backtrack)
+  @req algorithm in (:partition_backtrack, :plesken_souvignier) "Unknown algorithm"
   if rank(L) != rank(M)
     return false, zero_matrix(QQ, 0, 0)
   end
@@ -719,13 +773,13 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     _L1 = integer_lattice(gram=G1[1];cached=false)
     _L2 = integer_lattice(gram=G2[1];cached=false)
     if use_norm_one
-      sv1 = short_vectors(_L1, 0, Int(1))
-      sv2 = short_vectors(_L2, 0, Int(1))
+      sv1 = short_vectors(_L1, 0, Int(1); check = false)
+      sv2 = short_vectors(_L2, 0, Int(1); check = false)
       length(sv1) == length(sv2) || return false, zero_matrix(QQ,0,0)
       if length(sv1)>0
         S1, T1, _, _ = _norm_one_sublattice_automorphism_group(_L1, sv1; doauto=false)
         S2, T2, _, _ = _norm_one_sublattice_automorphism_group(_L2, sv2; doauto=false)
-        b,T = is_isometric_with_isometry(T1,T2)
+        b,T = is_isometric_with_isometry(T1, T2; algorithm)
         !b && return false, zero_matrix(QQ,0,0)
         B1 = vcat(basis_matrix(S1),basis_matrix(T1))
         B2 = vcat(basis_matrix(S2),basis_matrix(T2))
@@ -742,8 +796,20 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     if !b
       return false, zero_matrix(QQ,0,0)
     end
+    if algorithm == :partition_backtrack
+      # The two vector sets with their labels and the further forms are
+      # compatible: every isometry of the lattices maps the ones to the
+      # others.
+      b, T = LatticePartitionBacktrack.isometry(grams1, grams2, V1, V2,
+                                                invariants1[1],
+                                                invariants2[1];
+                                                invariant = true)
+      @goto search_done
+    end
     fl, CLsmall, CMsmall = _try_iso_setup_small(grams1, grams2, depth = depth, bacher_depth = bacher_depth; vector_set1=V1, vector_set2=V2, invariants1, invariants2)
   end
+  # The partition backtrack is not used if an entry does not fit into an
+  # Int: it computes modulo 2^64, which need not tell the vectors apart.
   if fl
     b, _T = isometry(CLsmall, CMsmall)
     T = matrix(ZZ, _T)
@@ -751,6 +817,7 @@ function __is_isometric_with_isometry_definite(L::ZZLat, M::ZZLat; depth::Int = 
     CL, CM = _iso_setup(ZZMatrix[GLlll], ZZMatrix[GMlll], depth = depth, bacher_depth = bacher_depth)
     b, T = isometry(CL, CM)
   end
+  @label search_done
 
   if b
     # undo LLL
@@ -992,7 +1059,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
     #d = denominator(view(D,:,r))
     C = F[rows,:]
     ed = filter!(!isone, elementary_divisors(C))
-    push!(glue_indices, ed)
+    push!(glue_indices, pushfirst!(ed, (f[1:1, :]*GZ*transpose(f[1:1, :]))[1, 1]))
     j = k
   end
   KeyType = Tuple{Tuple{Symbol, Int}, Vector{ZZRingElem}}
@@ -1078,7 +1145,7 @@ function _weyl_group(L::ZZLat, root_types, fundamental_roots::Vector{ZZMatrix})
   end
 
   fixed_matrix = reduce(vcat, invariant_vectors)
-  @hassert :Lattice 1 all(all(isone,i*GZ*weyl_vector) for i in fundamental_roots)
+  @hassert :Lattice 1 all(2 .* (i*GZ*weyl_vector) == max.(diagonal(i*GZ*transpose(i)), 2) for i in fundamental_roots)
   return fixed_matrix, isotypic_cofix_spaces, weyl_vector, root_orbits
 end
 
