@@ -105,7 +105,7 @@ function _p_rationality_of_real_cyclotomic_check_per_prime(T, p)
 
   @vprint :pRationality 1 "conductor: $n: prime $p: check Schirokauer map on cyclotomic units\n"
   if !is_divisible_by(2*n, p)
-    fl, = _schirokauer_map_data_minkowski_unit(T.k, T.mink, p, T.aut; is_abelian = true, new = true)
+    fl, = _schirokauer_map_data_minkowski_unit(T.k, T.mink, p, T.aut; is_abelian = true)
     if fl
       @vprint :pRationality 1 "conductor: $n: prime $p: Schirokauer map injective; p-rationality established\n"
       return true

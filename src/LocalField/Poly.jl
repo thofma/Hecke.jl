@@ -1138,61 +1138,6 @@ function _compute_EF_phi(phi::Generic.Poly{T}, f::Generic.Poly{T}) where T <: Un
   return E, F
 end
 
-function _factor(f::Generic.Poly{T}) where T <: Union{PadicFieldElem, QadicFieldElem, LocalFieldElem}
-  Kx = parent(f)
-  K = base_ring(Kx)
-  phi = gen(Kx)
-  E = 1
-  tf = typeof(f)
-  pols = tf[]
-  res = Tuple{tf, Tuple{tf, tf}}[]
-  while true
-    fl, facts = newton_test(phi, f)
-    if !fl
-      for g in facts
-        append!(res, _factor(g))
-      end
-      return res
-    end
-    Ephi, Fphi = _compute_EF_phi(phi, f)
-    if !divides(E, Ephi)[1]
-      push!(pols, phi)
-      S = divexact(lcm(E, Ephi), E)
-      E = S*E
-      phi = phi^S
-      if E == deg(f1)
-        #Produce a certificate...
-      end
-
-
-      fl, facts = hensel_test(gamma, f)
-      if !fl
-        for g in facts
-          append!(res, _factor(g))
-        end
-        return res
-      end
-      if degree(facts[1])*E == degree(f)
-        #Produce a certificate
-      end
-      if degree(facts[1]) > 1
-        #Extend the base field
-        F, gF = unramified_extension(K, degree(facts[1]), precision(K))
-        fF = map_coefficients(F, f, cached = false)
-        lf = Hensel_factorization(fF)
-        fnew = first(values(lf))
-        lfF = _factor()
-      end
-    end
-
-
-  end
-
-
-
-
-end
-
 ################################################################################
 #
 #  Factor via global field
