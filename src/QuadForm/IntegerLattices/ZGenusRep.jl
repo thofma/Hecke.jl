@@ -718,7 +718,7 @@ function enumerate_definite_genus(
     add_spinor_generators::Bool=true,
     scaling_factor=nothing
   )
-return _enumerate_definite_genus!(copy(known), algorithm;
+  reps, missing_mass = _enumerate_definite_genus!(copy(known), algorithm;
     rand_neigh,
     distinct,
     invariant_function,
@@ -730,7 +730,19 @@ return _enumerate_definite_genus!(copy(known), algorithm;
     stop_after,
     max,
     add_spinor_generators,
-    scaling_factor)[1:2]
+    scaling_factor)
+  sc = denominator(scale(first(known)))
+  if !isone(sc)
+    s = 1//sc
+    for (i, L) in pairs(reps)
+      M = rescale(L, s; cached=false)
+      if isdefined(L, :automorphism_group_order)
+        M.automorphism_group_order = L.automorphism_group_order
+      end
+      reps[i] = M
+    end
+  end
+  return reps, missing_mass
 end
 
 function _enumerate_definite_genus!(

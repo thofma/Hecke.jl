@@ -1115,6 +1115,21 @@ end
   @test length(representatives(genus(L))) == 1
 end
 
+@testset "Definite genus enumeration at rational scale" begin
+  # Both the seed lattice and newly found classes retain the input scale.
+  L = integer_lattice(gram=identity_matrix(QQ, 3) * QQ(1, 2))
+  reps, missing = enumerate_definite_genus([L])
+  @test length(reps) == 1
+  @test det(only(reps)) == 1//8
+  @test missing == 0
+
+  L = integer_lattice(gram=QQ[2 1 0; 1 2 0; 0 0 18] * QQ(1, 2))
+  reps, missing = enumerate_definite_genus([L])
+  @test length(reps) > 1
+  @test all(M -> genus(M) == genus(L), reps)
+  @test missing == 0
+end
+
 @testset "More ZZGenus representatives" begin
   # Tests for even and odd at the prime 2 (and cover some corner cases)
   gg = integer_genera((0,5), 3*23)
